@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHONPATH="${repo_root}${PYTHONPATH:+:${PYTHONPATH}}"
+
 if [[ -n "${PYGRAPHISTRY_PATH:-}" ]]; then
-  export PYTHONPATH="${PYGRAPHISTRY_PATH}${PYTHONPATH:+:${PYTHONPATH}}"
+  PYTHONPATH="${PYGRAPHISTRY_PATH}:${PYTHONPATH}"
 fi
+
+export PYTHONPATH
 
 if [[ "${PYGRAPHISTRY_INSTALL:-0}" == "1" ]]; then
   if [[ -n "${PYGRAPHISTRY_PATH:-}" ]]; then
