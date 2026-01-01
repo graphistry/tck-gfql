@@ -22,9 +22,14 @@ jobs:
       PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
       PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
       PYGRAPHISTRY_INSTALL: "1"
+      PYGRAPHISTRY_PATH: pygraphistry
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Checkout pygraphistry
+        run: |
+          git clone --depth 1 --branch "${PYGRAPHISTRY_REF}" "${PYGRAPHISTRY_REPO}" "${PYGRAPHISTRY_PATH}"
 
       - name: Set up Python
         uses: actions/setup-python@v5
