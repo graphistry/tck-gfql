@@ -9,7 +9,7 @@ on:
       pygraphistry_ref:
         description: "pygraphistry ref (branch/tag/sha)"
         required: false
-        default: "main"
+        default: "master"
       pygraphistry_repo:
         description: "pygraphistry repo URL"
         required: false
@@ -19,7 +19,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     env:
-      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'main' }}
+      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
       PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
       PYGRAPHISTRY_INSTALL: "1"
     steps:

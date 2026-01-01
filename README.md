@@ -36,5 +36,5 @@ PYGRAPHISTRY_PATH=../pygraphistry2 ./bin/ci.sh
 
 Install a specific ref from GitHub:
 ```bash
-PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=main ./bin/ci.sh
+PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh
 ```
