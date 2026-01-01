@@ -1,3 +1,5 @@
+[![CI](https://github.com/graphistry/tck-gfql/actions/workflows/ci.yml/badge.svg)](https://github.com/graphistry/tck-gfql/actions/workflows/ci.yml)
+
 # GFQL Cypher TCK Conformance Harness
 
 This repo hosts the Cypher TCK -> GFQL translation harness used by
@@ -7,6 +9,7 @@ GFQL queries and validate results.
 ## Layout
 - `tests/cypher_tck/`: Scenario translations, runner, and gap analysis.
 - TCK clone (gitignored): `plans/cypher-tck-conformance/tck`.
+- Sync guide: `SYNC.md`.
 
 ## Setup
 1. Install or editable-link `pygraphistry`:
