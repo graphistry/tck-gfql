@@ -27,3 +27,14 @@ GFQL queries and validate results.
 pytest tests/cypher_tck -xvs
 TEST_CUDF=1 pytest tests/cypher_tck -xvs
 ```
+
+## Local pygraphistry override
+Use a sibling checkout without installing by setting `PYGRAPHISTRY_PATH`:
+```bash
+PYGRAPHISTRY_PATH=../pygraphistry2 ./bin/ci.sh
+```
+
+Install a specific ref from GitHub:
+```bash
+PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=main ./bin/ci.sh
+```
