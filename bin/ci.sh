@@ -26,3 +26,4 @@ if [[ "${PYGRAPHISTRY_INSTALL:-0}" == "1" ]]; then
 fi
 
 pytest tests/cypher_tck -xvs
+python -m tests.cypher_tck.report
