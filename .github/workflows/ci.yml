@@ -29,7 +29,10 @@ jobs:
 
       - name: Checkout pygraphistry
         run: |
-          git clone --depth 1 --branch "${PYGRAPHISTRY_REF}" "${PYGRAPHISTRY_REPO}" "${PYGRAPHISTRY_PATH}"
+          git clone --depth 1 "${PYGRAPHISTRY_REPO}" "${PYGRAPHISTRY_PATH}"
+          cd "${PYGRAPHISTRY_PATH}"
+          git fetch --depth 1 origin "${PYGRAPHISTRY_REF}"
+          git checkout FETCH_HEAD
 
       - name: Set up Python
         uses: actions/setup-python@v5

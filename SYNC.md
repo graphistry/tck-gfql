@@ -11,18 +11,23 @@ The code lives under `tests/cypher_tck/` and is intended to stay in sync with
 ## Sync commands
 Replace paths as needed for your workspace.
 
+```bash
+export TCK_GFQL_ROOT=/path/to/tck-gfql
+export PYGRAPHISTRY_ROOT=/path/to/pygraphistry
+```
+
 ### tck-gfql → pygraphistry
 ```bash
 rsync -a --delete --exclude '__pycache__' --exclude '.pytest_cache' \
-  /home/lmeyerov/Work/tck-gfql/tests/cypher_tck/ \
-  /home/lmeyerov/Work/pygraphistry2/tests/cypher_tck/
+  "${TCK_GFQL_ROOT}/tests/cypher_tck/" \
+  "${PYGRAPHISTRY_ROOT}/tests/cypher_tck/"
 ```
 
 ### pygraphistry → tck-gfql
 ```bash
 rsync -a --delete --exclude '__pycache__' --exclude '.pytest_cache' \
-  /home/lmeyerov/Work/pygraphistry2/tests/cypher_tck/ \
-  /home/lmeyerov/Work/tck-gfql/tests/cypher_tck/
+  "${PYGRAPHISTRY_ROOT}/tests/cypher_tck/" \
+  "${TCK_GFQL_ROOT}/tests/cypher_tck/"
 ```
 
 ## Notes
