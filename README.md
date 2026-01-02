@@ -8,17 +8,17 @@ PyGraphistry. It relies on an installed `pygraphistry` package to execute
 GFQL queries and validate results.
 
 ## Layout
-- `tests/cypher_tck/`: Scenario translations, runner, and gap analysis.
+- [`tests/cypher_tck/`](tests/cypher_tck/): Scenario translations, runner, and gap analysis.
 - TCK clone (gitignored): `plans/cypher-tck-conformance/tck`.
-- Sync guide: `SYNC.md`.
+- Sync guide: [SYNC.md](SYNC.md).
 
 ## Links
-- PyGraphistry repo: https://github.com/graphistry/pygraphistry
-- GFQL docs: https://pygraphistry.readthedocs.io/en/latest/gfql/index.html
-- openCypher TCK: https://github.com/opencypher/openCypher/tree/main/tck
-- Contributing: `CONTRIBUTING.md`
-- Code of Conduct: `CODE_OF_CONDUCT.md`
-- Security: `SECURITY.md`
+- PyGraphistry repo: [graphistry/pygraphistry](https://github.com/graphistry/pygraphistry)
+- GFQL docs: [pygraphistry.readthedocs.io](https://pygraphistry.readthedocs.io/en/latest/gfql/index.html)
+- openCypher TCK: [opencypher/openCypher](https://github.com/opencypher/openCypher/tree/main/tck)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Security: [SECURITY.md](SECURITY.md)
 
 ## Setup
 1. Install or editable-link `pygraphistry`:
@@ -49,5 +49,5 @@ PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh
 ```
 
 ## License
-This repository is licensed under the Apache License 2.0. See `LICENSE` and
-`NOTICE` for details and upstream attribution.
+This repository is licensed under the Apache License 2.0. See [LICENSE](LICENSE)
+and [NOTICE](NOTICE) for details and upstream attribution.
