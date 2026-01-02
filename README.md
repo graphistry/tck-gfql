@@ -1,5 +1,6 @@
 [![CI](https://github.com/graphistry/tck-gfql/actions/workflows/ci.yml/badge.svg)](https://github.com/graphistry/tck-gfql/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![pygraphistry](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/graphistry/tck-gfql/main/badges/pygraphistry-version.json)](https://github.com/graphistry/pygraphistry)
 
 # GFQL Cypher TCK Conformance Harness
 
