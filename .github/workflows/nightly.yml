@@ -4,6 +4,23 @@ on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+    inputs:
+      pygraphistry_ref:
+        description: "pygraphistry ref (branch/tag/sha)"
+        required: false
+        default: "master"
+      pygraphistry_repo:
+        description: "pygraphistry repo URL"
+        required: false
+        default: "https://github.com/graphistry/pygraphistry.git"
+      dry_run:
+        description: "Skip badge update/push"
+        required: false
+        default: "true"
+  pull_request:
+    paths:
+      - .github/workflows/nightly.yml
+      - badges/**
 
 permissions:
   contents: write
@@ -12,8 +29,8 @@ jobs:
   nightly:
     runs-on: ubuntu-latest
     env:
-      PYGRAPHISTRY_REF: master
-      PYGRAPHISTRY_REPO: https://github.com/graphistry/pygraphistry.git
+      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
+      PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
       PYGRAPHISTRY_INSTALL: "1"
     steps:
       - name: Checkout
@@ -34,6 +51,7 @@ jobs:
           ./bin/ci.sh
 
       - name: Update pygraphistry badge
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
         run: |
           version="$(python - <<'PY'
 import graphistry
@@ -42,10 +60,11 @@ PY
 )"
           mkdir -p badges
           cat > badges/pygraphistry-version.json <<JSON
-{"schemaVersion":1,"label":"pygraphistry","message":"master @ ${version}","color":"blue"}
+{"schemaVersion":1,"label":"pygraphistry","message":"${PYGRAPHISTRY_REF} @ ${version}","color":"blue"}
 JSON
 
       - name: Commit badge
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
         run: |
           if git diff --quiet -- badges/pygraphistry-version.json; then
             echo "Badge is up to date."
