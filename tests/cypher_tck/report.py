@@ -53,11 +53,26 @@ def build_report() -> str:
         for scenario in SCENARIOS
         if scenario.status == "supported" and scenario.gfql is not None
     )
+    translated_xfail = sum(
+        1
+        for scenario in SCENARIOS
+        if scenario.status == "xfail" and scenario.gfql is not None
+    )
+    translated_skip = sum(
+        1
+        for scenario in SCENARIOS
+        if scenario.status == "skip" and scenario.gfql is not None
+    )
     supported_missing = sum(
         1
         for scenario in SCENARIOS
         if scenario.status == "supported" and scenario.gfql is None
     )
+
+    supported_count = status_counts.get("supported", 0)
+    xfail_count = status_counts.get("xfail", 0)
+    skip_count = status_counts.get("skip", 0)
+    other_count = total - supported_count - xfail_count - skip_count
 
     group_counts: Dict[str, Counter] = defaultdict(Counter)
     area_counts: Dict[str, Counter] = defaultdict(Counter)
@@ -74,15 +89,17 @@ def build_report() -> str:
     lines = [
         "GFQL conformance report (tck-gfql)",
         "",
-        f"Total scenarios: {total}",
-        f"GFQL translated: {gfql_defined} ({_percent(gfql_defined, total)})",
+        f"Scenarios represented (ported): {total}",
+        f"GFQL translated (non-None): {gfql_defined} ({_percent(gfql_defined, total)})",
         f"GFQL missing: {missing_gfql} ({_percent(missing_gfql, total)})",
-        f"Expected pass: {supported_defined}",
+        f"Translated + expected pass (supported): {supported_defined}",
+        f"Translated but xfail: {translated_xfail}",
+        f"Translated but skip: {translated_skip}",
         f"Supported but missing GFQL: {supported_missing}",
-        f"Status counts: supported {status_counts.get('supported', 0)}, "
-        f"xfail {status_counts.get('xfail', 0)}, "
-        f"skip {status_counts.get('skip', 0)}, "
-        f"other {total - status_counts.get('supported', 0) - status_counts.get('xfail', 0) - status_counts.get('skip', 0)}",
+        f"Status counts: supported {supported_count}, "
+        f"xfail {xfail_count}, "
+        f"skip {skip_count}, "
+        f"other {other_count}",
         "",
         "By feature group:",
         "| group | total | supported | xfail | skip |",
