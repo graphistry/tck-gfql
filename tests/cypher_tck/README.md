@@ -41,4 +41,6 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
 - The TCK repo is not vendored; use the local clone under `plans/`.
 - Each translated scenario should include a reference back to the TCK path,
   the original Cypher, and the expected rows or aggregates.
+- For xfail scenarios, `gfql` may contain a non-executable plan built with
+  `tests.cypher_tck.gfql_plan` to document the intended translation.
 - Track feature gaps and workarounds in `tests/cypher_tck/GAP_ANALYSIS.md`.
