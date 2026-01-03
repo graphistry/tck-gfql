@@ -21,6 +21,8 @@ optional cuDF runs when enabled.
   - `engine='cudf'` (only when `TEST_CUDF=1` and cudf is available)
 - Record unsupported scenarios with explicit xfail/skip reasons and capability tags.
 - Preserve traceability to the original Cypher query and expected results.
+  - Capability tags include `target-table-ops`, `target-expr-dsl`, `defer-quantifier`,
+    `defer-path-enum`, `defer-unwind`, `defer-union`.
 
 ## Running
 ```bash

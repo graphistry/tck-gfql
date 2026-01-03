@@ -9,6 +9,8 @@ translation guidelines.
 - If a scenario is marked skip/xfail, add or reference a gap entry below.
 - Keep the entry short, with a clear root cause and a proposed path forward.
 - Update the entry when the gap is partially or fully addressed.
+- Targettable capability tags (e.g., `target-table-ops`, `target-expr-dsl`) are
+  auto-applied to xfail scenarios by feature path for tracking near-term work.
 
 ## Entry format
 - **ID**: Short identifier (G1, G2, ...)
