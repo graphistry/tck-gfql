@@ -5,7 +5,6 @@ import sys
 from collections import Counter
 from typing import Iterable, List
 
-from tests.cypher_tck.gfql_plan import is_placeholder
 from tests.cypher_tck.models import Scenario
 
 _PYGRAPHISTRY_PATH = os.environ.get("PYGRAPHISTRY_PATH")
@@ -37,16 +36,12 @@ DEFER_TAGS = (
 )
 
 
-def _is_missing_gfql(scenario: Scenario) -> bool:
-    return scenario.gfql is None or is_placeholder(scenario.gfql)
-
-
 def _filter_target(scenarios: Iterable[Scenario], tag: str) -> List[Scenario]:
     return [
         scenario
         for scenario in scenarios
         if scenario.status == "xfail"
-        and _is_missing_gfql(scenario)
+        and scenario.gfql is None
         and tag in scenario.tags
     ]
 
@@ -70,7 +65,7 @@ def main() -> None:
 
     tag_counts = Counter()
     for scenario in scenarios:
-        if scenario.status != "xfail" or not _is_missing_gfql(scenario):
+        if scenario.status != "xfail" or scenario.gfql is not None:
             continue
         tag_counts.update(scenario.tags)
 

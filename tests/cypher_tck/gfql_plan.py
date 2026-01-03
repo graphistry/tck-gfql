@@ -52,17 +52,3 @@ def distinct() -> PlanStep:
 def group_by(keys: Iterable[str]) -> PlanStep:
     return step("group_by", keys=tuple(keys))
 
-
-def placeholder(note: str, **kwargs: Any) -> PlanStep:
-    payload = {"note": note}
-    payload.update(kwargs)
-    return step("placeholder", **payload)
-
-
-def is_placeholder(value: Any) -> bool:
-    if not isinstance(value, (tuple, list)):
-        return False
-    for item in value:
-        if isinstance(item, PlanStep) and item.op == "placeholder":
-            return True
-    return False
