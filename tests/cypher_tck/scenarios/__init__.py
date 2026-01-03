@@ -5,6 +5,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from typing import Iterable, Tuple
 
+from tests.cypher_tck.gfql_plan import placeholder, plan
 from tests.cypher_tck.models import Scenario
 
 _SCENARIO_ROOT = Path(__file__).resolve().parent / "tck" / "features"
@@ -74,6 +75,26 @@ def _tag_scenario(scenario: Scenario) -> Scenario:
     return replace(scenario, tags=_merge_tags(scenario.tags, extra_tags))
 
 
+def _placeholder_plan(scenario: Scenario) -> Tuple:
+    return plan(
+        placeholder(
+            "auto placeholder for target-table-ops/target-expr-dsl",
+            feature_path=scenario.feature_path,
+            scenario_key=scenario.key,
+        )
+    )
+
+
+def _apply_placeholder(scenario: Scenario) -> Scenario:
+    if scenario.status != "xfail":
+        return scenario
+    if scenario.gfql is not None:
+        return scenario
+    if "target-table-ops" in scenario.tags or "target-expr-dsl" in scenario.tags:
+        return replace(scenario, gfql=_placeholder_plan(scenario))
+    return scenario
+
+
 for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     module_name = "tests.cypher_tck.scenarios." + path.relative_to(Path(__file__).resolve().parent).with_suffix("").as_posix().replace("/", ".")
     spec = spec_from_file_location(module_name, path)
@@ -83,4 +104,4 @@ for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     spec.loader.exec_module(module)
     SCENARIOS.extend(getattr(module, "SCENARIOS", []))
 
-SCENARIOS = [_tag_scenario(scenario) for scenario in SCENARIOS]
+SCENARIOS = [_apply_placeholder(_tag_scenario(scenario)) for scenario in SCENARIOS]
