@@ -1,5 +1,14 @@
 from graphistry.compute import e_forward, e_undirected, n
 
+from tests.cypher_tck.gfql_plan import (
+    group_by,
+    match,
+    order_by,
+    plan,
+    rows,
+    select,
+)
+
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
@@ -42,7 +51,13 @@ SCENARIOS = [
                 {"n.division": "'Germany'", "count(*)": 1},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n(name="n")),
+            rows(table="nodes", source="n"),
+            group_by(["n.division"]),
+            select([("n.division", "n.division"), ("count(*)", "count(*)")]),
+            order_by([("count(*)", "desc"), ("n.division", "asc")]),
+        ),
         status="xfail",
         reason="ORDER BY and aggregations are not supported",
         tags=("return", "orderby", "aggregation", "xfail"),
