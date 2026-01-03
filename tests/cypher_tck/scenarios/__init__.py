@@ -43,20 +43,20 @@ _TARGET_EXPR_PREFIXES = (
     "expressions/comparison",
     "expressions/list",
     "expressions/literals",
+    "expressions/map",
     "expressions/mathematical",
     "expressions/null",
     "expressions/precedence",
     "expressions/string",
     "expressions/temporal",
+    "expressions/typeConversion",
 )
 
 _DEFER_EXPR_PREFIXES = (
     "expressions/conditional",
     "expressions/existentialSubqueries",
     "expressions/graph",
-    "expressions/map",
     "expressions/pattern",
-    "expressions/typeConversion",
 )
 
 
@@ -557,7 +557,10 @@ def _parse_expr(expr_text: str):
     try:
         tokens = _tokenize(expr_text)
         parser = _ExprParser(tokens)
-        return parser.parse()
+        result = parser.parse()
+        if parser._peek().kind != "EOF":
+            raise ValueError("trailing tokens")
+        return result
     except Exception:
         return raw(expr_text)
 
