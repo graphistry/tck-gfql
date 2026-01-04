@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- None.
+
+### Changed
+- None.
+
+## [0.1.0 - 2026-01-03]
+
+### Added
 - **GFQL plans**: Auto-generate clause + expression plans for target extension xfail scenarios (table ops + expr DSL).
 - **GFQL plan DSL**: Added expression AST helpers (`col`, `lit`, `param`, `func`, `binary`, `unary`, `list`, `map`, `index`, `star`) for non-executable plan capture.
 - **Docs**: Documented generated xfail plans and plan helpers in `tests/cypher_tck/README.md`.
