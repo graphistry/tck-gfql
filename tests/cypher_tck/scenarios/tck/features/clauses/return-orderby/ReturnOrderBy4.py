@@ -1,5 +1,14 @@
 from graphistry.compute import e_forward, e_undirected, n
 
+from tests.cypher_tck.gfql_plan import (
+    match,
+    order_by,
+    plan,
+    rows,
+    select,
+    step,
+)
+
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
@@ -34,7 +43,14 @@ SCENARIOS = [
                 {"p": 1},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            step("with", items=(("prows", "[0, 1]"), ("qrows", "[[2], [3, 4]]"))),
+            step("unwind", expr="prows", as_="p"),
+            step("unwind", expr="qrows[p]", as_="q"),
+            step("with", items=(("p", "p"), ("rng", "count(q)"))),
+            select([("p", "p")]),
+            order_by([("rng", "asc")]),
+        ),
         status="xfail",
         reason="WITH pipelines, UNWIND, and ORDER BY are not supported",
         tags=("return", "orderby", "with", "unwind", "xfail"),
@@ -63,7 +79,13 @@ SCENARIOS = [
                 {"rank": 5},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n({"label__Crew": True, "name": "Neo"}, name="c")),
+            rows(table="nodes", source="c"),
+            step("with", items=(("c", "c"), ("relevance", "0"))),
+            select([("rank", "c.rank")]),
+            order_by([("relevance", "asc"), ("c.rank", "asc")]),
+        ),
         status="xfail",
         reason="WITH pipelines and ORDER BY are not supported",
         tags=("return", "orderby", "with", "xfail"),

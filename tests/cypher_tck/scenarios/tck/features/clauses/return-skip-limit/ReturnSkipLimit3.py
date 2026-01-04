@@ -1,5 +1,15 @@
 from graphistry.compute import e_forward, e_undirected, n
 
+from tests.cypher_tck.gfql_plan import (
+    limit,
+    match,
+    order_by,
+    plan,
+    rows,
+    select,
+    skip,
+)
+
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
@@ -42,7 +52,14 @@ SCENARIOS = [
                 {"n": "({name: 'D'})"},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n(name="n")),
+            rows(table="nodes", source="n"),
+            select([("n", "n")]),
+            order_by([("n.name", "asc")]),
+            skip(2),
+            limit(2),
+        ),
         status="xfail",
         reason="SKIP/LIMIT and ORDER BY are not supported",
         tags=("return", "skip", "limit", "orderby", "xfail"),
@@ -68,7 +85,14 @@ SCENARIOS = [
                 {"n": "({name: 'D'})"},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n(name="n")),
+            rows(table="nodes", source="n"),
+            select([("n", "n")]),
+            order_by([("n.name", "asc")]),
+            skip("$s"),
+            limit("$l"),
+        ),
         status="xfail",
         reason="SKIP/LIMIT, ORDER BY, and parameter binding are not supported",
         tags=("return", "skip", "limit", "orderby", "params", "xfail"),
@@ -93,7 +117,14 @@ SCENARIOS = [
                 {"a.count": 15},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n(name="a")),
+            rows(table="nodes", source="a"),
+            select([("a.count", "a.count")]),
+            order_by([("a.count", "asc")]),
+            skip(10),
+            limit(10),
+        ),
         status="xfail",
         reason="UNWIND, SKIP/LIMIT, and ORDER BY are not supported",
         tags=("return", "skip", "limit", "orderby", "unwind", "xfail"),

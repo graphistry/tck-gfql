@@ -1,5 +1,14 @@
 from graphistry.compute import e_forward, e_undirected, n
 
+from tests.cypher_tck.gfql_plan import (
+    match,
+    order_by,
+    plan,
+    rows,
+    select,
+    step,
+)
+
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
@@ -33,7 +42,12 @@ SCENARIOS = [
                 {"avgAge": "null"},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n(name="person")),
+            rows(table="nodes", source="person"),
+            select([("avgAge", "avg(person.age)")]),
+            order_by([("$age + avg(person.age) - 1000", "asc")]),
+        ),
         status="xfail",
         reason="Parameters, aggregations, and ORDER BY are not supported",
         tags=("return", "orderby", "aggregation", "params", "xfail"),
@@ -46,7 +60,16 @@ SCENARIOS = [
         cypher="MATCH (me: Person)--(you: Person)\nRETURN me.age AS age, count(you.age) AS cnt\nORDER BY age, age + count(you.age)",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(rows=[]),
-        gfql=None,
+        gfql=plan(
+            match(
+                n({"label__Person": True}, name="me"),
+                e_undirected(),
+                n({"label__Person": True}, name="you"),
+            ),
+            rows(table="nodes", source="me"),
+            select([("age", "me.age"), ("cnt", "count(you.age)")]),
+            order_by([("age", "asc"), ("age + count(you.age)", "asc")]),
+        ),
         status="xfail",
         reason="Aggregations and ORDER BY are not supported",
         tags=("return", "orderby", "aggregation", "xfail"),
@@ -59,7 +82,16 @@ SCENARIOS = [
         cypher="MATCH (me: Person)--(you: Person)\nRETURN me.age AS age, count(you.age) AS cnt\nORDER BY me.age + count(you.age)",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(rows=[]),
-        gfql=None,
+        gfql=plan(
+            match(
+                n({"label__Person": True}, name="me"),
+                e_undirected(),
+                n({"label__Person": True}, name="you"),
+            ),
+            rows(table="nodes", source="me"),
+            select([("age", "me.age"), ("cnt", "count(you.age)")]),
+            order_by([("me.age + count(you.age)", "asc")]),
+        ),
         status="xfail",
         reason="Aggregations and ORDER BY are not supported",
         tags=("return", "orderby", "aggregation", "xfail"),
@@ -72,7 +104,17 @@ SCENARIOS = [
         cypher="MATCH (me: Person)--(you: Person)\nRETURN count(you.age) AS agg\nORDER BY me.age + count(you.age)",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(),
-        gfql=None,
+        gfql=plan(
+            match(
+                n({"label__Person": True}, name="me"),
+                e_undirected(),
+                n({"label__Person": True}, name="you"),
+            ),
+            rows(table="nodes", source="me"),
+            select([("agg", "count(you.age)")]),
+            order_by([("me.age + count(you.age)", "asc")]),
+            step("invalid", note="ORDER BY references non-returned variable"),
+        ),
         status="xfail",
         reason="Compile-time validation for ORDER BY aggregation expressions is not enforced",
         tags=("return", "orderby", "syntax-error", "xfail"),
@@ -85,7 +127,17 @@ SCENARIOS = [
         cypher="MATCH (me: Person)--(you: Person)\nRETURN me.age + you.age, count(*) AS cnt\nORDER BY me.age + you.age + count(*)",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(),
-        gfql=None,
+        gfql=plan(
+            match(
+                n({"label__Person": True}, name="me"),
+                e_undirected(),
+                n({"label__Person": True}, name="you"),
+            ),
+            rows(table="nodes", source="me"),
+            select([("me.age + you.age", "me.age + you.age"), ("cnt", "count(*)")]),
+            order_by([("me.age + you.age + count(*)", "asc")]),
+            step("invalid", note="ORDER BY aggregation expression not allowed"),
+        ),
         status="xfail",
         reason="Compile-time validation for ORDER BY aggregation expressions is not enforced",
         tags=("return", "orderby", "syntax-error", "xfail"),

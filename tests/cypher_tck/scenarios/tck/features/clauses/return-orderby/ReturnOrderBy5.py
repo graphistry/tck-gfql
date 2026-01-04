@@ -1,5 +1,7 @@
 from graphistry.compute import e_forward, e_undirected, n
 
+from tests.cypher_tck.gfql_plan import match, order_by, plan, rows, select
+
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
@@ -41,7 +43,12 @@ SCENARIOS = [
                 {"n": 3},
             ],
         ),
-        gfql=None,
+        gfql=plan(
+            match(n(name="n")),
+            rows(table="nodes", source="n"),
+            select([("n", "n.num")]),
+            order_by([("n + 2", "asc")]),
+        ),
         status="xfail",
         reason="ORDER BY expression evaluation is not supported",
         tags=("return", "orderby", "expression", "xfail"),

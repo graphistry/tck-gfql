@@ -21,6 +21,8 @@ optional cuDF runs when enabled.
   - `engine='cudf'` (only when `TEST_CUDF=1` and cudf is available)
 - Record unsupported scenarios with explicit xfail/skip reasons and capability tags.
 - Preserve traceability to the original Cypher query and expected results.
+  - Capability tags include `target-table-ops`, `target-expr-dsl`, `defer-quantifier`,
+    `defer-path-enum`, `defer-unwind`, `defer-union`.
 
 ## Running
 ```bash
@@ -28,8 +30,19 @@ pytest tests/cypher_tck -xvs
 TEST_CUDF=1 pytest tests/cypher_tck -xvs
 ```
 
+## Porting backlog
+```bash
+PYGRAPHISTRY_PATH=/path/to/pygraphistry python -m tests.cypher_tck.porting_backlog
+python -m tests.cypher_tck.porting_backlog
+BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
+```
+
 ## Notes
 - The TCK repo is not vendored; use the local clone under `plans/`.
 - Each translated scenario should include a reference back to the TCK path,
   the original Cypher, and the expected rows or aggregates.
+- For xfail scenarios, `gfql` may contain a non-executable plan built with
+  `tests.cypher_tck.gfql_plan` to document the intended translation. When a
+  target-table-ops or target-expr-dsl scenario lacks a manual plan, a minimal
+  clause-based plan is generated from the Cypher text at load time.
 - Track feature gaps and workarounds in `tests/cypher_tck/GAP_ANALYSIS.md`.
