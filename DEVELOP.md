@@ -8,6 +8,7 @@ the local `plans/` clone of the TCK repo for reference (not vendored).
 ## Local Tests
 
 ```bash
+./bin/ci.sh
 pytest tests/cypher_tck -xvs
 TEST_CUDF=1 pytest tests/cypher_tck -xvs
 ```
@@ -18,9 +19,22 @@ When running from a sibling `pygraphistry` checkout, set:
 PYTHONPATH=/path/to/pygraphistry python -m tests.cypher_tck.porting_backlog
 ```
 
+## Environment Variables
+
+- `PYGRAPHISTRY_PATH`: use a local pygraphistry checkout (sibling repo).
+- `PYGRAPHISTRY_INSTALL=1`: install pygraphistry (editable if `PYGRAPHISTRY_PATH` set).
+- `PYGRAPHISTRY_REPO`: git URL for pygraphistry (CI default is upstream).
+- `PYGRAPHISTRY_REF`: branch/tag/sha for pygraphistry (CI default is `master`).
+
 ## CI
 
 GitHub Actions runs the suite on PRs. See `.github/workflows`.
+`nightly.yml` runs on schedule and updates the pygraphistry badge.
+
+## Debugging Tips
+
+- Use `python -m tests.cypher_tck.report` to print the conformance summary.
+- Use `python -m tests.cypher_tck.porting_backlog` for xfail coverage stats.
 
 ## Publish: Merge, Tag, & Release
 
