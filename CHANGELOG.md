@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
-- None.
+- **Docs**: Expanded `DEVELOP.md` with local run helpers, environment variables, and CI notes.
 
 ### Changed
 - None.
