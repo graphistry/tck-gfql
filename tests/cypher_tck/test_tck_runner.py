@@ -200,7 +200,7 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     )
 
     if is_plan:
-        plan_rows_df = execute_plan(g, scenario.graph, scenario.gfql)
+        plan_rows_df = execute_plan(g, scenario.graph, scenario.gfql, params=scenario.params)
         _assert_expected_rows(scenario, plan_rows_df.to_dict("records"))
         return
 

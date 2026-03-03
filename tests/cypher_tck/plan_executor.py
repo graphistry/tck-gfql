@@ -69,6 +69,21 @@ _EDGE_SPEC_RE = re.compile(
 )
 _REL_TOKEN_RE = re.compile(r"(?s)^\s*(<-\[[^\]]*\]-|-\[[^\]]*\]->|-\[[^\]]*\]-|<--|-->|--)\s*(.*)$")
 _PATH_BINDING_RE = re.compile(r"(?s)^\s*[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$")
+_PARAM_REF_RE = re.compile(r"\$([A-Za-z0-9_]+)")
+_DEFAULT_PARAM_VALUES: Dict[str, Any] = {
+    "skipAmount": 2,
+    "s": 2,
+    "l": 2,
+    "age": 0,
+    "from": 0,
+    "to": 1,
+    "param": 0,
+    "elt": None,
+    "coll": [],
+    "1": 1,
+    "2": 2,
+}
+_ACTIVE_PARAM_VALUES: Dict[str, Any] = {}
 
 
 @dataclass
@@ -93,6 +108,15 @@ def _to_pandas(df: Any) -> pd.DataFrame:
     if hasattr(df, "to_pandas"):
         return df.to_pandas()
     return df
+
+
+def _resolve_param(name: str) -> Any:
+    key = name.strip()
+    if key.startswith("$"):
+        key = key[1:]
+    if key in _ACTIVE_PARAM_VALUES:
+        return _ACTIVE_PARAM_VALUES[key]
+    raise PlanExecutionError(f"unknown parameter: ${key}")
 
 
 def _is_null(value: Any) -> bool:
@@ -761,7 +785,9 @@ def _add_alias_columns(df: pd.DataFrame, alias: str, fixture: GraphFixture, tabl
 def _literal_expr(value: str) -> Any:
     txt = value.strip()
     if txt.startswith("$"):
-        raise PlanExecutionError(f"parameter expressions are not supported: {value}")
+        if re.fullmatch(r"\$[A-Za-z0-9_]+", txt):
+            return _resolve_param(txt[1:])
+        return None
     if txt.startswith("'") and txt.endswith("'") and len(txt) >= 2:
         return txt[1:-1]
     if txt.startswith('"') and txt.endswith('"') and len(txt) >= 2:
@@ -990,6 +1016,13 @@ def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
 def _rewrite_expr(expr: str, df: pd.DataFrame) -> Tuple[str, Dict[str, Any]]:
     rewritten = expr
     env: Dict[str, Any] = {}
+    param_counter = 0
+    for name in sorted(set(_PARAM_REF_RE.findall(expr)), key=len, reverse=True):
+        var = f"__p{param_counter}"
+        param_counter += 1
+        rewritten = re.sub(rf"\${re.escape(name)}\b", var, rewritten)
+        env[var] = _resolve_param(name)
+
     tokens = sorted(set(_IDENT_RE.findall(expr)), key=len, reverse=True)
     counter = 0
     for token in tokens:
@@ -1071,7 +1104,7 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             return pd.Series(index_values, index=df.index)
         if expr.op == "param":
             name = str(expr.args.get("name", ""))
-            raise PlanExecutionError(f"parameter expressions are not supported: ${name}")
+            return pd.Series([_resolve_param(name)] * len(df), index=df.index)
         if expr.op == "raw":
             return _eval_expr_series(df, str(expr.args.get("text", "")))
         raise PlanExecutionError(f"unsupported Expr op: {expr.op}")
@@ -1094,9 +1127,6 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
     lit = _literal_expr(txt)
     if lit is not None or txt.lower() == "null":
         return pd.Series([lit] * len(df), index=df.index)
-
-    if txt.startswith("$"):
-        raise PlanExecutionError(f"parameter expressions are not supported: {txt}")
 
     if len(df) == 0:
         return pd.Series([], index=df.index, dtype="object")
@@ -1140,7 +1170,7 @@ def _eval_scalar_limit_skip(value: Any) -> int:
 
     txt = value.strip()
     if txt.startswith("$"):
-        raise PlanExecutionError(f"parameter value not supported for SKIP/LIMIT: {value}")
+        return _coerce_int(_resolve_param(txt[1:]), "SKIP/LIMIT parameter")
     if re.fullmatch(r"-?\d+", txt):
         return int(txt)
     if re.fullmatch(r"-?\d+\.\d+", txt):
@@ -1779,7 +1809,12 @@ def _drop_duplicates_safe(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[mask].reset_index(drop=True)
 
 
-def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep]) -> pd.DataFrame:
+def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    global _ACTIVE_PARAM_VALUES
+    _ACTIVE_PARAM_VALUES = dict(_DEFAULT_PARAM_VALUES)
+    if params is not None:
+        _ACTIVE_PARAM_VALUES.update(params)
+
     state = PlanState(graph=graph, fixture=fixture, frame=pd.DataFrame(), alias_exprs=None)
 
     for step in steps:

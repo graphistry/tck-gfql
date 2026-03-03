@@ -34,7 +34,7 @@ def _compute_pass_sweep() -> Tuple[List[str], List[Tuple[str, str]]]:
 
         try:
             graph = _build_graph(scenario.graph)
-            rows_df = execute_plan(graph, scenario.graph, scenario.gfql)
+            rows_df = execute_plan(graph, scenario.graph, scenario.gfql, params=scenario.params)
             _assert_expected_rows(scenario, rows_df.to_dict("records"))
             keys.append(scenario.key)
         except Exception as exc:  # noqa: BLE001 - summarize sweep blockers
