@@ -3333,6 +3333,11 @@ def execute_plan(
                 except Exception:
                     pass
 
+            # Ordering a 0/1-row frame is a semantic no-op.
+            if len(state.frame) <= 1:
+                state.frame = state.frame.reset_index(drop=True)
+                continue
+
             _mark_impure("order_by_local_eval", strict_pure, impurity_reasons)
             sort_cols: List[str] = []
             ascending: List[bool] = []

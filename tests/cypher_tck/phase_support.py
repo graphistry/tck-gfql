@@ -2048,6 +2048,7 @@ PHASE1_EXECUTOR_PURE_KEYS = {
     "return-orderby2-2",
     "return-orderby2-3",
     "return-orderby2-4",
+    "return-orderby2-5",
     "return-orderby2-6",
     "return-orderby2-7",
     "return-orderby2-8",
