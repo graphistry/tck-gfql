@@ -2266,6 +2266,57 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
     return None
 
 
+def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
+    txt = expr.strip()
+    if txt == "":
+        return None
+
+    resolved = _resolve_expr_column_name(txt, frame)
+    if resolved is not None:
+        return resolved
+
+    lit = _literal_expr(txt)
+    if lit is not None or txt.lower() == "null":
+        return lit
+
+    try:
+        parsed = ast.literal_eval(txt)
+    except Exception:
+        parsed = None
+    if parsed is not None and _is_json_compatible_literal(parsed):
+        return parsed
+
+    tokens = sorted(set(_IDENT_RE.findall(txt)), key=len, reverse=True)
+    rewritten = txt
+    unresolved_ident = False
+    for token in tokens:
+        up = token.upper()
+        if up in _KEYWORDS:
+            continue
+        if token in _FN_NAMES and re.search(rf"(?i)\b{re.escape(token)}\s*\(", txt):
+            continue
+        resolved_token = _resolve_expr_column_name(token, frame)
+        if resolved_token is None:
+            unresolved_ident = True
+            continue
+        rewritten = re.sub(
+            rf"(?<![A-Za-z0-9_.]){re.escape(token)}(?![A-Za-z0-9_.])",
+            resolved_token,
+            rewritten,
+        )
+
+    if unresolved_ident:
+        return None
+
+    if re.search(
+        r"\b(?:AND|OR|NOT|IS\s+NULL|IS\s+NOT\s+NULL)\b|[\[\]()+\-*/%<>=:]",
+        rewritten,
+        flags=re.IGNORECASE,
+    ):
+        return rewritten
+    return None
+
+
 def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
     if isinstance(expr, Expr):
         if expr.op == "col":
@@ -2286,18 +2337,7 @@ def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
         return literal_value if _is_json_compatible_literal(literal_value) else None
 
     if isinstance(expr, str):
-        txt = expr.strip()
-        resolved = _resolve_expr_column_name(txt, frame)
-        if resolved is not None:
-            return resolved
-        lit = _literal_expr(txt)
-        if lit is not None or txt.lower() == "null":
-            return lit
-        try:
-            parsed = ast.literal_eval(txt)
-        except Exception:
-            return None
-        return parsed if _is_json_compatible_literal(parsed) else None
+        return _string_expr_to_gfql(expr, frame)
 
     if _is_json_compatible_literal(expr):
         return expr
