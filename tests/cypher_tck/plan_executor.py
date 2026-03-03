@@ -3236,6 +3236,20 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
             return None
         return f"{left_token} {op_txt} {right_token}"
 
+    if expr.op == "func":
+        fn_name = str(expr.args.get("name", "")).strip()
+        fn_lower = fn_name.lower()
+        if fn_lower not in {"toboolean", "tostring", "coalesce"}:
+            return None
+        arg_values = tuple(expr.args.get("args", ()))
+        arg_tokens: List[str] = []
+        for arg in arg_values:
+            token = _expr_token(arg)
+            if token is None:
+                return None
+            arg_tokens.append(token)
+        return f"{fn_name}({', '.join(arg_tokens)})"
+
     return None
 
 
@@ -3632,7 +3646,16 @@ def _select_items_to_gfql(
 
         # Strictly limited constant fold: only for 0/1-row frames where
         # expression folding cannot introduce row-wise impurity.
-        if converted is None and len(frame) <= 1:
+        # This also handles non-column expression strings that pygraphistry
+        # may not yet parse but that can be folded deterministically.
+        should_try_fold = (
+            len(frame) <= 1
+            and (
+                converted is None
+                or (isinstance(converted, str) and converted not in frame.columns)
+            )
+        )
+        if should_try_fold:
             eval_frame = frame
             if len(eval_frame) == 0 and len(eval_frame.columns) == 0:
                 eval_frame = pd.DataFrame(index=[0])
