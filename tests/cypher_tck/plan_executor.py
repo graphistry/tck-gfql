@@ -2364,19 +2364,74 @@ def _parse_relationship_token(rel_token: str) -> Tuple[str, Optional[str], Dict[
     raise PlanExecutionError(f"unsupported relationship token: {rel_token}")
 
 
-def _compile_match_pattern(pattern: str) -> List[Any]:
-    body = pattern.strip()
-    if body == "":
-        raise PlanExecutionError("empty MATCH pattern")
+_MAX_MATCH_HOPS = 6
 
-    bind_match = _PATH_BINDING_RE.fullmatch(body)
-    if bind_match is not None:
-        body = bind_match.group(1).strip()
 
-    if len(_split_top_level_text(body, ",")) > 1:
-        raise PlanExecutionError("comma-separated MATCH patterns are not supported")
+def _matcher_name(part: Any) -> Optional[str]:
+    alias = getattr(part, "name", None)
+    if alias is None:
+        alias = getattr(part, "_name", None)
+    if isinstance(alias, str) and alias.strip() != "":
+        return alias
+    return None
 
-    left_token, remainder = _consume_parenthesized_node(body, "MATCH pattern")
+
+def _node_filter_dict(part: Any) -> Dict[str, Any]:
+    raw = getattr(part, "filter_dict", None)
+    if isinstance(raw, dict):
+        return dict(raw)
+    return {}
+
+
+def _merge_node_matchers(left: Any, right: Any) -> Any:
+    left_name = _matcher_name(left)
+    right_name = _matcher_name(right)
+    if left_name is not None and right_name is not None and left_name != right_name:
+        raise PlanExecutionError("comma-separated MATCH pattern has conflicting node aliases")
+
+    left_filter = _node_filter_dict(left)
+    right_filter = _node_filter_dict(right)
+    for key, value in right_filter.items():
+        if key in left_filter and left_filter[key] != value:
+            raise PlanExecutionError("comma-separated MATCH pattern has conflicting node filters")
+        left_filter[key] = value
+
+    merged_name = left_name or right_name
+    return n(filter_dict=left_filter or None, name=merged_name)
+
+
+def _edge_match_dict(part: Any) -> Dict[str, Any]:
+    raw = getattr(part, "edge_match", None)
+    if isinstance(raw, dict):
+        return dict(raw)
+    return {}
+
+
+def _flip_edge_matcher(edge: Any) -> Any:
+    direction = getattr(edge, "direction", None)
+    name = _matcher_name(edge)
+    edge_filter = _edge_match_dict(edge)
+    if direction == "forward":
+        return e_reverse(edge_match=edge_filter or None, name=name)
+    if direction == "reverse":
+        return e_forward(edge_match=edge_filter or None, name=name)
+    if direction == "undirected":
+        return e_undirected(edge_match=edge_filter or None, name=name)
+    raise PlanExecutionError("unsupported edge matcher direction while normalizing comma MATCH")
+
+
+def _reverse_chain(chain: Sequence[Any]) -> List[Any]:
+    out: List[Any] = []
+    for idx, part in enumerate(reversed(chain)):
+        if idx % 2 == 0:
+            out.append(part)
+        else:
+            out.append(_flip_edge_matcher(part))
+    return out
+
+
+def _compile_single_match_pattern(pattern_body: str) -> List[Any]:
+    left_token, remainder = _consume_parenthesized_node(pattern_body, "MATCH pattern")
     left_name, left_filter = _parse_node_pattern(left_token)
     chain: List[Any] = [n(filter_dict=left_filter or None, name=left_name)]
 
@@ -2385,7 +2440,7 @@ def _compile_match_pattern(pattern: str) -> List[Any]:
     while rem:
         rel_match = _REL_TOKEN_RE.fullmatch(rem)
         if rel_match is None:
-            raise PlanExecutionError(f"unsupported MATCH pattern shape: {pattern}")
+            raise PlanExecutionError(f"unsupported MATCH pattern shape: {pattern_body}")
 
         rel_token = rel_match.group(1)
         right_src = rel_match.group(2)
@@ -2398,10 +2453,77 @@ def _compile_match_pattern(pattern: str) -> List[Any]:
         chain.append(n(filter_dict=right_filter or None, name=right_name))
 
         hop_count += 1
-        if hop_count > 2:
-            raise PlanExecutionError("only up to 2-hop MATCH patterns are supported")
+        if hop_count > _MAX_MATCH_HOPS:
+            raise PlanExecutionError(
+                f"only up to {_MAX_MATCH_HOPS}-hop MATCH patterns are supported"
+            )
         rem = tail.strip()
 
+    return chain
+
+
+def _node_can_join(left: Any, right: Any) -> bool:
+    left_name = _matcher_name(left)
+    right_name = _matcher_name(right)
+    if left_name is not None and right_name is not None:
+        return left_name == right_name
+    if left_name is not None or right_name is not None:
+        return True
+    left_filter = _node_filter_dict(left)
+    right_filter = _node_filter_dict(right)
+    return bool(left_filter) and left_filter == right_filter
+
+
+def _stitch_match_chains(left_chain: List[Any], right_chain: List[Any]) -> List[Any]:
+    if len(left_chain) == 0:
+        return right_chain
+    if len(right_chain) == 0:
+        return left_chain
+    if len(left_chain) % 2 == 0 or len(right_chain) % 2 == 0:
+        raise PlanExecutionError("invalid compiled MATCH chain structure")
+
+    if _node_can_join(left_chain[-1], right_chain[0]):
+        merged = _merge_node_matchers(left_chain[-1], right_chain[0])
+        return left_chain[:-1] + [merged] + right_chain[1:]
+    if _node_can_join(left_chain[-1], right_chain[-1]):
+        reversed_right = _reverse_chain(right_chain)
+        merged = _merge_node_matchers(left_chain[-1], reversed_right[0])
+        return left_chain[:-1] + [merged] + reversed_right[1:]
+    if _node_can_join(left_chain[0], right_chain[-1]):
+        merged = _merge_node_matchers(right_chain[-1], left_chain[0])
+        return right_chain[:-1] + [merged] + left_chain[1:]
+    if _node_can_join(left_chain[0], right_chain[0]):
+        reversed_right = _reverse_chain(right_chain)
+        merged = _merge_node_matchers(reversed_right[-1], left_chain[0])
+        return reversed_right[:-1] + [merged] + left_chain[1:]
+
+    raise PlanExecutionError(
+        "comma-separated MATCH patterns are only supported for a single linear connected path"
+    )
+
+
+def _compile_match_pattern(pattern: str) -> List[Any]:
+    body = pattern.strip()
+    if body == "":
+        raise PlanExecutionError("empty MATCH pattern")
+
+    bind_match = _PATH_BINDING_RE.fullmatch(body)
+    if bind_match is not None:
+        body = bind_match.group(1).strip()
+
+    parts = _split_top_level_text(body, ",")
+    if len(parts) == 0:
+        raise PlanExecutionError("empty MATCH pattern")
+
+    chain = _compile_single_match_pattern(parts[0])
+    for part in parts[1:]:
+        next_chain = _compile_single_match_pattern(part)
+        chain = _stitch_match_chains(chain, next_chain)
+        hop_count = (len(chain) - 1) // 2
+        if hop_count > _MAX_MATCH_HOPS:
+            raise PlanExecutionError(
+                f"only up to {_MAX_MATCH_HOPS}-hop MATCH patterns are supported"
+            )
     return chain
 
 
@@ -2434,8 +2556,8 @@ def _empty_match_result(graph: Any, chain: Sequence[Any]) -> _SyntheticMatchResu
 
     alias_cols = []
     for part in chain:
-        alias = getattr(part, "name", None)
-        if isinstance(alias, str) and alias:
+        alias = _matcher_name(part)
+        if alias is not None:
             alias_cols.append(alias)
     for alias in alias_cols:
         if alias not in nodes_pdf.columns:
@@ -2450,8 +2572,8 @@ def _extract_match_aliases(chain: Sequence[Any]) -> Tuple[List[str], List[str]]:
     node_aliases: List[str] = []
     edge_aliases: List[str] = []
     for idx, part in enumerate(chain):
-        alias = getattr(part, "name", None)
-        if not isinstance(alias, str) or alias == "":
+        alias = _matcher_name(part)
+        if alias is None:
             continue
         target = node_aliases if idx % 2 == 0 else edge_aliases
         if alias not in target:
