@@ -1174,12 +1174,103 @@ def _expr_literal_value(expr: Any) -> Any:
         return expr
     if expr.op == "lit":
         return expr.args.get("value")
+    if expr.op == "param":
+        return _resolve_param(str(expr.args.get("name", "")))
     if expr.op == "list":
         return [_expr_literal_value(item) for item in expr.args.get("items", ())]
     if expr.op == "map":
         return {str(k): _expr_literal_value(v) for k, v in expr.args.get("items", ())}
+    if expr.op == "index":
+        base = _expr_literal_value(expr.args.get("base"))
+        key = _expr_literal_value(expr.args.get("key"))
+        if _is_null(base) or _is_null(key):
+            return None
+        return base[key]
+    if expr.op == "unary":
+        op = str(expr.args.get("op", "")).lower()
+        value = _expr_literal_value(expr.args.get("value"))
+        if op == "not":
+            return not bool(value)
+        if op == "is_null":
+            return _is_null(value)
+        if op == "is_not_null":
+            return not _is_null(value)
+        if op == "neg":
+            return -cast(float, value)
+        if op == "pos":
+            return +cast(float, value)
+        raise PlanExecutionError(f"unsupported unary literal op: {op}")
+    if expr.op == "binary":
+        op = str(expr.args.get("op", "")).lower()
+        left = _expr_literal_value(expr.args.get("left"))
+        right = _expr_literal_value(expr.args.get("right"))
+        if op == "and":
+            return bool(left) and bool(right)
+        if op == "or":
+            return bool(left) or bool(right)
+        if op == "xor":
+            return bool(left) ^ bool(right)
+        if op == "eq":
+            return left == right
+        if op == "neq":
+            return left != right
+        if op == "lt":
+            return left < right
+        if op == "lte":
+            return left <= right
+        if op == "gt":
+            return left > right
+        if op == "gte":
+            return left >= right
+        if op == "add":
+            return cast(float, left) + cast(float, right)
+        if op == "sub":
+            return cast(float, left) - cast(float, right)
+        if op == "mul":
+            return cast(float, left) * cast(float, right)
+        if op == "div":
+            return cast(float, left) / cast(float, right)
+        if op == "mod":
+            return cast(float, left) % cast(float, right)
+        if op == "pow":
+            return cast(float, left) ** cast(float, right)
+        if op == "in":
+            return left in cast(Any, right)
+        if op == "not_in":
+            return left not in cast(Any, right)
+        if op == "contains":
+            return str(right) in str(left)
+        if op == "not_contains":
+            return str(right) not in str(left)
+        if op == "starts_with":
+            return str(left).startswith(str(right))
+        if op == "not_starts_with":
+            return not str(left).startswith(str(right))
+        if op == "ends_with":
+            return str(left).endswith(str(right))
+        if op == "not_ends_with":
+            return not str(left).endswith(str(right))
+        if op == "regex":
+            return re.search(str(right), str(left)) is not None
+        raise PlanExecutionError(f"unsupported binary literal op: {op}")
+    if expr.op == "func":
+        name = str(expr.args.get("name", ""))
+        args = [_expr_literal_value(a) for a in expr.args.get("args", ())]
+        return _call_expr_function(name, args)
     if expr.op == "raw":
         txt = str(expr.args.get("text", "")).strip()
+        fn_match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_.]*)\((.*)\)", txt)
+        if fn_match:
+            fn_name = fn_match.group(1)
+            raw_args = fn_match.group(2).strip()
+            try:
+                arg_parts = _split_top_level_text(raw_args) if raw_args else []
+                folded_args = [
+                    _expr_literal_value(Expr(op="raw", args={"text": part})) for part in arg_parts
+                ]
+                return _call_expr_function(fn_name, folded_args)
+            except Exception:
+                pass
         lit = _literal_expr(txt)
         if lit is not None or txt.lower() == "null":
             return lit
@@ -1920,20 +2011,16 @@ def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
             if ctx_name in frame.columns:
                 return ctx_name
             return None
-        if expr.op == "lit":
-            value = expr.args.get("value")
-            return value if _is_json_compatible_literal(value) else None
-        if expr.op in {"list", "map"}:
-            try:
-                value = _expr_literal_value(expr)
-            except Exception:
-                return None
-            return value if _is_json_compatible_literal(value) else None
-        if expr.op == "param":
-            return _resolve_param(str(expr.args.get("name", "")))
         if expr.op == "raw":
-            return _expr_to_gfql_value(str(expr.args.get("text", "")), frame)
-        return None
+            text_value = str(expr.args.get("text", ""))
+            converted = _expr_to_gfql_value(text_value, frame)
+            if converted is not None:
+                return converted
+        try:
+            literal_value = _expr_literal_value(expr)
+        except Exception:
+            return None
+        return literal_value if _is_json_compatible_literal(literal_value) else None
 
     if isinstance(expr, str):
         txt = expr.strip()
@@ -2091,6 +2178,7 @@ def _group_projection_to_gfql(
     items: Sequence[Tuple[Any, Any]],
     alias_exprs: Optional[Dict[str, str]],
 ) -> Optional[Tuple[List[str], List[Tuple[Any, ...]], List[Tuple[str, Any]]]]:
+    has_explicit_group_keys = len(group_keys) > 0
     key_cols: List[str] = []
     for key_expr in group_keys:
         col = _expr_to_column_name(key_expr, frame, alias_exprs)
@@ -2107,8 +2195,12 @@ def _group_projection_to_gfql(
         agg = _parse_agg(expr_for_eval)
         if agg is None:
             col = _expr_to_column_name(expr_for_eval, frame, alias_exprs)
-            if col is None or col not in key_cols:
+            if col is None:
                 return None
+            if col not in key_cols:
+                if has_explicit_group_keys:
+                    return None
+                key_cols.append(col)
             post_items.append((alias, col))
             continue
 
@@ -2315,6 +2407,33 @@ def execute_plan(
                             delegated = True
                         except Exception:
                             delegated = False
+                    if not delegated:
+                        implicit_group_plan = _group_projection_to_gfql(
+                            state.frame, (), items_list, state.alias_exprs
+                        )
+                        if implicit_group_plan is not None:
+                            key_cols, aggregations, post_items = implicit_group_plan
+                            group_source = state.frame
+                            if not key_cols:
+                                synthetic_key = "__gfql_group_all__"
+                                i = 0
+                                while synthetic_key in group_source.columns:
+                                    i += 1
+                                    synthetic_key = f"__gfql_group_all__{i}"
+                                group_source = group_source.assign(**{synthetic_key: 1})
+                                key_cols = [synthetic_key]
+                            try:
+                                grouped_graph = _frame_as_row_graph(state.graph, group_source).gfql(
+                                    [gfql_group_by(key_cols, aggregations)]
+                                )
+                                grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
+                                projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
+                                    [_select_call(op, post_items)]
+                                )
+                                state.frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                                delegated = True
+                            except Exception:
+                                delegated = False
                 else:
                     group_plan = _group_projection_to_gfql(
                         state.frame, state.group_keys, items_list, state.alias_exprs
