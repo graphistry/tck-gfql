@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+from graphistry.compute import e_forward, e_reverse, e_undirected, n
 from tests.cypher_tck.gfql_plan import Expr, PlanStep
 from tests.cypher_tck.models import GraphFixture
 
@@ -56,6 +57,18 @@ _FN_NAMES = {
 _CTX_PREFIX = "__ctx__"
 
 _OFFSET_RE = re.compile(r"^([+-])(\d{2})(?::?(\d{2}))?(?::?(\d{2}))?$")
+_SIMPLE_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_NODE_SPEC_RE = re.compile(
+    r"(?s)^\s*(?:(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*)?"
+    r"(?P<labels>(?::\s*[A-Za-z_][A-Za-z0-9_]*)*)\s*(?P<props>\{.*\})?\s*$"
+)
+_EDGE_SPEC_RE = re.compile(
+    r"(?s)^\s*(?:(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*)?"
+    r"(?P<types>(?::\s*[A-Za-z_][A-Za-z0-9_]*\s*(?:\|\s*:?\s*[A-Za-z_][A-Za-z0-9_]*\s*)*)?)\s*"
+    r"(?P<props>\{.*\})?\s*$"
+)
+_REL_TOKEN_RE = re.compile(r"(?s)^\s*(<-\[[^\]]*\]-|-\[[^\]]*\]->|-\[[^\]]*\]-|<--|-->|--)\s*(.*)$")
+_PATH_BINDING_RE = re.compile(r"(?s)^\s*[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$")
 
 
 @dataclass
@@ -1375,6 +1388,322 @@ def _eval_unwind_expr(df: pd.DataFrame, expr: Any) -> Sequence[Any]:
     raise PlanExecutionError(f"UNWIND expression did not evaluate to list/tuple: {expr}")
 
 
+def _split_top_level_text(text: str, delimiter: str = ",") -> List[str]:
+    parts: List[str] = []
+    current: List[str] = []
+    depth_paren = 0
+    depth_brace = 0
+    depth_bracket = 0
+    quote: Optional[str] = None
+    escaped = False
+
+    for ch in text:
+        if quote is not None:
+            current.append(ch)
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            continue
+
+        if ch in {"'", '"'}:
+            quote = ch
+            current.append(ch)
+            continue
+        if ch == "(":
+            depth_paren += 1
+        elif ch == ")":
+            depth_paren -= 1
+        elif ch == "{":
+            depth_brace += 1
+        elif ch == "}":
+            depth_brace -= 1
+        elif ch == "[":
+            depth_bracket += 1
+        elif ch == "]":
+            depth_bracket -= 1
+
+        if ch == delimiter and depth_paren == 0 and depth_brace == 0 and depth_bracket == 0:
+            piece = "".join(current).strip()
+            if piece:
+                parts.append(piece)
+            current = []
+            continue
+        current.append(ch)
+
+    piece = "".join(current).strip()
+    if piece:
+        parts.append(piece)
+    return parts
+
+
+def _find_top_level_char(text: str, target: str) -> int:
+    depth_paren = 0
+    depth_brace = 0
+    depth_bracket = 0
+    quote: Optional[str] = None
+    escaped = False
+
+    for i, ch in enumerate(text):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            continue
+
+        if ch in {"'", '"'}:
+            quote = ch
+            continue
+        if ch == "(":
+            depth_paren += 1
+            continue
+        if ch == ")":
+            depth_paren -= 1
+            continue
+        if ch == "{":
+            depth_brace += 1
+            continue
+        if ch == "}":
+            depth_brace -= 1
+            continue
+        if ch == "[":
+            depth_bracket += 1
+            continue
+        if ch == "]":
+            depth_bracket -= 1
+            continue
+        if ch == target and depth_paren == 0 and depth_brace == 0 and depth_bracket == 0:
+            return i
+
+    return -1
+
+
+def _parse_cypher_literal(text: str, context: str) -> Any:
+    token = text.strip()
+    if token == "":
+        raise PlanExecutionError(f"empty literal in {context}")
+
+    lower = token.lower()
+    if lower == "null":
+        return None
+    if lower == "true":
+        return True
+    if lower == "false":
+        return False
+
+    if (token[0] == token[-1]) and token[0] in {"'", '"'} and len(token) >= 2:
+        try:
+            return ast.literal_eval(token)
+        except Exception:
+            return _strip_outer_quotes(token)
+
+    if re.fullmatch(r"-?\d+", token):
+        return int(token)
+    if re.fullmatch(r"-?(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?", token):
+        return float(token)
+
+    if token.startswith("[") and token.endswith("]"):
+        inner = token[1:-1].strip()
+        if inner == "":
+            return []
+        return [_parse_cypher_literal(part, context) for part in _split_top_level_text(inner, ",")]
+
+    if token.startswith("{") and token.endswith("}"):
+        return _parse_cypher_map(token, context)
+
+    raise PlanExecutionError(f"unsupported literal in {context}: {token}")
+
+
+def _parse_cypher_map(text: str, context: str) -> Dict[str, Any]:
+    body = text.strip()
+    if not (body.startswith("{") and body.endswith("}")):
+        raise PlanExecutionError(f"invalid map literal in {context}: {text}")
+    inner = body[1:-1].strip()
+    if inner == "":
+        return {}
+
+    out: Dict[str, Any] = {}
+    for item in _split_top_level_text(inner, ","):
+        colon = _find_top_level_char(item, ":")
+        if colon <= 0:
+            raise PlanExecutionError(f"invalid map entry in {context}: {item}")
+        key_token = item[:colon].strip()
+        value_token = item[colon + 1 :].strip()
+
+        if key_token.startswith(("'", '"')) and key_token.endswith(("'", '"')) and len(key_token) >= 2:
+            try:
+                key_val = ast.literal_eval(key_token)
+            except Exception:
+                key_val = _strip_outer_quotes(key_token)
+            key = str(key_val)
+        else:
+            if not _SIMPLE_IDENT_RE.fullmatch(key_token):
+                raise PlanExecutionError(f"unsupported map key in {context}: {key_token}")
+            key = key_token
+
+        out[key] = _parse_cypher_literal(value_token, f"{context}.{key}")
+
+    return out
+
+
+def _consume_parenthesized_node(text: str, context: str) -> Tuple[str, str]:
+    src = text.lstrip()
+    if not src.startswith("("):
+        raise PlanExecutionError(f"{context}: expected node pattern starting with '('")
+
+    quote: Optional[str] = None
+    escaped = False
+    depth = 0
+    for i, ch in enumerate(src):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            continue
+
+        if ch in {"'", '"'}:
+            quote = ch
+            continue
+        if ch == "(":
+            depth += 1
+            continue
+        if ch == ")":
+            depth -= 1
+            if depth == 0:
+                return src[: i + 1].strip(), src[i + 1 :]
+
+    raise PlanExecutionError(f"{context}: unbalanced parentheses in node pattern")
+
+
+def _parse_node_pattern(node_token: str) -> Tuple[Optional[str], Dict[str, Any]]:
+    token = node_token.strip()
+    if not (token.startswith("(") and token.endswith(")")):
+        raise PlanExecutionError(f"invalid node pattern token: {node_token}")
+
+    body = token[1:-1]
+    match = _NODE_SPEC_RE.fullmatch(body)
+    if match is None:
+        raise PlanExecutionError(f"unsupported node pattern: {node_token}")
+
+    name = match.group("name")
+    labels_txt = match.group("labels") or ""
+    props_txt = match.group("props")
+
+    labels = re.findall(r":\s*([A-Za-z_][A-Za-z0-9_]*)", labels_txt)
+    filter_dict: Dict[str, Any] = {f"label__{label}": True for label in labels}
+
+    if props_txt:
+        filter_dict.update(_parse_cypher_map(props_txt, "node property map"))
+
+    return name, filter_dict
+
+
+def _parse_relationship_details(rel_body: str) -> Tuple[Optional[str], Dict[str, Any]]:
+    body = rel_body.strip()
+    if body == "":
+        return None, {}
+    if "*" in body:
+        raise PlanExecutionError("variable-length relationship patterns are not supported")
+
+    match = _EDGE_SPEC_RE.fullmatch(body)
+    if match is None:
+        raise PlanExecutionError(f"unsupported relationship pattern: [{rel_body}]")
+
+    name = match.group("name")
+    types_txt = (match.group("types") or "").strip()
+    props_txt = match.group("props")
+
+    out: Dict[str, Any] = {}
+    if types_txt:
+        raw_types = types_txt[1:]
+        parsed_types = []
+        for chunk in raw_types.split("|"):
+            t = chunk.strip()
+            if t.startswith(":"):
+                t = t[1:].strip()
+            if t == "":
+                continue
+            if not _SIMPLE_IDENT_RE.fullmatch(t):
+                raise PlanExecutionError(f"unsupported relationship type token: {chunk}")
+            parsed_types.append(t)
+        if len(parsed_types) > 1:
+            raise PlanExecutionError("relationship type alternation is not supported")
+        if parsed_types:
+            out["type"] = parsed_types[0]
+
+    if props_txt:
+        out.update(_parse_cypher_map(props_txt, "relationship property map"))
+
+    return name, out
+
+
+def _parse_relationship_token(rel_token: str) -> Tuple[str, Optional[str], Dict[str, Any]]:
+    token = rel_token.strip()
+    if token == "-->":
+        return "forward", None, {}
+    if token == "<--":
+        return "reverse", None, {}
+    if token == "--":
+        return "undirected", None, {}
+    if token.startswith("-[") and token.endswith("]->"):
+        name, edge_filter = _parse_relationship_details(token[2:-3])
+        return "forward", name, edge_filter
+    if token.startswith("<-[") and token.endswith("]-"):
+        name, edge_filter = _parse_relationship_details(token[3:-2])
+        return "reverse", name, edge_filter
+    if token.startswith("-[") and token.endswith("]-"):
+        name, edge_filter = _parse_relationship_details(token[2:-2])
+        return "undirected", name, edge_filter
+    raise PlanExecutionError(f"unsupported relationship token: {rel_token}")
+
+
+def _compile_match_pattern(pattern: str) -> List[Any]:
+    body = pattern.strip()
+    if body == "":
+        raise PlanExecutionError("empty MATCH pattern")
+
+    bind_match = _PATH_BINDING_RE.fullmatch(body)
+    if bind_match is not None:
+        body = bind_match.group(1).strip()
+
+    if len(_split_top_level_text(body, ",")) > 1:
+        raise PlanExecutionError("comma-separated MATCH patterns are not supported")
+
+    left_token, remainder = _consume_parenthesized_node(body, "MATCH pattern")
+    left_name, left_filter = _parse_node_pattern(left_token)
+    chain: List[Any] = [n(filter_dict=left_filter or None, name=left_name)]
+
+    rem = remainder.strip()
+    if rem == "":
+        return chain
+
+    rel_match = _REL_TOKEN_RE.fullmatch(rem)
+    if rel_match is None:
+        raise PlanExecutionError(f"unsupported MATCH pattern shape: {pattern}")
+
+    rel_token = rel_match.group(1)
+    right_src = rel_match.group(2)
+    right_token, tail = _consume_parenthesized_node(right_src, "MATCH pattern")
+    if tail.strip():
+        raise PlanExecutionError("only single-hop MATCH patterns are supported")
+
+    right_name, right_filter = _parse_node_pattern(right_token)
+    direction, edge_name, edge_filter = _parse_relationship_token(rel_token)
+
+    edge_ctor = {"forward": e_forward, "reverse": e_reverse, "undirected": e_undirected}[direction]
+    chain.append(edge_ctor(edge_match=edge_filter or None, name=edge_name))
+    chain.append(n(filter_dict=right_filter or None, name=right_name))
+    return chain
+
+
 def _is_empty_graph(graph: Any) -> bool:
     nodes_pdf = _to_pandas(getattr(graph, "_nodes", None))
     return nodes_pdf is None or len(nodes_pdf) == 0
@@ -1464,8 +1793,15 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep]) -
             raise PlanExecutionError(str(args.get("note", "invalid plan step")))
 
         if op == "match":
+            chain: Optional[List[Any]] = None
             if "chain" in args:
                 chain = list(args["chain"])
+            elif "pattern" in args:
+                chain = _compile_match_pattern(str(args["pattern"]))
+            elif "cypher" in args:
+                chain = _compile_match_pattern(str(args["cypher"]))
+
+            if chain is not None:
                 try:
                     state.match_result = state.graph.gfql(chain, engine="pandas")
                 except Exception as exc:
