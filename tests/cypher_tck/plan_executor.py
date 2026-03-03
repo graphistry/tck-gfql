@@ -1809,6 +1809,41 @@ def _drop_duplicates_safe(df: pd.DataFrame) -> pd.DataFrame:
     return df.loc[mask].reset_index(drop=True)
 
 
+def _is_nan_scalar(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    try:
+        return math.isnan(cast(float, value))
+    except Exception:
+        return False
+
+
+def _cypher_sort_key(value: Any) -> Any:
+    if _is_nan_scalar(value):
+        return (8, 0)
+    if _is_null(value):
+        return (9, 0)
+    if isinstance(value, dict):
+        items = tuple((str(k), _cypher_sort_key(v)) for k, v in sorted(value.items(), key=lambda kv: str(kv[0])))
+        return (0, items)
+    if isinstance(value, str):
+        if value.startswith("<(") and value.endswith(")>"):
+            return (4, value)
+        if value.startswith("(") and value.endswith(")"):
+            return (1, value)
+        if value.startswith("[") and value.endswith("]"):
+            return (2, value)
+        return (5, value)
+    if isinstance(value, (list, tuple)):
+        nested = tuple(_cypher_sort_key(v) for v in value)
+        return (3, nested)
+    if isinstance(value, bool):
+        return (6, int(value))
+    if isinstance(value, numbers.Number):
+        return (7, float(cast(float, value)))
+    return (10, repr(value))
+
+
 def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
     global _ACTIVE_PARAM_VALUES
     _ACTIVE_PARAM_VALUES = dict(_DEFAULT_PARAM_VALUES)
@@ -1915,7 +1950,7 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             for i, (expr, direction) in enumerate(keys):
                 col = f"__sort_{i}"
                 expr_for_eval = _rewrite_with_projection_aliases(expr, state.alias_exprs)
-                work[col] = _eval_expr_series(work, expr_for_eval)
+                work[col] = _eval_expr_series(work, expr_for_eval).map(_cypher_sort_key)
                 sort_cols.append(col)
                 ascending.append(str(direction).lower() != "desc")
             if sort_cols:
