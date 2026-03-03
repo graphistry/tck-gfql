@@ -13,16 +13,28 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from graphistry.compute import (
+    eq as pred_eq,
+    ge as pred_ge,
     distinct as gfql_distinct,
     e_forward,
     e_reverse,
     e_undirected,
+    group_by as gfql_group_by,
+    gt as pred_gt,
+    isna as pred_isna,
     limit as gfql_limit,
+    le as pred_le,
+    lt as pred_lt,
     n,
+    ne as pred_ne,
+    notna as pred_notna,
     order_by as gfql_order_by,
     rows as gfql_rows,
     select as gfql_select,
     skip as gfql_skip,
+    unwind as gfql_unwind,
+    where_rows as gfql_where_rows,
+    with_ as gfql_with,
 )
 from tests.cypher_tck.gfql_plan import Expr, PlanStep
 from tests.cypher_tck.models import GraphFixture
@@ -1213,6 +1225,8 @@ def _parse_agg(expr: Any) -> Optional[Tuple[str, Any]]:
         args = tuple(expr.args.get("args", ()))
         if func_name == "count" and len(args) == 1 and isinstance(args[0], Expr) and args[0].op == "star":
             return func_name, "*"
+        if func_name == "count" and len(args) == 1 and isinstance(args[0], Expr) and args[0].op == "distinct":
+            return "count_distinct", args[0].args.get("value")
         if len(args) != 1:
             raise PlanExecutionError(f"aggregate {func_name} expects one argument")
         return func_name, args[0]
@@ -1221,7 +1235,13 @@ def _parse_agg(expr: Any) -> Optional[Tuple[str, Any]]:
     m = _AGG_RE.match(expr.strip())
     if not m:
         return None
-    return m.group(1).lower(), m.group(2).strip()
+    func_name = m.group(1).lower()
+    arg = m.group(2).strip()
+    if func_name == "count":
+        m_distinct = re.match(r"(?is)^distinct\s+(.+)$", arg)
+        if m_distinct:
+            return "count_distinct", m_distinct.group(1).strip()
+    return func_name, arg
 
 
 def _aggregate_series(df: pd.DataFrame, func: str, arg: Any) -> Any:
@@ -1230,6 +1250,8 @@ def _aggregate_series(df: pd.DataFrame, func: str, arg: Any) -> Any:
     series = _eval_expr_series(df, arg)
     if func == "count":
         return int(series.count())
+    if func == "count_distinct":
+        return int(series.nunique(dropna=True))
     if func == "sum":
         return series.sum()
     if func == "min":
@@ -1266,6 +1288,8 @@ def _group_projection(df: pd.DataFrame, key_exprs: List[Any], items: Sequence[Tu
             gb_agg = tmp.groupby(key_cols, dropna=False, sort=False)["__agg_val__"]
             if func == "count":
                 agg_df = gb_agg.count().reset_index(name="__val__")
+            elif func == "count_distinct":
+                agg_df = gb_agg.nunique(dropna=True).reset_index(name="__val__")
             elif func == "sum":
                 agg_df = gb_agg.sum().reset_index(name="__val__")
             elif func == "min":
@@ -1874,16 +1898,245 @@ def _mark_impure(
         raise PlanPurityError(reason)
 
 
-def _expr_to_gfql_value(expr: Any) -> Optional[Any]:
+def _is_json_compatible_literal(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, (bool, int, float, str)):
+        return True
+    if isinstance(value, (list, tuple)):
+        return all(_is_json_compatible_literal(v) for v in value)
+    if isinstance(value, dict):
+        return all(isinstance(k, str) and _is_json_compatible_literal(v) for k, v in value.items())
+    return False
+
+
+def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
     if isinstance(expr, Expr):
         if expr.op == "col":
-            return str(expr.args.get("name"))
+            name = str(expr.args.get("name"))
+            if name in frame.columns:
+                return name
+            ctx_name = f"{_CTX_PREFIX}{name}"
+            if ctx_name in frame.columns:
+                return ctx_name
+            return None
         if expr.op == "lit":
-            return expr.args.get("value")
+            value = expr.args.get("value")
+            return value if _is_json_compatible_literal(value) else None
+        if expr.op in {"list", "map"}:
+            try:
+                value = _expr_literal_value(expr)
+            except Exception:
+                return None
+            return value if _is_json_compatible_literal(value) else None
+        if expr.op == "param":
+            return _resolve_param(str(expr.args.get("name", "")))
+        if expr.op == "raw":
+            return _expr_to_gfql_value(str(expr.args.get("text", "")), frame)
         return None
-    if isinstance(expr, (str, int, float, bool)) or expr is None:
+
+    if isinstance(expr, str):
+        txt = expr.strip()
+        if txt in frame.columns:
+            return txt
+        ctx_name = f"{_CTX_PREFIX}{txt}"
+        if ctx_name in frame.columns:
+            return ctx_name
+        lit = _literal_expr(txt)
+        if lit is not None or txt.lower() == "null":
+            return lit
+        try:
+            parsed = ast.literal_eval(txt)
+        except Exception:
+            return None
+        return parsed if _is_json_compatible_literal(parsed) else None
+
+    if _is_json_compatible_literal(expr):
         return expr
     return None
+
+
+def _expr_to_column_name(expr: Any, frame: pd.DataFrame, alias_exprs: Optional[Dict[str, str]]) -> Optional[str]:
+    expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+    converted = _expr_to_gfql_value(expr_for_eval, frame)
+    if isinstance(converted, str) and converted in frame.columns:
+        return converted
+    return None
+
+
+_UNSUPPORTED_EXPR = object()
+
+
+def _expr_to_literal_value(expr: Any, frame: pd.DataFrame, alias_exprs: Optional[Dict[str, str]]) -> Any:
+    expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+    converted = _expr_to_gfql_value(expr_for_eval, frame)
+    if isinstance(converted, str) and converted in frame.columns:
+        return _UNSUPPORTED_EXPR
+    if converted is None and not (
+        expr_for_eval is None
+        or (isinstance(expr_for_eval, str) and expr_for_eval.strip().lower() == "null")
+    ):
+        return _UNSUPPORTED_EXPR
+    return converted
+
+
+def _where_comparison_predicate(op: str, value: Any) -> Optional[Any]:
+    if op == "eq":
+        if value is None:
+            return pred_isna()
+        return pred_eq(value)
+    if op == "neq":
+        if value is None:
+            return pred_notna()
+        return pred_ne(value)
+    if op == "lt":
+        return pred_lt(value)
+    if op == "lte":
+        return pred_le(value)
+    if op == "gt":
+        return pred_gt(value)
+    if op == "gte":
+        return pred_ge(value)
+    return None
+
+
+def _where_expr_to_filter_dict(
+    frame: pd.DataFrame,
+    expr: Any,
+    alias_exprs: Optional[Dict[str, str]],
+) -> Optional[Dict[str, Any]]:
+    if isinstance(expr, Expr) and expr.op == "unary":
+        op = str(expr.args.get("op", "")).lower()
+        value_expr = expr.args.get("value")
+        col = _expr_to_column_name(value_expr, frame, alias_exprs)
+        if col is None:
+            return None
+        if op == "is_null":
+            return {col: pred_isna()}
+        if op == "is_not_null":
+            return {col: pred_notna()}
+        return None
+
+    if isinstance(expr, Expr) and expr.op == "binary":
+        op = str(expr.args.get("op", "")).lower()
+        left = expr.args.get("left")
+        right = expr.args.get("right")
+
+        if op == "and":
+            left_dict = _where_expr_to_filter_dict(frame, left, alias_exprs)
+            right_dict = _where_expr_to_filter_dict(frame, right, alias_exprs)
+            if left_dict is None or right_dict is None:
+                return None
+            overlap = set(left_dict).intersection(right_dict)
+            if overlap:
+                return None
+            merged: Dict[str, Any] = dict(left_dict)
+            merged.update(right_dict)
+            return merged
+
+        comparable_ops = {"eq", "neq", "lt", "lte", "gt", "gte"}
+        if op not in comparable_ops:
+            return None
+
+        left_col = _expr_to_column_name(left, frame, alias_exprs)
+        right_lit = _expr_to_literal_value(right, frame, alias_exprs)
+        actual_op = op
+        col = left_col
+        lit = right_lit
+
+        if col is None or lit is _UNSUPPORTED_EXPR:
+            right_col = _expr_to_column_name(right, frame, alias_exprs)
+            left_lit = _expr_to_literal_value(left, frame, alias_exprs)
+            if right_col is None or left_lit is _UNSUPPORTED_EXPR:
+                return None
+            inversion = {
+                "eq": "eq",
+                "neq": "neq",
+                "lt": "gt",
+                "lte": "gte",
+                "gt": "lt",
+                "gte": "lte",
+            }
+            col = right_col
+            lit = left_lit
+            actual_op = inversion[op]
+
+        predicate = _where_comparison_predicate(actual_op, lit)
+        if predicate is None:
+            return None
+        return {col: predicate}
+
+    return None
+
+
+def _unwind_expr_to_gfql(
+    frame: pd.DataFrame,
+    expr: Any,
+    alias_exprs: Optional[Dict[str, str]],
+) -> Optional[Any]:
+    expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+    converted = _expr_to_gfql_value(expr_for_eval, frame)
+    if isinstance(converted, str):
+        return converted if converted in frame.columns else None
+    if isinstance(converted, tuple):
+        return list(converted)
+    if isinstance(converted, list):
+        return converted
+    return None
+
+
+def _group_projection_to_gfql(
+    frame: pd.DataFrame,
+    group_keys: Sequence[Any],
+    items: Sequence[Tuple[Any, Any]],
+    alias_exprs: Optional[Dict[str, str]],
+) -> Optional[Tuple[List[str], List[Tuple[Any, ...]], List[Tuple[str, Any]]]]:
+    key_cols: List[str] = []
+    for key_expr in group_keys:
+        col = _expr_to_column_name(key_expr, frame, alias_exprs)
+        if col is None:
+            return None
+        if col not in key_cols:
+            key_cols.append(col)
+
+    aggregations: List[Tuple[Any, ...]] = []
+    post_items: List[Tuple[str, Any]] = []
+    for alias_raw, expr in items:
+        alias = str(alias_raw)
+        expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+        agg = _parse_agg(expr_for_eval)
+        if agg is None:
+            col = _expr_to_column_name(expr_for_eval, frame, alias_exprs)
+            if col is None or col not in key_cols:
+                return None
+            post_items.append((alias, col))
+            continue
+
+        func, arg = agg
+        func_name = func
+        agg_arg = arg
+        if func == "count" and isinstance(arg, Expr) and arg.op == "distinct":
+            func_name = "count_distinct"
+            agg_arg = arg.args.get("value")
+
+        if func_name == "count" and agg_arg == "*":
+            aggregations.append((alias, "count"))
+        else:
+            col = _expr_to_column_name(agg_arg, frame, alias_exprs)
+            if col is None:
+                return None
+            aggregations.append((alias, func_name, col))
+        post_items.append((alias, alias))
+
+    if not aggregations:
+        return None
+    return key_cols, aggregations, post_items
+
+
+def _select_call(op: str, items: List[Tuple[str, Any]]) -> Any:
+    if op == "with":
+        return gfql_with(items)
+    return gfql_select(items)
 
 
 def _order_keys_to_gfql(
@@ -1894,7 +2147,7 @@ def _order_keys_to_gfql(
     out: List[Tuple[str, str]] = []
     for expr, direction in keys:
         expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
-        converted = _expr_to_gfql_value(expr_for_eval)
+        converted = _expr_to_gfql_value(expr_for_eval, frame)
         if not isinstance(converted, str):
             return None
         if converted not in frame.columns:
@@ -1922,7 +2175,7 @@ def _select_items_to_gfql(
         expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
         if _parse_agg(expr_for_eval) is not None:
             return None
-        converted = _expr_to_gfql_value(expr_for_eval)
+        converted = _expr_to_gfql_value(expr_for_eval, frame)
         if converted is None:
             return None
         if isinstance(converted, str) and converted not in frame.columns:
@@ -2024,26 +2277,62 @@ def execute_plan(
             continue
 
         if op == "group_by":
-            _mark_impure("group_by_local", strict_pure, impurity_reasons)
             keys = args.get("keys", ())
-            state.group_keys = [str(k) for k in keys]
+            key_cols: List[str] = []
+            convertible = True
+            for key_expr in keys:
+                col = _expr_to_column_name(key_expr, state.frame, state.alias_exprs)
+                if col is None:
+                    convertible = False
+                    break
+                if col not in key_cols:
+                    key_cols.append(col)
+            if strict_pure and not convertible:
+                _mark_impure("group_by_local", strict_pure, impurity_reasons)
+            state.group_keys = key_cols if convertible else [str(k) for k in keys]
             continue
 
         if op in {"select", "with"}:
             items = args.get("items", ())
             items_list = list(items)
             delegated = False
-            if strict_pure and state.group_keys is None:
-                delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
-                if delegated_items is not None:
-                    try:
-                        delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
-                            [gfql_select(delegated_items)]
+            if strict_pure:
+                if state.group_keys is None:
+                    delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
+                    if delegated_items is not None:
+                        only_literals = all(
+                            not (isinstance(expr, str) and expr in state.frame.columns)
+                            for _, expr in delegated_items
                         )
-                        state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
-                        delegated = True
-                    except Exception:
-                        delegated = False
+                        source_frame = state.frame
+                        if len(source_frame) == 0 and len(source_frame.columns) == 0 and only_literals:
+                            source_frame = pd.DataFrame(index=[0])
+                        try:
+                            delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
+                                [_select_call(op, delegated_items)]
+                            )
+                            state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                            delegated = True
+                        except Exception:
+                            delegated = False
+                else:
+                    group_plan = _group_projection_to_gfql(
+                        state.frame, state.group_keys, items_list, state.alias_exprs
+                    )
+                    if group_plan is not None:
+                        key_cols, aggregations, post_items = group_plan
+                        try:
+                            grouped_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                                [gfql_group_by(key_cols, aggregations)]
+                            )
+                            grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
+                            projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
+                                [_select_call(op, post_items)]
+                            )
+                            state.frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                            delegated = True
+                        except Exception:
+                            delegated = False
             if not delegated:
                 if strict_pure:
                     _mark_impure(f"{op}_local_projection", strict_pure, impurity_reasons)
@@ -2052,7 +2341,10 @@ def execute_plan(
             alias_exprs = {}
             for alias, expr in items_list:
                 expr_for_eval = _rewrite_with_projection_aliases(expr, state.alias_exprs)
-                if isinstance(expr_for_eval, str):
+                col_name = _expr_to_column_name(expr_for_eval, state.frame, None)
+                if col_name is not None:
+                    alias_exprs[col_name] = str(alias)
+                elif isinstance(expr_for_eval, str):
                     alias_exprs[str(expr_for_eval)] = str(alias)
             state.alias_exprs = alias_exprs
             continue
@@ -2073,14 +2365,26 @@ def execute_plan(
             continue
 
         if op == "where":
-            _mark_impure("where_local_eval", strict_pure, impurity_reasons)
             expr = args.get("expr")
-            mask = _eval_expr_series(state.frame, expr)
-            if not isinstance(mask, pd.Series):
-                mask = pd.Series([bool(mask)] * len(state.frame), index=state.frame.index)
-            if mask.dtype != bool:
-                mask = mask.astype(bool)
-            state.frame = state.frame.loc[mask].reset_index(drop=True)
+            delegated = False
+            filter_dict = _where_expr_to_filter_dict(state.frame, expr, state.alias_exprs)
+            if filter_dict is not None:
+                try:
+                    delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                        [gfql_where_rows(filter_dict)],
+                    )
+                    state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                    delegated = True
+                except Exception:
+                    delegated = False
+            if not delegated:
+                _mark_impure("where_local_eval", strict_pure, impurity_reasons)
+                mask = _eval_expr_series(state.frame, expr)
+                if not isinstance(mask, pd.Series):
+                    mask = pd.Series([bool(mask)] * len(state.frame), index=state.frame.index)
+                if mask.dtype != bool:
+                    mask = mask.astype(bool)
+                state.frame = state.frame.loc[mask].reset_index(drop=True)
             state.group_keys = None
             state.alias_exprs = None
             continue
@@ -2151,23 +2455,39 @@ def execute_plan(
             continue
 
         if op == "unwind":
-            _mark_impure("unwind_local_row_loop", strict_pure, impurity_reasons)
             as_name = str(args.get("as_", "value"))
-            base_rows: List[Dict[str, Any]]
-            if state.frame.empty and len(state.frame.columns) == 0:
-                base_rows = [{}]
-            else:
-                base_rows = state.frame.to_dict("records")
+            delegated = False
+            converted_expr = _unwind_expr_to_gfql(state.frame, args.get("expr"), state.alias_exprs)
+            if converted_expr is not None:
+                source_frame = state.frame
+                if len(source_frame) == 0 and len(source_frame.columns) == 0:
+                    source_frame = pd.DataFrame(index=[0])
+                try:
+                    delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
+                        [gfql_unwind(converted_expr, as_name)],
+                    )
+                    state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                    delegated = True
+                except Exception:
+                    delegated = False
 
-            out_rows: List[Dict[str, Any]] = []
-            for row in base_rows:
-                row_df = pd.DataFrame([row]) if row else pd.DataFrame(index=[0])
-                values = _eval_unwind_expr(row_df, args.get("expr"))
-                for value in values:
-                    next_row = dict(row)
-                    next_row[as_name] = value
-                    out_rows.append(next_row)
-            state.frame = pd.DataFrame(out_rows)
+            if not delegated:
+                _mark_impure("unwind_local_row_loop", strict_pure, impurity_reasons)
+                base_rows: List[Dict[str, Any]]
+                if state.frame.empty and len(state.frame.columns) == 0:
+                    base_rows = [{}]
+                else:
+                    base_rows = state.frame.to_dict("records")
+
+                out_rows: List[Dict[str, Any]] = []
+                for row in base_rows:
+                    row_df = pd.DataFrame([row]) if row else pd.DataFrame(index=[0])
+                    values = _eval_unwind_expr(row_df, args.get("expr"))
+                    for value in values:
+                        next_row = dict(row)
+                        next_row[as_name] = value
+                        out_rows.append(next_row)
+                state.frame = pd.DataFrame(out_rows)
             state.group_keys = None
             state.alias_exprs = None
             continue
