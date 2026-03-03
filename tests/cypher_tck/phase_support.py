@@ -538,3 +538,13 @@ PHASE1_EXECUTOR_SUPPORTED_KEYS = {
     "with-orderby3-7-8",
     "with-orderby3-7-9",
 }
+
+PHASE1_EXECUTOR_PURE_KEYS = {
+    "return-orderby2-1",
+    "return-orderby2-2",
+    "return-orderby2-9",
+    "return-skip-limit2-3",
+    "return-skip-limit2-4",
+    "return-skip-limit2-7",
+    "return-skip-limit3-3",
+}

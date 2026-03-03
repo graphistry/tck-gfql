@@ -16,6 +16,7 @@ from tests.cypher_tck.scenarios import SCENARIOS
 
 _HAS_CUDF, _ = check_cudf()
 _TEST_CUDF = os.environ.get("TEST_CUDF", "0") == "1"
+_STRICT_PURE = os.environ.get("TCK_STRICT_PURE", "0") == "1"
 
 
 def _df_from_records(records: Sequence[dict], required_cols: Iterable[str]) -> pd.DataFrame:
@@ -200,7 +201,13 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     )
 
     if is_plan:
-        plan_rows_df = execute_plan(g, scenario.graph, scenario.gfql, params=scenario.params)
+        plan_rows_df = execute_plan(
+            g,
+            scenario.graph,
+            scenario.gfql,
+            params=scenario.params,
+            strict_pure=_STRICT_PURE,
+        )
         _assert_expected_rows(scenario, plan_rows_df.to_dict("records"))
         return
 

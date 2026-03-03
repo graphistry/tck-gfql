@@ -21,6 +21,7 @@ from graphistry.compute import (
     n,
     order_by as gfql_order_by,
     rows as gfql_rows,
+    select as gfql_select,
     skip as gfql_skip,
 )
 from tests.cypher_tck.gfql_plan import Expr, PlanStep
@@ -28,6 +29,10 @@ from tests.cypher_tck.models import GraphFixture
 
 
 class PlanExecutionError(ValueError):
+    pass
+
+
+class PlanPurityError(PlanExecutionError):
     pass
 
 
@@ -1858,6 +1863,17 @@ def _frame_as_row_graph(graph: Any, frame: pd.DataFrame) -> Any:
     return graph.bind().nodes(frame.copy())
 
 
+def _mark_impure(
+    reason: str,
+    strict_pure: bool,
+    impurity_reasons: Optional[List[str]],
+) -> None:
+    if impurity_reasons is not None and reason not in impurity_reasons:
+        impurity_reasons.append(reason)
+    if strict_pure:
+        raise PlanPurityError(reason)
+
+
 def _expr_to_gfql_value(expr: Any) -> Optional[Any]:
     if isinstance(expr, Expr):
         if expr.op == "col":
@@ -1896,7 +1912,33 @@ def _order_keys_to_gfql(
     return out
 
 
-def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+def _select_items_to_gfql(
+    frame: pd.DataFrame,
+    items: Sequence[Tuple[Any, Any]],
+    alias_exprs: Optional[Dict[str, str]],
+) -> Optional[List[Tuple[str, Any]]]:
+    out: List[Tuple[str, Any]] = []
+    for alias, expr in items:
+        expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+        if _parse_agg(expr_for_eval) is not None:
+            return None
+        converted = _expr_to_gfql_value(expr_for_eval)
+        if converted is None:
+            return None
+        if isinstance(converted, str) and converted not in frame.columns:
+            return None
+        out.append((str(alias), converted))
+    return out
+
+
+def execute_plan(
+    graph: Any,
+    fixture: GraphFixture,
+    steps: Sequence[PlanStep],
+    params: Optional[Dict[str, Any]] = None,
+    strict_pure: bool = False,
+    impurity_reasons: Optional[List[str]] = None,
+) -> pd.DataFrame:
     global _ACTIVE_PARAM_VALUES
     _ACTIVE_PARAM_VALUES = dict(_DEFAULT_PARAM_VALUES)
     if params is not None:
@@ -1925,7 +1967,7 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
 
             if chain is not None:
                 try:
-                    state.match_result = state.graph.gfql(chain, engine="pandas")
+                    state.match_result = state.graph.gfql(chain)
                 except Exception as exc:
                     if _can_treat_match_as_empty(state.graph, exc):
                         state.match_result = _empty_match_result(state.graph, chain)
@@ -1961,15 +2003,16 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             if source_str is None or source_str in rows_df.columns:
                 try:
                     if source_str is None:
-                        delegated_graph = state.match_result.gfql([gfql_rows(table=table)], engine="pandas")
+                        delegated_graph = state.match_result.gfql([gfql_rows(table=table)])
                     else:
-                        delegated_graph = state.match_result.gfql([gfql_rows(table=table, source=source_str)], engine="pandas")
+                        delegated_graph = state.match_result.gfql([gfql_rows(table=table, source=source_str)])
                     rows_df = _to_pandas(delegated_graph._nodes).copy()
                     delegated = True
                 except Exception:
                     delegated = False
 
             if source_str is not None and not delegated:
+                _mark_impure("rows_local_source_filter", strict_pure, impurity_reasons)
                 rows_df = rows_df.loc[rows_df[source_str].astype(bool)].copy()
 
             if source_str is not None:
@@ -1981,6 +2024,7 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             continue
 
         if op == "group_by":
+            _mark_impure("group_by_local", strict_pure, impurity_reasons)
             keys = args.get("keys", ())
             state.group_keys = [str(k) for k in keys]
             continue
@@ -1988,12 +2032,28 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
         if op in {"select", "with"}:
             items = args.get("items", ())
             items_list = list(items)
-            state.frame = _projection(state.frame, items_list, state.group_keys)
+            delegated = False
+            if strict_pure and state.group_keys is None:
+                delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
+                if delegated_items is not None:
+                    try:
+                        delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                            [gfql_select(delegated_items)]
+                        )
+                        state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                        delegated = True
+                    except Exception:
+                        delegated = False
+            if not delegated:
+                if strict_pure:
+                    _mark_impure(f"{op}_local_projection", strict_pure, impurity_reasons)
+                state.frame = _projection(state.frame, items_list, state.group_keys)
             state.group_keys = None
             alias_exprs = {}
             for alias, expr in items_list:
-                if isinstance(expr, str):
-                    alias_exprs[str(expr)] = str(alias)
+                expr_for_eval = _rewrite_with_projection_aliases(expr, state.alias_exprs)
+                if isinstance(expr_for_eval, str):
+                    alias_exprs[str(expr_for_eval)] = str(alias)
             state.alias_exprs = alias_exprs
             continue
 
@@ -2002,17 +2062,18 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             try:
                 delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                     [gfql_distinct()],
-                    engine="pandas",
                 )
                 state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
                 delegated = True
             except Exception:
                 delegated = False
             if not delegated:
+                _mark_impure("distinct_local_fallback", strict_pure, impurity_reasons)
                 state.frame = _drop_duplicates_safe(state.frame)
             continue
 
         if op == "where":
+            _mark_impure("where_local_eval", strict_pure, impurity_reasons)
             expr = args.get("expr")
             mask = _eval_expr_series(state.frame, expr)
             if not isinstance(mask, pd.Series):
@@ -2031,13 +2092,13 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
                 try:
                     delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                         [gfql_order_by(delegated_keys)],
-                        engine="pandas",
                     )
                     state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
                     continue
                 except Exception:
                     pass
 
+            _mark_impure("order_by_local_eval", strict_pure, impurity_reasons)
             sort_cols: List[str] = []
             ascending: List[bool] = []
             work = state.frame.copy()
@@ -2061,13 +2122,13 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             try:
                 delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                     [gfql_skip(v)],
-                    engine="pandas",
                 )
                 state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
                 delegated = True
             except Exception:
                 delegated = False
             if not delegated:
+                _mark_impure("skip_local_fallback", strict_pure, impurity_reasons)
                 state.frame = state.frame.iloc[v:].reset_index(drop=True)
             continue
 
@@ -2079,17 +2140,18 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             try:
                 delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                     [gfql_limit(v)],
-                    engine="pandas",
                 )
                 state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
                 delegated = True
             except Exception:
                 delegated = False
             if not delegated:
+                _mark_impure("limit_local_fallback", strict_pure, impurity_reasons)
                 state.frame = state.frame.iloc[:v].reset_index(drop=True)
             continue
 
         if op == "unwind":
+            _mark_impure("unwind_local_row_loop", strict_pure, impurity_reasons)
             as_name = str(args.get("as_", "value"))
             base_rows: List[Dict[str, Any]]
             if state.frame.empty and len(state.frame.columns) == 0:

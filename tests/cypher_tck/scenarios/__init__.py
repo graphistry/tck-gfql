@@ -29,7 +29,10 @@ from tests.cypher_tck.gfql_plan import (
     unary,
 )
 from tests.cypher_tck.models import Scenario
-from tests.cypher_tck.phase_support import PHASE1_EXECUTOR_SUPPORTED_KEYS
+from tests.cypher_tck.phase_support import (
+    PHASE1_EXECUTOR_PURE_KEYS,
+    PHASE1_EXECUTOR_SUPPORTED_KEYS,
+)
 
 _SCENARIO_ROOT = Path(__file__).resolve().parent / "tck" / "features"
 SCENARIOS: list[Scenario] = []
@@ -676,6 +679,8 @@ def _promote_executor_support(scenario: Scenario) -> Scenario:
     tags = list(_without_tag(scenario.tags, "xfail"))
     if "phase1-executor" not in tags:
         tags.append("phase1-executor")
+    if scenario.key in PHASE1_EXECUTOR_PURE_KEYS and "phase1-executor-pure" not in tags:
+        tags.append("phase1-executor-pure")
     return replace(
         scenario,
         status="supported",
