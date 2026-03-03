@@ -113,6 +113,8 @@ _EDGE_SPEC_RE = re.compile(
 _REL_TOKEN_RE = re.compile(r"(?s)^\s*(<-\[[^\]]*\]-|-\[[^\]]*\]->|-\[[^\]]*\]-|<--|-->|--)\s*(.*)$")
 _PATH_BINDING_RE = re.compile(r"(?s)^\s*[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$")
 _PARAM_REF_RE = re.compile(r"\$([A-Za-z0-9_]+)")
+_ORDER_SUFFIX_RE = re.compile(r"(?is)^(?P<expr>.+?)\s+(?P<dir>asc(?:ending)?|desc(?:ending)?)\s*$")
+_REL_HOP_SPEC_RE = re.compile(r"(?s)^(?P<prefix>.*)\*(?P<spec>\d*(?:\.\.\d*)?)\s*$")
 _DEFAULT_PARAM_VALUES: Dict[str, Any] = {
     "skipAmount": 2,
     "s": 2,
@@ -2720,12 +2722,73 @@ def _parse_node_pattern(node_token: str) -> Tuple[Optional[str], Dict[str, Any]]
     return name, filter_dict
 
 
-def _parse_relationship_details(rel_body: str) -> Tuple[Optional[str], Dict[str, Any]]:
+def _parse_variable_hop_spec(spec: Optional[str]) -> Dict[str, Any]:
+    token = (spec or "").strip()
+    if token == "":
+        raise PlanExecutionError("unbounded variable-length relationship patterns are not supported")
+
+    if re.fullmatch(r"\d+", token):
+        hops = int(token)
+        if hops > _MAX_MATCH_HOPS:
+            raise PlanExecutionError(
+                f"only up to {_MAX_MATCH_HOPS}-hop MATCH patterns are supported"
+            )
+        return {"hops": hops}
+
+    range_match = re.fullmatch(r"(\d*)\.\.(\d*)", token)
+    if range_match is None:
+        raise PlanExecutionError("unsupported variable-length relationship pattern")
+
+    min_txt, max_txt = range_match.groups()
+    min_hops = int(min_txt) if min_txt != "" else 0
+    if max_txt == "":
+        raise PlanExecutionError("unbounded variable-length relationship patterns are not supported")
+    max_hops = int(max_txt)
+    if min_hops > max_hops:
+        raise PlanExecutionError("invalid variable-length relationship range")
+    if max_hops > _MAX_MATCH_HOPS:
+        raise PlanExecutionError(
+            f"only up to {_MAX_MATCH_HOPS}-hop MATCH patterns are supported"
+        )
+    return {"hops": None, "min_hops": min_hops, "max_hops": max_hops}
+
+
+def _edge_hop_budget(hop_kwargs: Dict[str, Any]) -> int:
+    max_hops = hop_kwargs.get("max_hops")
+    if isinstance(max_hops, int):
+        return max_hops
+    hops = hop_kwargs.get("hops")
+    if isinstance(hops, int):
+        return hops
+    return 1
+
+
+def _edge_part_hop_budget(edge: Any) -> int:
+    max_hops = getattr(edge, "max_hops", None)
+    if isinstance(max_hops, int):
+        return max_hops
+    hops = getattr(edge, "hops", None)
+    if isinstance(hops, int):
+        return hops
+    return 1
+
+
+def _chain_hop_budget(chain: Sequence[Any]) -> int:
+    return sum(_edge_part_hop_budget(part) for part in chain[1::2])
+
+
+def _parse_relationship_details(rel_body: str) -> Tuple[Optional[str], Dict[str, Any], Dict[str, Any]]:
     body = rel_body.strip()
     if body == "":
-        return None, {}
+        return None, {}, {}
+
+    hop_kwargs: Dict[str, Any] = {}
     if "*" in body:
-        raise PlanExecutionError("variable-length relationship patterns are not supported")
+        hop_match = _REL_HOP_SPEC_RE.fullmatch(body)
+        if hop_match is None:
+            raise PlanExecutionError("unsupported variable-length relationship pattern")
+        body = hop_match.group("prefix").strip()
+        hop_kwargs = _parse_variable_hop_spec(hop_match.group("spec"))
 
     match = _EDGE_SPEC_RE.fullmatch(body)
     if match is None:
@@ -2756,26 +2819,26 @@ def _parse_relationship_details(rel_body: str) -> Tuple[Optional[str], Dict[str,
     if props_txt:
         out.update(_parse_cypher_map(props_txt, "relationship property map"))
 
-    return name, out
+    return name, out, hop_kwargs
 
 
-def _parse_relationship_token(rel_token: str) -> Tuple[str, Optional[str], Dict[str, Any]]:
+def _parse_relationship_token(rel_token: str) -> Tuple[str, Optional[str], Dict[str, Any], Dict[str, Any]]:
     token = rel_token.strip()
     if token == "-->":
-        return "forward", None, {}
+        return "forward", None, {}, {}
     if token == "<--":
-        return "reverse", None, {}
+        return "reverse", None, {}, {}
     if token == "--":
-        return "undirected", None, {}
+        return "undirected", None, {}, {}
     if token.startswith("-[") and token.endswith("]->"):
-        name, edge_filter = _parse_relationship_details(token[2:-3])
-        return "forward", name, edge_filter
+        name, edge_filter, hop_kwargs = _parse_relationship_details(token[2:-3])
+        return "forward", name, edge_filter, hop_kwargs
     if token.startswith("<-[") and token.endswith("]-"):
-        name, edge_filter = _parse_relationship_details(token[3:-2])
-        return "reverse", name, edge_filter
+        name, edge_filter, hop_kwargs = _parse_relationship_details(token[3:-2])
+        return "reverse", name, edge_filter, hop_kwargs
     if token.startswith("-[") and token.endswith("]-"):
-        name, edge_filter = _parse_relationship_details(token[2:-2])
-        return "undirected", name, edge_filter
+        name, edge_filter, hop_kwargs = _parse_relationship_details(token[2:-2])
+        return "undirected", name, edge_filter, hop_kwargs
     raise PlanExecutionError(f"unsupported relationship token: {rel_token}")
 
 
@@ -2826,12 +2889,17 @@ def _flip_edge_matcher(edge: Any) -> Any:
     direction = getattr(edge, "direction", None)
     name = _matcher_name(edge)
     edge_filter = _edge_match_dict(edge)
+    hop_kwargs = {
+        "hops": getattr(edge, "hops", None),
+        "min_hops": getattr(edge, "min_hops", None),
+        "max_hops": getattr(edge, "max_hops", None),
+    }
     if direction == "forward":
-        return e_reverse(edge_match=edge_filter or None, name=name)
+        return e_reverse(edge_match=edge_filter or None, name=name, **hop_kwargs)
     if direction == "reverse":
-        return e_forward(edge_match=edge_filter or None, name=name)
+        return e_forward(edge_match=edge_filter or None, name=name, **hop_kwargs)
     if direction == "undirected":
-        return e_undirected(edge_match=edge_filter or None, name=name)
+        return e_undirected(edge_match=edge_filter or None, name=name, **hop_kwargs)
     raise PlanExecutionError("unsupported edge matcher direction while normalizing comma MATCH")
 
 
@@ -2861,13 +2929,13 @@ def _compile_single_match_pattern(pattern_body: str) -> List[Any]:
         right_src = rel_match.group(2)
         right_token, tail = _consume_parenthesized_node(right_src, "MATCH pattern")
         right_name, right_filter = _parse_node_pattern(right_token)
-        direction, edge_name, edge_filter = _parse_relationship_token(rel_token)
+        direction, edge_name, edge_filter, hop_kwargs = _parse_relationship_token(rel_token)
 
         edge_ctor = {"forward": e_forward, "reverse": e_reverse, "undirected": e_undirected}[direction]
-        chain.append(edge_ctor(edge_match=edge_filter or None, name=edge_name))
+        chain.append(edge_ctor(edge_match=edge_filter or None, name=edge_name, **hop_kwargs))
         chain.append(n(filter_dict=right_filter or None, name=right_name))
 
-        hop_count += 1
+        hop_count += _edge_hop_budget(hop_kwargs)
         if hop_count > _MAX_MATCH_HOPS:
             raise PlanExecutionError(
                 f"only up to {_MAX_MATCH_HOPS}-hop MATCH patterns are supported"
@@ -2934,7 +3002,7 @@ def _compile_match_pattern(pattern: str) -> List[Any]:
     for part in parts[1:]:
         next_chain = _compile_single_match_pattern(part)
         chain = _stitch_match_chains(chain, next_chain)
-        hop_count = (len(chain) - 1) // 2
+        hop_count = _chain_hop_budget(chain)
         if hop_count > _MAX_MATCH_HOPS:
             raise PlanExecutionError(
                 f"only up to {_MAX_MATCH_HOPS}-hop MATCH patterns are supported"
@@ -3620,15 +3688,44 @@ def _order_keys_to_gfql(
 ) -> Optional[List[Tuple[str, str]]]:
     out: List[Tuple[str, str]] = []
     for expr, direction in keys:
+        expr, direction = _normalize_order_key(expr, direction)
         expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
         converted = _expr_to_gfql_value(expr_for_eval, frame)
         if not isinstance(converted, str):
             return None
-        direction_txt = str(direction).lower()
+        direction_txt = _normalize_order_direction(direction)
         if direction_txt not in {"asc", "desc"}:
             return None
         out.append((converted, direction_txt))
     return out
+
+
+def _normalize_order_direction(direction: Any) -> str:
+    txt = str(direction).strip().lower()
+    if txt in {"asc", "ascending"}:
+        return "asc"
+    if txt in {"desc", "descending"}:
+        return "desc"
+    return txt
+
+
+def _normalize_order_key(expr: Any, direction: Any) -> Tuple[Any, Any]:
+    if isinstance(expr, Expr) and expr.op == "raw":
+        raw_text = str(expr.args.get("text", "")).strip()
+        match = _ORDER_SUFFIX_RE.match(raw_text)
+        if match is not None:
+            expr_txt = match.group("expr").strip()
+            dir_txt = _normalize_order_direction(match.group("dir"))
+            if expr_txt:
+                return Expr(op="raw", args={"text": expr_txt}), dir_txt
+    if isinstance(expr, str):
+        match = _ORDER_SUFFIX_RE.match(expr.strip())
+        if match is not None:
+            expr_txt = match.group("expr").strip()
+            dir_txt = _normalize_order_direction(match.group("dir"))
+            if expr_txt:
+                return expr_txt, dir_txt
+    return expr, _normalize_order_direction(direction)
 
 
 def _select_items_to_gfql(
@@ -3681,6 +3778,24 @@ def _select_items_to_gfql(
 
         if converted is None and not _is_explicit_null_expr(expr_for_eval) and not folded_constant:
             return None
+        if folded_constant and isinstance(converted, str) and converted not in frame.columns:
+            preserve_unquoted = False
+            if isinstance(expr_for_eval, Expr) and expr_for_eval.op == "func":
+                fn_lower = str(expr_for_eval.args.get("name", "")).strip().lower()
+                preserve_unquoted = fn_lower in {
+                    "date",
+                    "time",
+                    "localtime",
+                    "datetime",
+                    "localdatetime",
+                    "date.truncate",
+                    "time.truncate",
+                    "localtime.truncate",
+                    "datetime.truncate",
+                    "localdatetime.truncate",
+                }
+            if not preserve_unquoted:
+                converted = repr(converted)
         if isinstance(converted, str) and converted not in frame.columns:
             expr_string = _expr_to_gfql_string(expr_for_eval, frame) if isinstance(expr_for_eval, Expr) else None
             if expr_string is None:
@@ -3910,6 +4025,7 @@ def execute_plan(
 
         if op == "order_by":
             keys = list(args.get("keys", ()))
+            keys = [cast(Tuple[Any, Any], _normalize_order_key(expr, direction)) for expr, direction in keys]
             delegated_keys = _order_keys_to_gfql(state.frame, keys, state.alias_exprs)
             if delegated_keys is not None:
                 try:
@@ -3935,7 +4051,7 @@ def execute_plan(
                 expr_for_eval = _rewrite_with_projection_aliases(expr, state.alias_exprs)
                 work[col] = _eval_expr_series(work, expr_for_eval).map(_cypher_sort_key)
                 sort_cols.append(col)
-                ascending.append(str(direction).lower() != "desc")
+                ascending.append(_normalize_order_direction(direction) != "desc")
             if sort_cols:
                 work = work.sort_values(by=sort_cols, ascending=ascending, kind="mergesort")
                 work = work.drop(columns=sort_cols)

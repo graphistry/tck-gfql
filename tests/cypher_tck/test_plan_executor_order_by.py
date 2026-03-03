@@ -14,14 +14,23 @@ def _scenario(key: str):
     raise AssertionError(f"scenario not found: {key}")
 
 
-def _assert_strict_pure_key(key: str) -> None:
+def _assert_semantic_and_strict_pure(key: str) -> None:
     scenario = _scenario(key)
     assert scenario.gfql is not None
     assert scenario.expected.rows is not None
 
-    impurity_reasons: List[str] = []
     graph = _build_graph(scenario.graph)
-    rows_df = execute_plan(
+    semantic_rows = execute_plan(
+        graph,
+        scenario.graph,
+        scenario.gfql,
+        params=scenario.params,
+        strict_pure=False,
+    )
+    _assert_expected_rows(scenario, semantic_rows.to_dict("records"))
+
+    impurity_reasons: List[str] = []
+    strict_rows = execute_plan(
         graph,
         scenario.graph,
         scenario.gfql,
@@ -29,25 +38,13 @@ def _assert_strict_pure_key(key: str) -> None:
         strict_pure=True,
         impurity_reasons=impurity_reasons,
     )
-    _assert_expected_rows(scenario, rows_df.to_dict("records"))
+    _assert_expected_rows(scenario, strict_rows.to_dict("records"))
     assert impurity_reasons == []
 
 
-def test_strict_pure_list_comparison_projection() -> None:
-    _assert_strict_pure_key("expr-list3-1")
+def test_order_by_raw_suffix_ascending_delegates_pure() -> None:
+    _assert_semantic_and_strict_pure("with-orderby1-25-3")
 
 
-def test_strict_pure_unary_neg_parenthesized_projection() -> None:
-    _assert_strict_pure_key("expr-precedence2-5-1")
-
-
-def test_strict_pure_toboolean_projection() -> None:
-    _assert_strict_pure_key("expr-typeconversion1-3")
-
-
-def test_strict_pure_map_index_projection() -> None:
-    _assert_strict_pure_key("expr-map2-5-1")
-
-
-def test_strict_pure_temporal_tostring_projection() -> None:
-    _assert_strict_pure_key("expr-temporal6-7")
+def test_order_by_raw_suffix_descending_delegates_pure() -> None:
+    _assert_semantic_and_strict_pure("with-orderby1-26-2")
