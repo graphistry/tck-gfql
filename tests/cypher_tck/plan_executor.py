@@ -6,7 +6,7 @@ import math
 import numbers
 import random
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 from zoneinfo import ZoneInfo
 
@@ -121,6 +121,8 @@ class PlanState:
     match_result: Optional[Any] = None
     group_keys: Optional[List[str]] = None
     alias_exprs: Optional[Dict[str, str]] = None
+    match_node_aliases: List[str] = field(default_factory=list)
+    match_edge_aliases: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -1102,9 +1104,10 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             return pd.Series(map_values, index=df.index)
         if expr.op == "col":
             name = str(expr.args.get("name"))
-            if name not in df.columns:
+            resolved = _resolve_expr_column_name(name, df)
+            if resolved is None:
                 raise PlanExecutionError(f"unknown column in expression: {name}")
-            return df[name]
+            return df[resolved]
         if expr.op == "func":
             name = str(expr.args.get("name", ""))
             arg_exprs = tuple(expr.args.get("args", ()))
@@ -1447,6 +1450,113 @@ def _drop_match_tag_columns(rows_df: pd.DataFrame, fixture: GraphFixture, table:
     if not drop_cols:
         return rows_df
     return rows_df.drop(columns=drop_cols)
+
+
+def _materialize_rows_from_match(
+    state: PlanState,
+    table: str,
+    source: Optional[str],
+    strict_pure: bool,
+    impurity_reasons: Optional[List[str]],
+) -> None:
+    if state.match_result is None:
+        raise PlanExecutionError("rows step requires a preceding executable match step")
+
+    if table == "nodes":
+        rows_df = _to_pandas(state.match_result._nodes).copy()
+    elif table == "edges":
+        rows_df = _to_pandas(state.match_result._edges).copy()
+    else:
+        raise PlanExecutionError(f"unsupported rows table: {table}")
+
+    source_str = str(source) if source is not None else None
+    if source_str is not None:
+        if source_str not in rows_df.columns and len(rows_df) == 0:
+            rows_df[source_str] = pd.Series(dtype=bool)
+        if source_str not in rows_df.columns:
+            raise PlanExecutionError(f"rows source alias not present in match output: {source_str}")
+
+    delegated = False
+    if source_str is None or source_str in rows_df.columns:
+        try:
+            if source_str is None:
+                delegated_graph = state.match_result.gfql([gfql_rows(table=table)])
+            else:
+                delegated_graph = state.match_result.gfql([gfql_rows(table=table, source=source_str)])
+            rows_df = _to_pandas(delegated_graph._nodes).copy()
+            delegated = True
+        except Exception:
+            delegated = False
+
+    if source_str is not None and not delegated:
+        _mark_impure("rows_local_source_filter", strict_pure, impurity_reasons)
+        rows_df = rows_df.loc[rows_df[source_str].astype(bool)].copy()
+
+    if source_str is not None:
+        rows_df = _drop_match_tag_columns(rows_df, state.fixture, table, source_str)
+        rows_df = _add_alias_columns(rows_df, source_str, state.fixture, table)
+
+    state.frame = rows_df.reset_index(drop=True)
+    state.group_keys = None
+
+
+def _ensure_default_rows_frame(
+    state: PlanState,
+    strict_pure: bool,
+    impurity_reasons: Optional[List[str]],
+) -> None:
+    if state.match_result is None:
+        return
+    if len(state.frame.columns) > 0 or len(state.frame) > 0:
+        return
+
+    if len(state.match_node_aliases) == 1 and len(state.match_edge_aliases) == 0:
+        _materialize_rows_from_match(
+            state,
+            table="nodes",
+            source=state.match_node_aliases[0],
+            strict_pure=strict_pure,
+            impurity_reasons=impurity_reasons,
+        )
+        return
+
+    if len(state.match_edge_aliases) == 1 and len(state.match_node_aliases) == 0:
+        _materialize_rows_from_match(
+            state,
+            table="edges",
+            source=state.match_edge_aliases[0],
+            strict_pure=strict_pure,
+            impurity_reasons=impurity_reasons,
+        )
+        return
+
+    if state.match_node_aliases:
+        _materialize_rows_from_match(
+            state,
+            table="nodes",
+            source=None,
+            strict_pure=strict_pure,
+            impurity_reasons=impurity_reasons,
+        )
+        return
+
+    if state.match_edge_aliases:
+        _materialize_rows_from_match(
+            state,
+            table="edges",
+            source=None,
+            strict_pure=strict_pure,
+            impurity_reasons=impurity_reasons,
+        )
+        return
+
+    _materialize_rows_from_match(
+        state,
+        table="nodes",
+        source=None,
+        strict_pure=strict_pure,
+        impurity_reasons=impurity_reasons,
+    )
 
 
 def _projection(df: pd.DataFrame, items: Sequence[Tuple[str, Any]], group_keys: Optional[List[str]]) -> pd.DataFrame:
@@ -1842,25 +1952,27 @@ def _compile_match_pattern(pattern: str) -> List[Any]:
     chain: List[Any] = [n(filter_dict=left_filter or None, name=left_name)]
 
     rem = remainder.strip()
-    if rem == "":
-        return chain
+    hop_count = 0
+    while rem:
+        rel_match = _REL_TOKEN_RE.fullmatch(rem)
+        if rel_match is None:
+            raise PlanExecutionError(f"unsupported MATCH pattern shape: {pattern}")
 
-    rel_match = _REL_TOKEN_RE.fullmatch(rem)
-    if rel_match is None:
-        raise PlanExecutionError(f"unsupported MATCH pattern shape: {pattern}")
+        rel_token = rel_match.group(1)
+        right_src = rel_match.group(2)
+        right_token, tail = _consume_parenthesized_node(right_src, "MATCH pattern")
+        right_name, right_filter = _parse_node_pattern(right_token)
+        direction, edge_name, edge_filter = _parse_relationship_token(rel_token)
 
-    rel_token = rel_match.group(1)
-    right_src = rel_match.group(2)
-    right_token, tail = _consume_parenthesized_node(right_src, "MATCH pattern")
-    if tail.strip():
-        raise PlanExecutionError("only single-hop MATCH patterns are supported")
+        edge_ctor = {"forward": e_forward, "reverse": e_reverse, "undirected": e_undirected}[direction]
+        chain.append(edge_ctor(edge_match=edge_filter or None, name=edge_name))
+        chain.append(n(filter_dict=right_filter or None, name=right_name))
 
-    right_name, right_filter = _parse_node_pattern(right_token)
-    direction, edge_name, edge_filter = _parse_relationship_token(rel_token)
+        hop_count += 1
+        if hop_count > 2:
+            raise PlanExecutionError("only up to 2-hop MATCH patterns are supported")
+        rem = tail.strip()
 
-    edge_ctor = {"forward": e_forward, "reverse": e_reverse, "undirected": e_undirected}[direction]
-    chain.append(edge_ctor(edge_match=edge_filter or None, name=edge_name))
-    chain.append(n(filter_dict=right_filter or None, name=right_name))
     return chain
 
 
@@ -1903,6 +2015,19 @@ def _empty_match_result(graph: Any, chain: Sequence[Any]) -> _SyntheticMatchResu
             edges_pdf[alias] = pd.Series(dtype=bool)
 
     return _SyntheticMatchResult(_nodes=nodes_pdf.iloc[0:0], _edges=edges_pdf.iloc[0:0])
+
+
+def _extract_match_aliases(chain: Sequence[Any]) -> Tuple[List[str], List[str]]:
+    node_aliases: List[str] = []
+    edge_aliases: List[str] = []
+    for idx, part in enumerate(chain):
+        alias = getattr(part, "name", None)
+        if not isinstance(alias, str) or alias == "":
+            continue
+        target = node_aliases if idx % 2 == 0 else edge_aliases
+        if alias not in target:
+            target.append(alias)
+    return node_aliases, edge_aliases
 
 
 def _rewrite_with_projection_aliases(expr: Any, alias_exprs: Optional[Dict[str, str]]) -> Any:
@@ -2001,23 +2126,47 @@ def _is_json_compatible_literal(value: Any) -> bool:
     return False
 
 
+def _resolve_column_case_insensitive(name: str, frame: pd.DataFrame) -> Optional[str]:
+    needle = name.strip().lower()
+    for col in frame.columns:
+        if isinstance(col, str) and col.lower() == needle:
+            return col
+    return None
+
+
 def _resolve_expr_column_name(name: str, frame: pd.DataFrame) -> Optional[str]:
     txt = name.strip()
     if txt in frame.columns:
         return txt
+    ci_txt = _resolve_column_case_insensitive(txt, frame)
+    if ci_txt is not None:
+        return ci_txt
     ctx_name = f"{_CTX_PREFIX}{txt}"
     if ctx_name in frame.columns:
         return ctx_name
+    ci_ctx = _resolve_column_case_insensitive(ctx_name, frame)
+    if ci_ctx is not None:
+        return ci_ctx
     prop_match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)", txt)
     if prop_match is not None:
         alias = prop_match.group(1)
         prop = prop_match.group(2)
-        alias_exists = alias in frame.columns or f"{_CTX_PREFIX}{alias}" in frame.columns
-        if alias_exists and prop in frame.columns:
-            return prop
+        alias_col = _resolve_column_case_insensitive(alias, frame)
+        alias_ctx_col = _resolve_column_case_insensitive(f"{_CTX_PREFIX}{alias}", frame)
+        alias_exists = alias_col is not None or alias_ctx_col is not None
+        prop_col = _resolve_column_case_insensitive(prop, frame)
+        if prop_col is not None:
+            if alias_exists:
+                return prop_col
+            # Translation may drop explicit alias tag columns while preserving
+            # property columns. Allow conservative property fallback.
+            return prop_col
         ctx_prop = f"{_CTX_PREFIX}{prop}"
-        if alias_exists and ctx_prop in frame.columns:
-            return ctx_prop
+        ctx_prop_col = _resolve_column_case_insensitive(ctx_prop, frame)
+        if ctx_prop_col is not None:
+            if alias_exists:
+                return ctx_prop_col
+            return ctx_prop_col
     return None
 
 
@@ -2276,7 +2425,15 @@ def _unwind_expr_to_gfql(
     expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
     converted = _expr_to_gfql_value(expr_for_eval, frame)
     if isinstance(converted, str):
-        return converted if converted in frame.columns else None
+        if converted in frame.columns:
+            return converted
+        if re.search(
+            r"\b(?:AND|OR|NOT|IS\s+NULL|IS\s+NOT\s+NULL)\b|[\[\]()+\-*/%<>=]",
+            converted,
+            flags=re.IGNORECASE,
+        ):
+            return converted
+        return None
     if isinstance(converted, tuple):
         return list(converted)
     if isinstance(converted, list):
@@ -2374,6 +2531,16 @@ def _select_items_to_gfql(
         converted = _expr_to_gfql_value(expr_for_eval, frame)
         if converted is None:
             return None
+        if isinstance(converted, str) and converted not in frame.columns:
+            expr_string = _expr_to_gfql_string(expr_for_eval, frame) if isinstance(expr_for_eval, Expr) else None
+            if expr_string is None:
+                if isinstance(expr_for_eval, Expr):
+                    if expr_for_eval.op not in {"col", "raw", "binary", "unary"}:
+                        converted = repr(converted)
+                elif isinstance(expr_for_eval, str):
+                    lit = _literal_expr(expr_for_eval)
+                    if isinstance(lit, str):
+                        converted = repr(lit)
         out.append((str(alias), converted))
     return out
 
@@ -2397,6 +2564,9 @@ def execute_plan(
         op = step.op
         args = step.args
 
+        if op in {"group_by", "select", "with", "distinct", "where", "order_by", "skip", "limit", "unwind"}:
+            _ensure_default_rows_frame(state, strict_pure, impurity_reasons)
+
         if op == "raw":
             raise PlanExecutionError("raw plan steps are non-executable placeholders")
 
@@ -2413,6 +2583,7 @@ def execute_plan(
                 chain = _compile_match_pattern(str(args["cypher"]))
 
             if chain is not None:
+                node_aliases, edge_aliases = _extract_match_aliases(chain)
                 try:
                     state.match_result = state.graph.gfql(chain)
                 except Exception as exc:
@@ -2422,52 +2593,20 @@ def execute_plan(
                         raise
                 state.group_keys = None
                 state.alias_exprs = None
+                state.match_node_aliases = node_aliases
+                state.match_edge_aliases = edge_aliases
                 continue
             raise PlanExecutionError("only match(chain=...) steps are executable")
 
         if op == "rows":
-            if state.match_result is None:
-                raise PlanExecutionError("rows step requires a preceding executable match step")
             table = str(args.get("table", "nodes"))
-            source = args.get("source")
-            if table == "nodes":
-                rows_df = _to_pandas(state.match_result._nodes).copy()
-            elif table == "edges":
-                rows_df = _to_pandas(state.match_result._edges).copy()
-            else:
-                raise PlanExecutionError(f"unsupported rows table: {table}")
-
-            if source is not None:
-                source_str = str(source)
-                if source_str not in rows_df.columns and len(rows_df) == 0:
-                    rows_df[source_str] = pd.Series(dtype=bool)
-                if source_str not in rows_df.columns:
-                    raise PlanExecutionError(f"rows source alias not present in match output: {source_str}")
-            else:
-                source_str = None
-
-            delegated = False
-            if source_str is None or source_str in rows_df.columns:
-                try:
-                    if source_str is None:
-                        delegated_graph = state.match_result.gfql([gfql_rows(table=table)])
-                    else:
-                        delegated_graph = state.match_result.gfql([gfql_rows(table=table, source=source_str)])
-                    rows_df = _to_pandas(delegated_graph._nodes).copy()
-                    delegated = True
-                except Exception:
-                    delegated = False
-
-            if source_str is not None and not delegated:
-                _mark_impure("rows_local_source_filter", strict_pure, impurity_reasons)
-                rows_df = rows_df.loc[rows_df[source_str].astype(bool)].copy()
-
-            if source_str is not None:
-                rows_df = _drop_match_tag_columns(rows_df, fixture, table, source_str)
-                rows_df = _add_alias_columns(rows_df, source_str, fixture, table)
-
-            state.frame = rows_df.reset_index(drop=True)
-            state.group_keys = None
+            _materialize_rows_from_match(
+                state,
+                table=table,
+                source=args.get("source"),
+                strict_pure=strict_pure,
+                impurity_reasons=impurity_reasons,
+            )
             continue
 
         if op == "group_by":
