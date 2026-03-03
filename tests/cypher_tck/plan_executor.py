@@ -2001,21 +2001,135 @@ def _is_json_compatible_literal(value: Any) -> bool:
     return False
 
 
+def _resolve_expr_column_name(name: str, frame: pd.DataFrame) -> Optional[str]:
+    txt = name.strip()
+    if txt in frame.columns:
+        return txt
+    ctx_name = f"{_CTX_PREFIX}{txt}"
+    if ctx_name in frame.columns:
+        return ctx_name
+    prop_match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)", txt)
+    if prop_match is not None:
+        alias = prop_match.group(1)
+        prop = prop_match.group(2)
+        alias_exists = alias in frame.columns or f"{_CTX_PREFIX}{alias}" in frame.columns
+        if alias_exists and prop in frame.columns:
+            return prop
+        ctx_prop = f"{_CTX_PREFIX}{prop}"
+        if alias_exists and ctx_prop in frame.columns:
+            return ctx_prop
+    return None
+
+
+def _gfql_literal_token(value: Any) -> Optional[str]:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return repr(value)
+    if isinstance(value, str):
+        return repr(value)
+    return None
+
+
+def _gfql_token_from_value(value: Any, frame: pd.DataFrame) -> Optional[str]:
+    if value is None:
+        return "null"
+    if isinstance(value, str):
+        resolved = _resolve_expr_column_name(value, frame)
+        if resolved is not None:
+            return resolved
+        if re.search(r"\b(?:AND|OR|NOT|IS\s+NULL|IS\s+NOT\s+NULL)\b|[()+\-*/%<>=]", value, flags=re.IGNORECASE):
+            return value
+        return repr(value)
+    return _gfql_literal_token(value)
+
+
+def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
+    def _expr_token(expr_value: Any) -> Optional[str]:
+        if isinstance(expr_value, Expr):
+            nested = _expr_to_gfql_string(expr_value, frame)
+            if nested is not None:
+                return nested
+            try:
+                literal_nested = _expr_literal_value(expr_value)
+            except Exception:
+                return None
+            return _gfql_literal_token(literal_nested)
+        converted = _expr_to_gfql_value(expr_value, frame)
+        return _gfql_token_from_value(converted, frame)
+
+    if not isinstance(expr, Expr):
+        return None
+
+    if expr.op == "col":
+        name = str(expr.args.get("name"))
+        return _resolve_expr_column_name(name, frame)
+
+    if expr.op == "unary":
+        op = str(expr.args.get("op", "")).lower()
+        value_token = _expr_token(expr.args.get("value"))
+        if value_token is None:
+            return None
+        if op == "is_null":
+            return f"{value_token} IS NULL"
+        if op == "is_not_null":
+            return f"{value_token} IS NOT NULL"
+        if op == "not":
+            return f"NOT {value_token}"
+        if op == "neg":
+            return f"0 - {value_token}"
+        if op == "pos":
+            return value_token
+        return None
+
+    if expr.op == "binary":
+        op = str(expr.args.get("op", "")).lower()
+        left_token = _expr_token(expr.args.get("left"))
+        right_token = _expr_token(expr.args.get("right"))
+        if left_token is None or right_token is None:
+            return None
+        op_map = {
+            "add": "+",
+            "sub": "-",
+            "mul": "*",
+            "div": "/",
+            "mod": "%",
+            "eq": "=",
+            "neq": "!=",
+            "lt": "<",
+            "lte": "<=",
+            "gt": ">",
+            "gte": ">=",
+            "and": "AND",
+            "or": "OR",
+        }
+        op_txt = op_map.get(op)
+        if op_txt is None:
+            return None
+        return f"{left_token} {op_txt} {right_token}"
+
+    return None
+
+
 def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
     if isinstance(expr, Expr):
         if expr.op == "col":
             name = str(expr.args.get("name"))
-            if name in frame.columns:
-                return name
-            ctx_name = f"{_CTX_PREFIX}{name}"
-            if ctx_name in frame.columns:
-                return ctx_name
-            return None
+            return _resolve_expr_column_name(name, frame)
         if expr.op == "raw":
             text_value = str(expr.args.get("text", ""))
             converted = _expr_to_gfql_value(text_value, frame)
             if converted is not None:
                 return converted
+        expr_string = _expr_to_gfql_string(expr, frame)
+        if expr_string is not None:
+            return expr_string
         try:
             literal_value = _expr_literal_value(expr)
         except Exception:
@@ -2024,11 +2138,9 @@ def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
 
     if isinstance(expr, str):
         txt = expr.strip()
-        if txt in frame.columns:
-            return txt
-        ctx_name = f"{_CTX_PREFIX}{txt}"
-        if ctx_name in frame.columns:
-            return ctx_name
+        resolved = _resolve_expr_column_name(txt, frame)
+        if resolved is not None:
+            return resolved
         lit = _literal_expr(txt)
         if lit is not None or txt.lower() == "null":
             return lit
@@ -2242,14 +2354,6 @@ def _order_keys_to_gfql(
         converted = _expr_to_gfql_value(expr_for_eval, frame)
         if not isinstance(converted, str):
             return None
-        if converted not in frame.columns:
-            return None
-        series = frame[converted]
-        if len(series) > 0:
-            if series.map(_is_nan_scalar).astype(bool).any():
-                return None
-            if series.map(_is_null).astype(bool).any():
-                return None
         direction_txt = str(direction).lower()
         if direction_txt not in {"asc", "desc"}:
             return None
@@ -2269,8 +2373,6 @@ def _select_items_to_gfql(
             return None
         converted = _expr_to_gfql_value(expr_for_eval, frame)
         if converted is None:
-            return None
-        if isinstance(converted, str) and converted not in frame.columns:
             return None
         out.append((str(alias), converted))
     return out
