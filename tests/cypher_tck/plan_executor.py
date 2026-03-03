@@ -49,7 +49,7 @@ class PlanPurityError(PlanExecutionError):
     pass
 
 
-_AGG_RE = re.compile(r"(?is)^(count|sum|min|max|avg)\((.*)\)$")
+_AGG_RE = re.compile(r"(?is)^(count|sum|min|max|avg|collect)\((.*)\)$")
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
 _KEYWORDS = {"AND", "OR", "NOT", "TRUE", "FALSE", "NULL"}
 _QUANTIFIER_CALL_RE = re.compile(r"(?is)^(any|all|none|single)\s*\((.*)\)$")
@@ -2071,7 +2071,7 @@ def _parse_agg(expr: Any) -> Optional[Tuple[str, Any]]:
         if expr.op != "func":
             return None
         func_name = str(expr.args.get("name", "")).lower()
-        if func_name not in {"count", "sum", "min", "max", "avg"}:
+        if func_name not in {"count", "sum", "min", "max", "avg", "collect"}:
             return None
         args = tuple(expr.args.get("args", ()))
         if func_name == "count" and len(args) == 1 and isinstance(args[0], Expr) and args[0].op == "star":
@@ -2103,6 +2103,8 @@ def _aggregate_series(df: pd.DataFrame, func: str, arg: Any) -> Any:
         return int(series.count())
     if func == "count_distinct":
         return int(series.nunique(dropna=True))
+    if func == "collect":
+        return [v for v in series.tolist() if not _is_null(v)]
     if func == "sum":
         return series.sum()
     if func == "min":
@@ -2141,6 +2143,11 @@ def _group_projection(df: pd.DataFrame, key_exprs: List[Any], items: Sequence[Tu
                 agg_df = gb_agg.count().reset_index(name="__val__")
             elif func == "count_distinct":
                 agg_df = gb_agg.nunique(dropna=True).reset_index(name="__val__")
+            elif func == "collect":
+                agg_df = gb_agg.agg(list).reset_index(name="__val__")
+                agg_df["__val__"] = agg_df["__val__"].map(
+                    lambda vals: [v for v in vals if not _is_null(v)]
+                )
             elif func == "sum":
                 agg_df = gb_agg.sum().reset_index(name="__val__")
             elif func == "min":
