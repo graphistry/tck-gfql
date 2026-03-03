@@ -63,6 +63,16 @@ _FN_NAMES = {
     "localtime",
     "datetime",
     "localdatetime",
+    "date.truncate",
+    "time.truncate",
+    "localtime.truncate",
+    "datetime.truncate",
+    "localdatetime.truncate",
+    "duration",
+    "duration.between",
+    "duration.inSeconds",
+    "duration.inMonths",
+    "duration.inDays",
     "range",
     "size",
     "keys",
@@ -993,12 +1003,346 @@ def _fn_temporal(name: str, args: Sequence[Any]) -> Any:
     raise PlanExecutionError(f"unsupported temporal function: {name}")
 
 
+_TRUNC_DATE_UNITS = {
+    "millennium",
+    "century",
+    "decade",
+    "year",
+    "weekyear",
+    "quarter",
+    "month",
+    "week",
+    "day",
+}
+_TRUNC_TIME_UNITS = {"day", "hour", "minute", "second", "millisecond", "microsecond"}
+_AVG_DAYS_PER_MONTH = 365.2425 / 12.0
+
+
+def _canonical_datetime_for_truncate(value: Any, timezone_override: Optional[str]) -> str:
+    if isinstance(value, dict):
+        mapping = dict(value)
+        if timezone_override is not None:
+            mapping["timezone"] = timezone_override
+        elif "timezone" not in mapping:
+            mapping["timezone"] = "Z"
+        return _coerce_datetime_from_map(mapping)
+
+    txt = _strip_outer_quotes(str(value))
+    if "T" not in txt:
+        return _coerce_datetime_from_map({"date": txt, "timezone": timezone_override or "Z"})
+
+    date_part, time_part = txt.split("T", 1)
+    zone_free, zone_name = _split_zone_suffix(time_part)
+    core_time, offset = _split_time_offset(zone_free)
+    date_txt = _format_date(*_parse_date_parts(date_part))
+    local_time_txt = _coerce_localtime_string(core_time)
+    tz_value: str
+    if timezone_override is not None:
+        tz_value = timezone_override
+    elif zone_name is not None:
+        tz_value = zone_name
+    else:
+        tz_value = offset or "Z"
+    return _coerce_datetime_from_map({"date": date_txt, "time": local_time_txt, "timezone": tz_value})
+
+
+def _canonical_localdatetime_for_truncate(value: Any) -> str:
+    if isinstance(value, dict):
+        return _coerce_localdatetime_from_map(value)
+
+    txt = _strip_outer_quotes(str(value))
+    if "T" not in txt:
+        return f"{_coerce_date_string(txt)}T00:00"
+
+    date_part, time_part = txt.split("T", 1)
+    zone_free, _ = _split_zone_suffix(time_part)
+    core_time, _ = _split_time_offset(zone_free)
+    date_txt = _format_date(*_parse_date_parts(date_part))
+    return f"{date_txt}T{_coerce_localtime_string(core_time)}"
+
+
+def _canonical_time_for_truncate(value: Any, timezone_override: Optional[str]) -> str:
+    if isinstance(value, dict):
+        mapping = dict(value)
+        if timezone_override is not None:
+            mapping["timezone"] = timezone_override
+        elif "timezone" not in mapping:
+            mapping["timezone"] = "Z"
+        return _coerce_time_from_map(mapping)
+
+    txt = _strip_outer_quotes(str(value))
+    if "T" in txt:
+        _, time_part = txt.split("T", 1)
+    else:
+        time_part = txt
+    zone_free, zone_name = _split_zone_suffix(time_part)
+    core_time, offset = _split_time_offset(zone_free)
+    local_time_txt = _coerce_localtime_string(core_time)
+    tz_value: str
+    if timezone_override is not None:
+        tz_value = timezone_override
+    elif zone_name is not None:
+        tz_value = zone_name
+    else:
+        tz_value = offset or "Z"
+    return _coerce_time_from_map({"time": local_time_txt, "timezone": tz_value})
+
+
+def _canonical_localtime_for_truncate(value: Any) -> str:
+    if isinstance(value, dict):
+        return _coerce_localtime_from_map(value)
+    txt = _strip_outer_quotes(str(value))
+    if "T" in txt:
+        _, txt = txt.split("T", 1)
+    zone_free, _ = _split_zone_suffix(txt)
+    core_time, _ = _split_time_offset(zone_free)
+    return _coerce_localtime_string(core_time)
+
+
+def _truncate_date_value(unit: str, base_date: str, mapping: Dict[str, Any]) -> str:
+    unit_lower = unit.lower()
+    if unit_lower not in _TRUNC_DATE_UNITS:
+        raise PlanExecutionError(f"unsupported truncate unit for date: {unit}")
+
+    year, month, day = _parse_date_parts(base_date)
+    d = dt.date(year, month, day)
+
+    if unit_lower == "millennium":
+        y = ((d.year - 1) // 1000) * 1000 + 1
+        out = dt.date(y, 1, 1)
+    elif unit_lower == "century":
+        y = ((d.year - 1) // 100) * 100 + 1
+        out = dt.date(y, 1, 1)
+    elif unit_lower == "decade":
+        y = (d.year // 10) * 10
+        out = dt.date(y, 1, 1)
+    elif unit_lower == "year":
+        out = dt.date(d.year, 1, 1)
+    elif unit_lower == "weekyear":
+        iso_year = d.isocalendar().year
+        out = dt.date.fromisocalendar(iso_year, 1, 1)
+    elif unit_lower == "quarter":
+        out = dt.date(d.year, ((d.month - 1) // 3) * 3 + 1, 1)
+    elif unit_lower == "month":
+        out = dt.date(d.year, d.month, 1)
+    elif unit_lower == "week":
+        out = d - dt.timedelta(days=d.isoweekday() - 1)
+    else:
+        out = d
+
+    if "dayOfWeek" in mapping:
+        dow = _coerce_int(mapping["dayOfWeek"], "truncate.dayOfWeek")
+        out = out - dt.timedelta(days=out.isoweekday() - 1) + dt.timedelta(days=dow - 1)
+    if "day" in mapping:
+        day_override = _coerce_int(mapping["day"], "truncate.day")
+        out = dt.date(out.year, out.month, day_override)
+    return _format_date(out.year, out.month, out.day)
+
+
+def _truncate_localtime_value(unit: str, base_time: str, mapping: Dict[str, Any]) -> str:
+    unit_lower = unit.lower()
+    if unit_lower not in _TRUNC_TIME_UNITS:
+        raise PlanExecutionError(f"unsupported truncate unit for time: {unit}")
+
+    hour, minute, second, nanos, _, _ = _parse_time_literal(base_time)
+
+    if unit_lower == "day":
+        hour = minute = second = 0
+        nanos = 0
+    elif unit_lower == "hour":
+        minute = second = 0
+        nanos = 0
+    elif unit_lower == "minute":
+        second = 0
+        nanos = 0
+    elif unit_lower == "second":
+        nanos = 0
+    elif unit_lower == "millisecond":
+        nanos = (nanos // 1_000_000) * 1_000_000
+    elif unit_lower == "microsecond":
+        nanos = (nanos // 1_000) * 1_000
+
+    if "nanosecond" in mapping:
+        nanos = _coerce_int(mapping["nanosecond"], "truncate.nanosecond")
+
+    show_seconds = second != 0 or nanos != 0
+    return _format_time(
+        hour,
+        minute,
+        second,
+        nanos,
+        show_seconds=show_seconds,
+        fraction_digits=9,
+        trim_fraction=False,
+    )
+
+
+def _truncate_temporal(unit: str, base: Any, mapping: Dict[str, Any], mode: str) -> str:
+    timezone_override_raw = mapping.get("timezone")
+    timezone_override = None if timezone_override_raw is None else str(timezone_override_raw)
+
+    if mode == "date":
+        date_txt = _coerce_date_string(base)
+        return _truncate_date_value(unit, date_txt, mapping)
+
+    if mode == "localdatetime":
+        local_txt = _canonical_localdatetime_for_truncate(base)
+        date_part, time_part = local_txt.split("T", 1)
+        trunc_date = _truncate_date_value(unit, date_part, mapping)
+        trunc_time = _truncate_localtime_value(unit, time_part, mapping)
+        return f"{trunc_date}T{trunc_time}"
+
+    if mode == "datetime":
+        dt_txt = _canonical_datetime_for_truncate(base, timezone_override=None)
+        body, zone_name = _split_zone_suffix(dt_txt)
+        date_part, time_with_offset = body.split("T", 1)
+        time_core, offset = _split_time_offset(time_with_offset)
+        trunc_date = _truncate_date_value(unit, date_part, mapping)
+        trunc_time = _truncate_localtime_value(unit, time_core, mapping)
+        tz_value = timezone_override or (zone_name if zone_name is not None else (offset or "Z"))
+        return _coerce_datetime_from_map({"date": trunc_date, "time": trunc_time, "timezone": tz_value})
+
+    if mode == "localtime":
+        time_txt = _canonical_localtime_for_truncate(base)
+        return _truncate_localtime_value(unit, time_txt, mapping)
+
+    if mode == "time":
+        time_txt = _canonical_time_for_truncate(base, timezone_override=None)
+        zone_free, zone_name = _split_zone_suffix(time_txt)
+        core_time, offset = _split_time_offset(zone_free)
+        trunc_time = _truncate_localtime_value(unit, core_time, mapping)
+        tz_value = timezone_override or (zone_name if zone_name is not None else (offset or "Z"))
+        return _coerce_time_from_map({"time": trunc_time, "timezone": tz_value})
+
+    raise PlanExecutionError(f"unsupported truncate mode: {mode}")
+
+
+def _duration_from_map(mapping: Dict[str, Any]) -> str:
+    def _to_float(name: str) -> float:
+        value = mapping.get(name, 0)
+        if _is_null(value):
+            return 0.0
+        return float(cast(float, value))
+
+    years = _to_float("years")
+    months = _to_float("months")
+    weeks = _to_float("weeks")
+    days = _to_float("days")
+    hours = _to_float("hours")
+    minutes = _to_float("minutes")
+    seconds = _to_float("seconds")
+    milliseconds = _to_float("milliseconds")
+    microseconds = _to_float("microseconds")
+    nanoseconds = _to_float("nanoseconds")
+
+    months_total = years * 12.0 + months
+    whole_months = math.trunc(months_total)
+    frac_months = months_total - whole_months
+
+    days_total = weeks * 7.0 + days + (frac_months * _AVG_DAYS_PER_MONTH)
+    whole_days = math.trunc(days_total)
+    frac_days = days_total - whole_days
+
+    seconds_total = (
+        frac_days * 86400.0
+        + hours * 3600.0
+        + minutes * 60.0
+        + seconds
+        + milliseconds / 1_000.0
+        + microseconds / 1_000_000.0
+        + nanoseconds / 1_000_000_000.0
+    )
+    whole_seconds = math.trunc(seconds_total)
+    frac_seconds = seconds_total - whole_seconds
+    second_nanos = int(round(abs(frac_seconds) * 1_000_000_000))
+    if second_nanos == 1_000_000_000:
+        whole_seconds += 1 if whole_seconds >= 0 else -1
+        second_nanos = 0
+
+    if whole_seconds >= 86_400:
+        carry_days = whole_seconds // 86_400
+        whole_days += carry_days
+        whole_seconds -= carry_days * 86_400
+
+    years_out = whole_months // 12
+    months_out = whole_months % 12
+    days_out = int(whole_days)
+
+    hours_out = int(whole_seconds // 3600)
+    rem_seconds = int(whole_seconds % 3600)
+    minutes_out = rem_seconds // 60
+    seconds_out = rem_seconds % 60
+
+    if (
+        years_out == 0
+        and months_out == 0
+        and days_out == 0
+        and hours_out == 0
+        and minutes_out == 0
+        and seconds_out == 0
+        and second_nanos == 0
+    ):
+        return "PT0S"
+
+    parts: List[str] = ["P"]
+    if years_out:
+        parts.append(f"{years_out}Y")
+    if months_out:
+        parts.append(f"{months_out}M")
+    if days_out:
+        parts.append(f"{days_out}D")
+
+    if hours_out or minutes_out or seconds_out or second_nanos:
+        parts.append("T")
+        if hours_out:
+            parts.append(f"{hours_out}H")
+        if minutes_out:
+            parts.append(f"{minutes_out}M")
+        if seconds_out or second_nanos:
+            if second_nanos:
+                sec_txt = f"{seconds_out + (second_nanos / 1_000_000_000):.9f}".rstrip("0").rstrip(".")
+                parts.append(f"{sec_txt}S")
+            else:
+                parts.append(f"{seconds_out}S")
+
+    return "".join(parts)
+
+
 def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
     fn = name.strip()
     fn_lower = fn.lower()
 
     if fn_lower in {"date", "localtime", "time", "localdatetime", "datetime"}:
         return _fn_temporal(fn_lower, args)
+    if fn_lower in {"date.truncate", "localtime.truncate", "time.truncate", "localdatetime.truncate", "datetime.truncate"}:
+        if len(args) not in {2, 3}:
+            raise PlanExecutionError(f"{name}() expects 2 or 3 arguments, got {len(args)}")
+        unit = _strip_outer_quotes(str(args[0]))
+        base = args[1]
+        options: Dict[str, Any] = {}
+        if len(args) == 3:
+            opt_raw = args[2]
+            if not _is_null(opt_raw):
+                if not isinstance(opt_raw, dict):
+                    raise PlanExecutionError(f"{name}() options must be a map, got {type(opt_raw).__name__}")
+                options = {str(k): v for k, v in opt_raw.items()}
+        if fn_lower == "date.truncate":
+            return _truncate_temporal(unit, base, options, "date")
+        if fn_lower == "localtime.truncate":
+            return _truncate_temporal(unit, base, options, "localtime")
+        if fn_lower == "time.truncate":
+            return _truncate_temporal(unit, base, options, "time")
+        if fn_lower == "localdatetime.truncate":
+            return _truncate_temporal(unit, base, options, "localdatetime")
+        return _truncate_temporal(unit, base, options, "datetime")
+    if fn_lower == "duration":
+        if len(args) != 1:
+            raise PlanExecutionError(f"duration() expects 1 argument, got {len(args)}")
+        if _is_null(args[0]):
+            return None
+        if isinstance(args[0], dict):
+            return _duration_from_map(cast(Dict[str, Any], args[0]))
+        raise PlanExecutionError(f"duration() expects a map argument, got {type(args[0]).__name__}")
     if fn_lower == "range":
         return _fn_range(args)
     if fn_lower == "size":
