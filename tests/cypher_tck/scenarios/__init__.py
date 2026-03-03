@@ -7,6 +7,7 @@ import re
 from typing import Iterable, Optional, Tuple
 
 from tests.cypher_tck.gfql_plan import (
+    PlanStep,
     binary,
     col,
     distinct,
@@ -28,9 +29,10 @@ from tests.cypher_tck.gfql_plan import (
     unary,
 )
 from tests.cypher_tck.models import Scenario
+from tests.cypher_tck.phase_support import PHASE1_EXECUTOR_SUPPORTED_KEYS
 
 _SCENARIO_ROOT = Path(__file__).resolve().parent / "tck" / "features"
-SCENARIOS = []
+SCENARIOS: list[Scenario] = []
 
 _TARGET_TABLE_PREFIXES = (
     "clauses/return",
@@ -97,7 +99,7 @@ def _tag_scenario(scenario: Scenario) -> Scenario:
 
 
 _CLAUSE_RE = re.compile(
-    r"(?im)^(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\\b"
+    r"(?im)^\s*(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\b"
 )
 
 
@@ -148,7 +150,7 @@ def _split_top_level(expr: str) -> Tuple[str, ...]:
             buf.append(ch)
         else:
             buf.append(ch)
-        raise ValueError(f"Unexpected character: {ch}")
+        idx += 1
     tail = "".join(buf).strip()
     if tail:
         items.append(tail)
@@ -568,7 +570,7 @@ def _parse_expr(expr_text: str):
 def _parse_return_items(body: str) -> Tuple[Tuple[str, object], ...]:
     items = []
     for item in _split_top_level(body):
-        parts = re.split(r"(?i)\\s+AS\\s+", item, maxsplit=1)
+        parts = re.split(r"(?i)\s+AS\s+", item, maxsplit=1)
         if len(parts) == 2:
             expr_text, alias = parts[0].strip(), parts[1].strip()
         else:
@@ -581,7 +583,7 @@ def _parse_return_items(body: str) -> Tuple[Tuple[str, object], ...]:
 def _parse_order_by(body: str) -> Tuple[Tuple[object, str], ...]:
     items = []
     for item in _split_top_level(body):
-        match = re.match(r"(?is)(.+?)\\s+(ASC|DESC)$", item.strip())
+        match = re.match(r"(?is)(.+?)\s+(ASC|DESC)$", item.strip())
         if match:
             expr_text = match.group(1).strip()
             direction = match.group(2).lower()
@@ -594,9 +596,9 @@ def _parse_order_by(body: str) -> Tuple[Tuple[object, str], ...]:
 
 def _parse_value(token: str):
     value = token.strip()
-    if re.fullmatch(r"-?\\d+", value):
+    if re.fullmatch(r"-?\d+", value):
         return int(value)
-    if re.fullmatch(r"-?\\d+\\.\\d+", value):
+    if re.fullmatch(r"-?\d+\.\d+", value):
         return float(value)
     return value
 
@@ -609,7 +611,7 @@ def _plan_from_cypher(cypher: str) -> Tuple:
         elif clause == "WHERE":
             steps.append(step("where", expr=_parse_expr(body)))
         elif clause == "UNWIND":
-            parts = re.split(r"(?i)\\s+AS\\s+", body, maxsplit=1)
+            parts = re.split(r"(?i)\s+AS\s+", body, maxsplit=1)
             payload = {"expr": _parse_expr(parts[0].strip())}
             if len(parts) == 2:
                 payload["as_"] = parts[1].strip()
@@ -647,6 +649,41 @@ def _apply_translation(scenario: Scenario) -> Scenario:
     return scenario
 
 
+def _without_tag(tags: Tuple[str, ...], target: str) -> Tuple[str, ...]:
+    return tuple(tag for tag in tags if tag != target)
+
+
+def _is_executable_plan_tuple(gfql: object) -> bool:
+    if not isinstance(gfql, tuple) or not gfql:
+        return False
+    if not all(isinstance(step_obj, PlanStep) for step_obj in gfql):
+        return False
+    if any(step_obj.op in {"raw", "invalid"} for step_obj in gfql):
+        return False
+    return True
+
+
+def _promote_executor_support(scenario: Scenario) -> Scenario:
+    if scenario.status != "xfail":
+        return scenario
+    if scenario.key not in PHASE1_EXECUTOR_SUPPORTED_KEYS:
+        return scenario
+    if scenario.expected.rows is None:
+        return scenario
+    if not _is_executable_plan_tuple(scenario.gfql):
+        return scenario
+
+    tags = list(_without_tag(scenario.tags, "xfail"))
+    if "phase1-executor" not in tags:
+        tags.append("phase1-executor")
+    return replace(
+        scenario,
+        status="supported",
+        reason=None,
+        tags=tuple(tags),
+    )
+
+
 for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     module_name = "tests.cypher_tck.scenarios." + path.relative_to(Path(__file__).resolve().parent).with_suffix("").as_posix().replace("/", ".")
     spec = spec_from_file_location(module_name, path)
@@ -656,4 +693,4 @@ for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     spec.loader.exec_module(module)
     SCENARIOS.extend(getattr(module, "SCENARIOS", []))
 
-SCENARIOS = [_apply_translation(_tag_scenario(scenario)) for scenario in SCENARIOS]
+SCENARIOS = [_promote_executor_support(_apply_translation(_tag_scenario(scenario))) for scenario in SCENARIOS]

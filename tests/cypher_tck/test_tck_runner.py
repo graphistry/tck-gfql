@@ -1,5 +1,5 @@
 import os
-from typing import Any, Iterable, Sequence
+from typing import Any, Dict, Iterable, List, Sequence
 
 import pandas as pd
 import pytest
@@ -8,7 +8,9 @@ from graphistry.embed_utils import check_cudf
 from graphistry.gfql.ref.enumerator import OracleCaps, enumerate_chain
 from graphistry.tests.test_compute import CGFull
 
+from tests.cypher_tck.gfql_plan import PlanStep
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
 
 
@@ -64,6 +66,84 @@ def _to_pandas(df: Any) -> Any:
     return df.to_pandas() if hasattr(df, "to_pandas") else df
 
 
+def _is_null(value: Any) -> bool:
+    if value is None:
+        return True
+    try:
+        marker = pd.isna(value)
+    except Exception:
+        return False
+    if isinstance(marker, bool):
+        return marker
+    return False
+
+
+def _normalize_row_value(value: Any) -> Any:
+    if hasattr(value, "item") and not isinstance(value, (str, bytes, list, tuple, dict)):
+        try:
+            value = value.item()
+        except Exception:
+            pass
+
+    if _is_null(value):
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str):
+        if value.startswith(("(", "[", "{", "<", "'")):
+            return value
+        if value in {"null", "true", "false"}:
+            return value
+        return f"'{value}'"
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(str(_normalize_row_value(v)) for v in value) + "]"
+    if isinstance(value, dict):
+        parts = []
+        for key in sorted(value.keys()):
+            parts.append(f"{key}: {_normalize_row_value(value[key])}")
+        return "{" + ", ".join(parts) + "}"
+    return value
+
+
+def _normalize_rows(rows: Sequence[Dict[str, Any]], expected_keys: Sequence[str]) -> List[Dict[str, Any]]:
+    normalized = []
+    for row in rows:
+        missing = [k for k in expected_keys if k not in row]
+        assert not missing, f"missing expected row columns: {missing}; row={row}"
+        normalized.append({key: _normalize_row_value(row[key]) for key in expected_keys})
+    return normalized
+
+
+def _rows_ordered(gfql: Sequence[Any]) -> bool:
+    for step in gfql:
+        if isinstance(step, PlanStep) and step.op in {"order_by", "skip", "limit"}:
+            return True
+    return False
+
+
+def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, Any]]) -> None:
+    if scenario.expected.rows is None:
+        return
+
+    expected_rows = scenario.expected.rows
+    if len(expected_rows) == 0:
+        assert len(actual_rows) == 0
+        return
+
+    expected_keys = sorted({key for row in expected_rows for key in row.keys()})
+    expected_norm = _normalize_rows(expected_rows, expected_keys)
+    actual_norm = _normalize_rows(actual_rows, expected_keys)
+
+    if _rows_ordered(scenario.gfql or ()):
+        assert actual_norm == expected_norm
+        return
+
+    def _row_key(row: Dict[str, Any]) -> str:
+        return "|".join(f"{key}={row[key]!r}" for key in expected_keys)
+
+    assert sorted(_row_key(row) for row in actual_norm) == sorted(_row_key(row) for row in expected_norm)
+
+
 def _ids_from_df(df: Any, id_col: str) -> set:
     if df is None:
         return set()
@@ -112,6 +192,18 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     assert scenario.gfql is not None
 
     g = _build_graph(scenario.graph)
+
+    is_plan = (
+        isinstance(scenario.gfql, Sequence)
+        and len(scenario.gfql) > 0
+        and all(isinstance(step, PlanStep) for step in scenario.gfql)
+    )
+
+    if is_plan:
+        plan_rows_df = execute_plan(g, scenario.graph, scenario.gfql)
+        _assert_expected_rows(scenario, plan_rows_df.to_dict("records"))
+        return
+
     oracle = enumerate_chain(g, scenario.gfql, caps=OracleCaps(max_nodes=100, max_edges=100))
 
     oracle_nodes = _ids_from_df(oracle.nodes, g._node)
