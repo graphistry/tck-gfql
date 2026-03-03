@@ -51,6 +51,7 @@ class PlanPurityError(PlanExecutionError):
 _AGG_RE = re.compile(r"(?is)^(count|sum|min|max|avg)\((.*)\)$")
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
 _KEYWORDS = {"AND", "OR", "NOT", "TRUE", "FALSE", "NULL"}
+_QUANTIFIER_CALL_RE = re.compile(r"(?is)^(any|all|none|single)\s*\((.*)\)$")
 _FN_NAMES = {
     "count",
     "sum",
@@ -80,6 +81,10 @@ _FN_NAMES = {
     "nodes",
     "length",
     "head",
+    "any",
+    "all",
+    "none",
+    "single",
 }
 _CTX_PREFIX = "__ctx__"
 
@@ -1753,6 +1758,84 @@ def _find_top_level_char(text: str, target: str) -> int:
     return -1
 
 
+def _split_top_level_keyword(text: str, keyword: str) -> Optional[Tuple[str, str]]:
+    upper = text.upper()
+    needle = keyword.upper()
+    depth_paren = 0
+    depth_brace = 0
+    depth_bracket = 0
+    quote: Optional[str] = None
+    escaped = False
+
+    for i, ch in enumerate(text):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            continue
+
+        if ch in {"'", '"'}:
+            quote = ch
+            continue
+        if ch == "(":
+            depth_paren += 1
+            continue
+        if ch == ")":
+            depth_paren -= 1
+            continue
+        if ch == "{":
+            depth_brace += 1
+            continue
+        if ch == "}":
+            depth_brace -= 1
+            continue
+        if ch == "[":
+            depth_bracket += 1
+            continue
+        if ch == "]":
+            depth_bracket -= 1
+            continue
+        if depth_paren != 0 or depth_brace != 0 or depth_bracket != 0:
+            continue
+        if not upper.startswith(needle, i):
+            continue
+        left_ok = i == 0 or not (upper[i - 1].isalnum() or upper[i - 1] == "_")
+        right_idx = i + len(needle)
+        right_ok = right_idx >= len(upper) or not (upper[right_idx].isalnum() or upper[right_idx] == "_")
+        if not (left_ok and right_ok):
+            continue
+        left = text[:i].strip()
+        right = text[right_idx:].strip()
+        if left and right:
+            return left, right
+    return None
+
+
+def _parse_quantifier_expr_text(text: str) -> Optional[Tuple[str, str, str, str]]:
+    match = _QUANTIFIER_CALL_RE.fullmatch(text.strip())
+    if match is None:
+        return None
+    fn = match.group(1).lower()
+    body = match.group(2).strip()
+    in_split = _split_top_level_keyword(body, "IN")
+    if in_split is None:
+        return None
+    var = in_split[0].strip()
+    if _SIMPLE_IDENT_RE.fullmatch(var) is None:
+        return None
+    where_split = _split_top_level_keyword(in_split[1], "WHERE")
+    if where_split is None:
+        return None
+    list_expr = where_split[0].strip()
+    predicate_expr = where_split[1].strip()
+    if list_expr == "" or predicate_expr == "":
+        return None
+    return fn, var, list_expr, predicate_expr
+
+
 def _parse_cypher_literal(text: str, context: str) -> Any:
     token = text.strip()
     if token == "":
@@ -2271,6 +2354,9 @@ def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
     if txt == "":
         return None
 
+    if _parse_quantifier_expr_text(txt) is not None:
+        return txt
+
     resolved = _resolve_expr_column_name(txt, frame)
     if resolved is not None:
         return resolved
@@ -2669,60 +2755,41 @@ def execute_plan(
             items = args.get("items", ())
             items_list = list(items)
             delegated = False
-            if strict_pure:
-                if state.group_keys is None:
-                    delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
-                    if delegated_items is not None:
-                        only_literals = all(
-                            not (isinstance(expr, str) and expr in state.frame.columns)
-                            for _, expr in delegated_items
-                        )
-                        source_frame = state.frame
-                        if len(source_frame) == 0 and len(source_frame.columns) == 0 and only_literals:
-                            source_frame = pd.DataFrame(index=[0])
-                        try:
-                            delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
-                                [_select_call(op, delegated_items)]
-                            )
-                            state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
-                            delegated = True
-                        except Exception:
-                            delegated = False
-                    if not delegated:
-                        implicit_group_plan = _group_projection_to_gfql(
-                            state.frame, (), items_list, state.alias_exprs
-                        )
-                        if implicit_group_plan is not None:
-                            key_cols, aggregations, post_items = implicit_group_plan
-                            group_source = state.frame
-                            if not key_cols:
-                                synthetic_key = "__gfql_group_all__"
-                                i = 0
-                                while synthetic_key in group_source.columns:
-                                    i += 1
-                                    synthetic_key = f"__gfql_group_all__{i}"
-                                group_source = group_source.assign(**{synthetic_key: 1})
-                                key_cols = [synthetic_key]
-                            try:
-                                grouped_graph = _frame_as_row_graph(state.graph, group_source).gfql(
-                                    [gfql_group_by(key_cols, aggregations)]
-                                )
-                                grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
-                                projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
-                                    [_select_call(op, post_items)]
-                                )
-                                state.frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
-                                delegated = True
-                            except Exception:
-                                delegated = False
-                else:
-                    group_plan = _group_projection_to_gfql(
-                        state.frame, state.group_keys, items_list, state.alias_exprs
+            if state.group_keys is None:
+                delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
+                if delegated_items is not None:
+                    only_literals = all(
+                        not (isinstance(expr, str) and expr in state.frame.columns)
+                        for _, expr in delegated_items
                     )
-                    if group_plan is not None:
-                        key_cols, aggregations, post_items = group_plan
+                    source_frame = state.frame
+                    if len(source_frame) == 0 and len(source_frame.columns) == 0 and only_literals:
+                        source_frame = pd.DataFrame(index=[0])
+                    try:
+                        delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
+                            [_select_call(op, delegated_items)]
+                        )
+                        state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                        delegated = True
+                    except Exception:
+                        delegated = False
+                if not delegated:
+                    implicit_group_plan = _group_projection_to_gfql(
+                        state.frame, (), items_list, state.alias_exprs
+                    )
+                    if implicit_group_plan is not None:
+                        key_cols, aggregations, post_items = implicit_group_plan
+                        group_source = state.frame
+                        if not key_cols:
+                            synthetic_key = "__gfql_group_all__"
+                            i = 0
+                            while synthetic_key in group_source.columns:
+                                i += 1
+                                synthetic_key = f"__gfql_group_all__{i}"
+                            group_source = group_source.assign(**{synthetic_key: 1})
+                            key_cols = [synthetic_key]
                         try:
-                            grouped_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                            grouped_graph = _frame_as_row_graph(state.graph, group_source).gfql(
                                 [gfql_group_by(key_cols, aggregations)]
                             )
                             grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
@@ -2733,6 +2800,24 @@ def execute_plan(
                             delegated = True
                         except Exception:
                             delegated = False
+            else:
+                group_plan = _group_projection_to_gfql(
+                    state.frame, state.group_keys, items_list, state.alias_exprs
+                )
+                if group_plan is not None:
+                    key_cols, aggregations, post_items = group_plan
+                    try:
+                        grouped_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                            [gfql_group_by(key_cols, aggregations)]
+                        )
+                        grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
+                        projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
+                            [_select_call(op, post_items)]
+                        )
+                        state.frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                        delegated = True
+                    except Exception:
+                        delegated = False
             if not delegated:
                 if strict_pure:
                     _mark_impure(f"{op}_local_projection", strict_pure, impurity_reasons)

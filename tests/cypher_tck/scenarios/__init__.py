@@ -52,6 +52,7 @@ _TARGET_EXPR_PREFIXES = (
     "expressions/mathematical",
     "expressions/null",
     "expressions/precedence",
+    "expressions/quantifier",
     "expressions/string",
     "expressions/temporal",
     "expressions/typeConversion",
