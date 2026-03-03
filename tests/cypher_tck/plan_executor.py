@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import calendar
 import datetime as dt
 import math
 import numbers
@@ -144,6 +145,15 @@ class PlanState:
 class _SyntheticMatchResult:
     _nodes: pd.DataFrame
     _edges: pd.DataFrame
+
+
+@dataclass
+class _TemporalValue:
+    has_date: bool
+    date_value: Optional[dt.date]
+    seconds_of_day: float
+    has_tz: bool
+    offset_seconds: int
 
 
 def _to_pandas(df: Any) -> pd.DataFrame:
@@ -514,11 +524,51 @@ def _extract_time_from_temporal(value: Any) -> Optional[str]:
     return None
 
 
+_DURATION_RE = re.compile(
+    r"^P"
+    r"(?:(?P<years>-?\d+)Y)?"
+    r"(?:(?P<months>-?\d+)M)?"
+    r"(?:(?P<days>-?\d+)D)?"
+    r"(?:T"
+    r"(?:(?P<hours>-?\d+)H)?"
+    r"(?:(?P<minutes>-?\d+)M)?"
+    r"(?:(?P<seconds>-?\d+(?:\.\d+)?)S)?"
+    r")?$"
+)
+
+
+def _duration_property(value: Any, prop: str) -> Optional[Any]:
+    txt = _strip_outer_quotes(str(value))
+    match = _DURATION_RE.fullmatch(txt)
+    if match is None:
+        return None
+
+    days = int(match.group("days") or 0)
+    hours = int(match.group("hours") or 0)
+    minutes = int(match.group("minutes") or 0)
+    seconds = float(match.group("seconds") or 0.0)
+    seconds_total = (hours * 3600.0) + (minutes * 60.0) + seconds
+
+    if prop == "days":
+        return days
+    if prop == "seconds":
+        return math.floor(seconds_total) if seconds_total < 0 else int(seconds_total)
+    if prop == "nanosecondsOfSecond":
+        seconds_int = math.floor(seconds_total) if seconds_total < 0 else int(seconds_total)
+        fraction = seconds_total - seconds_int
+        return int(round(fraction * 1_000_000_000))
+    return None
+
+
 def _temporal_property(value: Any, prop: str) -> Any:
     if _is_null(value):
         return None
     txt = _strip_outer_quotes(str(value))
     property_name = prop.strip()
+
+    duration_prop = _duration_property(txt, property_name)
+    if duration_prop is not None:
+        return duration_prop
 
     date_part = _extract_date_from_temporal(txt)
     if date_part is not None:
@@ -973,8 +1023,21 @@ def _fn_substring(args: Sequence[Any]) -> Any:
 
 
 def _fn_temporal(name: str, args: Sequence[Any]) -> Any:
+    if len(args) == 0:
+        if name == "date":
+            return "2000-01-01"
+        if name == "localtime":
+            return "00:00"
+        if name == "time":
+            return "00:00+00:00"
+        if name == "localdatetime":
+            return "2000-01-01T00:00"
+        if name == "datetime":
+            return "2000-01-01T00:00Z"
+        raise PlanExecutionError(f"unsupported temporal function: {name}")
+
     if len(args) != 1:
-        raise PlanExecutionError(f"{name}() expects 1 argument, got {len(args)}")
+        raise PlanExecutionError(f"{name}() expects 0 or 1 argument, got {len(args)}")
     value = args[0]
     if _is_null(value):
         return None
@@ -991,6 +1054,11 @@ def _fn_temporal(name: str, args: Sequence[Any]) -> Any:
     if name == "time":
         if isinstance(value, dict):
             return _coerce_time_from_map(value)
+        txt = _strip_outer_quotes(str(value))
+        zone_free, zone_name = _split_zone_suffix(txt)
+        _, offset_part = _split_time_offset(zone_free)
+        if offset_part is None and zone_name is None:
+            return _coerce_time_from_map({"time": txt, "timezone": "Z"})
         return _coerce_time_string(value)
     if name == "localdatetime":
         if isinstance(value, dict):
@@ -1308,6 +1376,319 @@ def _duration_from_map(mapping: Dict[str, Any]) -> str:
     return "".join(parts)
 
 
+def _last_day_of_month(year: int, month: int) -> int:
+    return calendar.monthrange(year, month)[1]
+
+
+def _add_months_datetime(base: dt.datetime, months: int) -> dt.datetime:
+    month_index = (base.year - 1) * 12 + (base.month - 1) + months
+    year = (month_index // 12) + 1
+    month = (month_index % 12) + 1
+    if year < 1 or year > 9999:
+        raise PlanExecutionError("duration computation year out of supported range")
+    day = min(base.day, _last_day_of_month(year, month))
+    return base.replace(year=year, month=month, day=day)
+
+
+def _parse_temporal_value(value: Any) -> _TemporalValue:
+    if isinstance(value, _TemporalValue):
+        return value
+    if _is_null(value):
+        raise PlanExecutionError("null temporal is not directly parseable")
+
+    txt = _strip_outer_quotes(str(value))
+
+    if "T" in txt:
+        date_part, time_part = txt.split("T", 1)
+        year, month, day = _parse_date_parts(date_part)
+        zone_free, zone_name = _split_zone_suffix(time_part)
+        core_time, offset_part = _split_time_offset(zone_free)
+        hour, minute, second, nanos, _, _ = _parse_time_literal(core_time)
+
+        has_tz = False
+        offset_seconds = 0
+        if offset_part is not None:
+            offset_seconds, _ = _parse_offset_token(offset_part)
+            has_tz = True
+        elif zone_name:
+            offset_txt = _resolve_named_zone_offset(zone_name, year, month, day, hour, minute, second)
+            offset_seconds, _ = _parse_offset_token(offset_txt)
+            has_tz = True
+
+        seconds_of_day = (
+            hour * 3600.0
+            + minute * 60.0
+            + second
+            + (nanos / 1_000_000_000.0)
+        )
+        return _TemporalValue(
+            has_date=True,
+            date_value=dt.date(year, month, day),
+            seconds_of_day=seconds_of_day,
+            has_tz=has_tz,
+            offset_seconds=offset_seconds,
+        )
+
+    date_only = _extract_date_from_temporal(txt)
+    if date_only is not None:
+        year, month, day = _parse_date_parts(date_only)
+        return _TemporalValue(
+            has_date=True,
+            date_value=dt.date(year, month, day),
+            seconds_of_day=0.0,
+            has_tz=False,
+            offset_seconds=0,
+        )
+
+    zone_free, zone_name = _split_zone_suffix(txt)
+    core_time, offset_part = _split_time_offset(zone_free)
+    hour, minute, second, nanos, _, _ = _parse_time_literal(core_time)
+    seconds_of_day = (
+        hour * 3600.0
+        + minute * 60.0
+        + second
+        + (nanos / 1_000_000_000.0)
+    )
+
+    has_tz = False
+    offset_seconds = 0
+    if offset_part is not None:
+        offset_seconds, _ = _parse_offset_token(offset_part)
+        has_tz = True
+    elif zone_name:
+        offset_txt = _resolve_named_zone_offset(zone_name, 2000, 1, 1, hour, minute, second)
+        offset_seconds, _ = _parse_offset_token(offset_txt)
+        has_tz = True
+
+    return _TemporalValue(
+        has_date=False,
+        date_value=None,
+        seconds_of_day=seconds_of_day,
+        has_tz=has_tz,
+        offset_seconds=offset_seconds,
+    )
+
+
+def _temporal_to_datetime(value: _TemporalValue, anchor_date: dt.date, use_tz: bool) -> dt.datetime:
+    if value.has_date:
+        if value.date_value is None:
+            raise PlanExecutionError("internal temporal parse error: missing date")
+        date_part = value.date_value
+    else:
+        date_part = anchor_date
+
+    total_nanos = int(round(value.seconds_of_day * 1_000_000_000))
+    hour, rem = divmod(total_nanos, 3_600_000_000_000)
+    minute, rem = divmod(rem, 60 * 1_000_000_000)
+    second, nanos = divmod(rem, 1_000_000_000)
+    microsecond = int(nanos // 1000)
+
+    out = dt.datetime(
+        date_part.year,
+        date_part.month,
+        date_part.day,
+        int(hour),
+        int(minute),
+        int(second),
+        microsecond,
+    )
+    if use_tz and value.has_tz:
+        out = out.replace(
+            tzinfo=dt.timezone(dt.timedelta(seconds=value.offset_seconds))
+        )
+    return out
+
+
+def _duration_seconds_from_values(start: _TemporalValue, end: _TemporalValue) -> float:
+    both_have_date = start.has_date and end.has_date
+    if both_have_date:
+        use_tz = start.has_tz and end.has_tz
+        start_dt = _temporal_to_datetime(start, dt.date(1970, 1, 1), use_tz=use_tz)
+        end_dt = _temporal_to_datetime(end, dt.date(1970, 1, 1), use_tz=use_tz)
+        if use_tz:
+            start_dt = start_dt.astimezone(dt.timezone.utc).replace(tzinfo=None)
+            end_dt = end_dt.astimezone(dt.timezone.utc).replace(tzinfo=None)
+        return (end_dt - start_dt).total_seconds()
+
+    start_seconds = start.seconds_of_day
+    end_seconds = end.seconds_of_day
+    if start.has_tz and end.has_tz:
+        start_seconds -= start.offset_seconds
+        end_seconds -= end.offset_seconds
+    return end_seconds - start_seconds
+
+
+def _decompose_signed_time_seconds(total_seconds: float) -> Tuple[int, int, float]:
+    if abs(total_seconds) < 1e-12:
+        return 0, 0, 0.0
+    total_nanos = int(round(total_seconds * 1_000_000_000))
+    sign = -1 if total_nanos < 0 else 1
+    remaining_nanos = abs(total_nanos)
+    hour_ns = 3600 * 1_000_000_000
+    minute_ns = 60 * 1_000_000_000
+    hours = remaining_nanos // hour_ns
+    remaining_nanos -= hours * hour_ns
+    minutes = remaining_nanos // minute_ns
+    remaining_nanos -= minutes * minute_ns
+    seconds = remaining_nanos / 1_000_000_000.0
+    return sign * hours, sign * minutes, sign * seconds
+
+
+def _format_signed_seconds(value: float) -> str:
+    abs_value = round(abs(value), 9)
+    if abs(abs_value - round(abs_value)) < 1e-9:
+        txt = str(int(round(abs_value)))
+    else:
+        txt = f"{abs_value:.9f}".rstrip("0").rstrip(".")
+    if value < 0:
+        return f"-{txt}"
+    return txt
+
+
+def _format_time_only_duration(total_seconds: float) -> str:
+    if abs(total_seconds) < 1e-12:
+        return "PT0S"
+    hours, minutes, seconds = _decompose_signed_time_seconds(total_seconds)
+    parts: List[str] = ["PT"]
+    if hours != 0:
+        parts.append(f"{hours}H")
+    if minutes != 0:
+        parts.append(f"{minutes}M")
+    if seconds != 0 or (hours == 0 and minutes == 0):
+        parts.append(f"{_format_signed_seconds(seconds)}S")
+    return "".join(parts)
+
+
+def _format_between_duration(years: int, months: int, days: int, rem_seconds: float) -> str:
+    if years == 0 and months == 0 and days == 0 and abs(rem_seconds) < 1e-12:
+        return "PT0S"
+    parts: List[str] = ["P"]
+    if years != 0:
+        parts.append(f"{years}Y")
+    if months != 0:
+        parts.append(f"{months}M")
+    if days != 0:
+        parts.append(f"{days}D")
+
+    if abs(rem_seconds) >= 1e-12:
+        hours, minutes, seconds = _decompose_signed_time_seconds(rem_seconds)
+        parts.append("T")
+        if hours != 0:
+            parts.append(f"{hours}H")
+        if minutes != 0:
+            parts.append(f"{minutes}M")
+        if seconds != 0 or (hours == 0 and minutes == 0):
+            parts.append(f"{_format_signed_seconds(seconds)}S")
+
+    if len(parts) == 1:
+        return "PT0S"
+    if parts[-1] == "T":
+        parts.append("0S")
+    return "".join(parts)
+
+
+def _format_in_months_duration(total_months: int) -> str:
+    if total_months == 0:
+        return "PT0S"
+    years = int(total_months / 12)
+    months = total_months - (years * 12)
+    out = ["P"]
+    if years != 0:
+        out.append(f"{years}Y")
+    if months != 0:
+        out.append(f"{months}M")
+    if len(out) == 1:
+        return "PT0S"
+    return "".join(out)
+
+
+def _duration_between_fn(start_raw: Any, end_raw: Any) -> Any:
+    if _is_null(start_raw) or _is_null(end_raw):
+        return None
+
+    start = _parse_temporal_value(start_raw)
+    end = _parse_temporal_value(end_raw)
+    both_have_date = start.has_date and end.has_date
+
+    if not both_have_date:
+        return _format_time_only_duration(_duration_seconds_from_values(start, end))
+
+    use_tz = start.has_tz and end.has_tz
+    start_dt = _temporal_to_datetime(start, dt.date(1970, 1, 1), use_tz=use_tz)
+    end_dt = _temporal_to_datetime(end, dt.date(1970, 1, 1), use_tz=use_tz)
+    if use_tz:
+        start_dt = start_dt.astimezone(dt.timezone.utc).replace(tzinfo=None)
+        end_dt = end_dt.astimezone(dt.timezone.utc).replace(tzinfo=None)
+
+    total_seconds = (end_dt - start_dt).total_seconds()
+    months = (end_dt.year - start_dt.year) * 12 + (end_dt.month - start_dt.month)
+    candidate = _add_months_datetime(start_dt, months)
+    if total_seconds >= 0 and candidate > end_dt:
+        months -= 1
+        candidate = _add_months_datetime(start_dt, months)
+    elif total_seconds < 0 and candidate < end_dt:
+        months += 1
+        candidate = _add_months_datetime(start_dt, months)
+
+    rem_seconds_total = (end_dt - candidate).total_seconds()
+    years = int(months / 12)
+    rem_months = months - (years * 12)
+
+    if years == 0 and rem_months == 0 and abs(total_seconds) < 86400.0:
+        return _format_time_only_duration(total_seconds)
+
+    days = int(rem_seconds_total / 86400.0)
+    rem_seconds = rem_seconds_total - (days * 86400.0)
+    return _format_between_duration(years, rem_months, days, rem_seconds)
+
+
+def _duration_in_seconds_fn(start_raw: Any, end_raw: Any) -> Any:
+    if _is_null(start_raw) or _is_null(end_raw):
+        return None
+    start = _parse_temporal_value(start_raw)
+    end = _parse_temporal_value(end_raw)
+    return _format_time_only_duration(_duration_seconds_from_values(start, end))
+
+
+def _duration_in_days_fn(start_raw: Any, end_raw: Any) -> Any:
+    if _is_null(start_raw) or _is_null(end_raw):
+        return None
+    start = _parse_temporal_value(start_raw)
+    end = _parse_temporal_value(end_raw)
+    if not (start.has_date and end.has_date):
+        return "PT0S"
+    total_seconds = _duration_seconds_from_values(start, end)
+    days = int(total_seconds / 86400.0)
+    if days == 0:
+        return "PT0S"
+    return f"P{days}D"
+
+
+def _duration_in_months_fn(start_raw: Any, end_raw: Any) -> Any:
+    if _is_null(start_raw) or _is_null(end_raw):
+        return None
+    start = _parse_temporal_value(start_raw)
+    end = _parse_temporal_value(end_raw)
+    if not (start.has_date and end.has_date):
+        return "PT0S"
+
+    use_tz = start.has_tz and end.has_tz
+    start_dt = _temporal_to_datetime(start, dt.date(1970, 1, 1), use_tz=use_tz)
+    end_dt = _temporal_to_datetime(end, dt.date(1970, 1, 1), use_tz=use_tz)
+    if use_tz:
+        start_dt = start_dt.astimezone(dt.timezone.utc).replace(tzinfo=None)
+        end_dt = end_dt.astimezone(dt.timezone.utc).replace(tzinfo=None)
+
+    total_seconds = (end_dt - start_dt).total_seconds()
+    months = (end_dt.year - start_dt.year) * 12 + (end_dt.month - start_dt.month)
+    candidate = _add_months_datetime(start_dt, months)
+    if total_seconds >= 0 and candidate > end_dt:
+        months -= 1
+    elif total_seconds < 0 and candidate < end_dt:
+        months += 1
+    return _format_in_months_duration(months)
+
+
 def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
     fn = name.strip()
     fn_lower = fn.lower()
@@ -1343,6 +1724,22 @@ def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
         if isinstance(args[0], dict):
             return _duration_from_map(cast(Dict[str, Any], args[0]))
         raise PlanExecutionError(f"duration() expects a map argument, got {type(args[0]).__name__}")
+    if fn_lower == "duration.between":
+        if len(args) != 2:
+            raise PlanExecutionError(f"{name}() expects 2 arguments, got {len(args)}")
+        return _duration_between_fn(args[0], args[1])
+    if fn_lower == "duration.inseconds":
+        if len(args) != 2:
+            raise PlanExecutionError(f"{name}() expects 2 arguments, got {len(args)}")
+        return _duration_in_seconds_fn(args[0], args[1])
+    if fn_lower == "duration.inmonths":
+        if len(args) != 2:
+            raise PlanExecutionError(f"{name}() expects 2 arguments, got {len(args)}")
+        return _duration_in_months_fn(args[0], args[1])
+    if fn_lower == "duration.indays":
+        if len(args) != 2:
+            raise PlanExecutionError(f"{name}() expects 2 arguments, got {len(args)}")
+        return _duration_in_days_fn(args[0], args[1])
     if fn_lower == "range":
         return _fn_range(args)
     if fn_lower == "size":
@@ -1453,6 +1850,17 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             return pd.Series(map_values, index=df.index)
         if expr.op == "col":
             name = str(expr.args.get("name"))
+            prop_match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)", name)
+            if prop_match is not None and name not in df.columns and f"{_CTX_PREFIX}{name}" not in df.columns:
+                base = prop_match.group(1)
+                prop = prop_match.group(2)
+                base_col = None
+                if base in df.columns:
+                    base_col = base
+                elif f"{_CTX_PREFIX}{base}" in df.columns:
+                    base_col = f"{_CTX_PREFIX}{base}"
+                if base_col is not None:
+                    return df[base_col].map(lambda value: _temporal_property(value, prop))
             resolved = _resolve_expr_column_name(name, df)
             if resolved is None:
                 raise PlanExecutionError(f"unknown column in expression: {name}")
@@ -3213,7 +3621,35 @@ def _select_items_to_gfql(
         if _parse_agg(expr_for_eval) is not None:
             return None
         converted = _expr_to_gfql_value(expr_for_eval, frame)
-        if converted is None and not _is_explicit_null_expr(expr_for_eval):
+        folded_constant = False
+
+        # Strictly limited constant fold: only for 0/1-row frames where
+        # expression folding cannot introduce row-wise impurity.
+        if converted is None and len(frame) <= 1:
+            eval_frame = frame
+            if len(eval_frame) == 0 and len(eval_frame.columns) == 0:
+                eval_frame = pd.DataFrame(index=[0])
+            try:
+                folded_series = _eval_expr_series(eval_frame, expr_for_eval)
+            except Exception:
+                folded_series = None
+            if folded_series is not None:
+                if len(folded_series) == 0:
+                    converted = None
+                elif len(folded_series) == 1:
+                    folded_value = folded_series.iloc[0]
+                    if _is_null(folded_value):
+                        folded_value = None
+                    elif hasattr(folded_value, "item"):
+                        try:
+                            folded_value = folded_value.item()
+                        except Exception:
+                            pass
+                    if _is_json_compatible_literal(folded_value):
+                        converted = folded_value
+                        folded_constant = True
+
+        if converted is None and not _is_explicit_null_expr(expr_for_eval) and not folded_constant:
             return None
         if isinstance(converted, str) and converted not in frame.columns:
             expr_string = _expr_to_gfql_string(expr_for_eval, frame) if isinstance(expr_for_eval, Expr) else None
