@@ -128,7 +128,10 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
 
     expected_rows = scenario.expected.rows
     if len(expected_rows) == 0:
-        assert len(actual_rows) == 0
+        assert len(actual_rows) == 0, (
+            f"expected no rows but received {len(actual_rows)} rows for scenario {scenario.key}: "
+            f"{actual_rows}"
+        )
         return
 
     expected_keys = sorted({key for row in expected_rows for key in row.keys()})
@@ -136,13 +139,21 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
     actual_norm = _normalize_rows(actual_rows, expected_keys)
 
     if _rows_ordered(scenario.gfql or ()):
-        assert actual_norm == expected_norm
+        assert actual_norm == expected_norm, (
+            f"ordered row mismatch for scenario {scenario.key}; "
+            f"expected={expected_norm}, actual={actual_norm}"
+        )
         return
 
     def _row_key(row: Dict[str, Any]) -> str:
         return "|".join(f"{key}={row[key]!r}" for key in expected_keys)
 
-    assert sorted(_row_key(row) for row in actual_norm) == sorted(_row_key(row) for row in expected_norm)
+    actual_sorted = sorted(_row_key(row) for row in actual_norm)
+    expected_sorted = sorted(_row_key(row) for row in expected_norm)
+    assert actual_sorted == expected_sorted, (
+        f"unordered row mismatch for scenario {scenario.key}; "
+        f"expected={expected_sorted}, actual={actual_sorted}"
+    )
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:
