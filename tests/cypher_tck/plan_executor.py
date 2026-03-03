@@ -12,7 +12,17 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from graphistry.compute import e_forward, e_reverse, e_undirected, n
+from graphistry.compute import (
+    distinct as gfql_distinct,
+    e_forward,
+    e_reverse,
+    e_undirected,
+    limit as gfql_limit,
+    n,
+    order_by as gfql_order_by,
+    rows as gfql_rows,
+    skip as gfql_skip,
+)
 from tests.cypher_tck.gfql_plan import Expr, PlanStep
 from tests.cypher_tck.models import GraphFixture
 
@@ -1844,6 +1854,48 @@ def _cypher_sort_key(value: Any) -> Any:
     return (10, repr(value))
 
 
+def _frame_as_row_graph(graph: Any, frame: pd.DataFrame) -> Any:
+    return graph.bind().nodes(frame.copy())
+
+
+def _expr_to_gfql_value(expr: Any) -> Optional[Any]:
+    if isinstance(expr, Expr):
+        if expr.op == "col":
+            return str(expr.args.get("name"))
+        if expr.op == "lit":
+            return expr.args.get("value")
+        return None
+    if isinstance(expr, (str, int, float, bool)) or expr is None:
+        return expr
+    return None
+
+
+def _order_keys_to_gfql(
+    frame: pd.DataFrame,
+    keys: Sequence[Tuple[Any, Any]],
+    alias_exprs: Optional[Dict[str, str]],
+) -> Optional[List[Tuple[str, str]]]:
+    out: List[Tuple[str, str]] = []
+    for expr, direction in keys:
+        expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+        converted = _expr_to_gfql_value(expr_for_eval)
+        if not isinstance(converted, str):
+            return None
+        if converted not in frame.columns:
+            return None
+        series = frame[converted]
+        if len(series) > 0:
+            if series.map(_is_nan_scalar).astype(bool).any():
+                return None
+            if series.map(_is_null).astype(bool).any():
+                return None
+        direction_txt = str(direction).lower()
+        if direction_txt not in {"asc", "desc"}:
+            return None
+        out.append((converted, direction_txt))
+    return out
+
+
 def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
     global _ACTIVE_PARAM_VALUES
     _ACTIVE_PARAM_VALUES = dict(_DEFAULT_PARAM_VALUES)
@@ -1902,7 +1954,25 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
                     rows_df[source_str] = pd.Series(dtype=bool)
                 if source_str not in rows_df.columns:
                     raise PlanExecutionError(f"rows source alias not present in match output: {source_str}")
+            else:
+                source_str = None
+
+            delegated = False
+            if source_str is None or source_str in rows_df.columns:
+                try:
+                    if source_str is None:
+                        delegated_graph = state.match_result.gfql([gfql_rows(table=table)], engine="pandas")
+                    else:
+                        delegated_graph = state.match_result.gfql([gfql_rows(table=table, source=source_str)], engine="pandas")
+                    rows_df = _to_pandas(delegated_graph._nodes).copy()
+                    delegated = True
+                except Exception:
+                    delegated = False
+
+            if source_str is not None and not delegated:
                 rows_df = rows_df.loc[rows_df[source_str].astype(bool)].copy()
+
+            if source_str is not None:
                 rows_df = _drop_match_tag_columns(rows_df, fixture, table, source_str)
                 rows_df = _add_alias_columns(rows_df, source_str, fixture, table)
 
@@ -1917,17 +1987,29 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
 
         if op in {"select", "with"}:
             items = args.get("items", ())
-            state.frame = _projection(state.frame, list(items), state.group_keys)
+            items_list = list(items)
+            state.frame = _projection(state.frame, items_list, state.group_keys)
             state.group_keys = None
             alias_exprs = {}
-            for alias, expr in items:
+            for alias, expr in items_list:
                 if isinstance(expr, str):
                     alias_exprs[str(expr)] = str(alias)
             state.alias_exprs = alias_exprs
             continue
 
         if op == "distinct":
-            state.frame = _drop_duplicates_safe(state.frame)
+            delegated = False
+            try:
+                delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                    [gfql_distinct()],
+                    engine="pandas",
+                )
+                state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                delegated = True
+            except Exception:
+                delegated = False
+            if not delegated:
+                state.frame = _drop_duplicates_safe(state.frame)
             continue
 
         if op == "where":
@@ -1944,6 +2026,18 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
 
         if op == "order_by":
             keys = list(args.get("keys", ()))
+            delegated_keys = _order_keys_to_gfql(state.frame, keys, state.alias_exprs)
+            if delegated_keys is not None:
+                try:
+                    delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                        [gfql_order_by(delegated_keys)],
+                        engine="pandas",
+                    )
+                    state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                    continue
+                except Exception:
+                    pass
+
             sort_cols: List[str] = []
             ascending: List[bool] = []
             work = state.frame.copy()
@@ -1963,14 +2057,36 @@ def execute_plan(graph: Any, fixture: GraphFixture, steps: Sequence[PlanStep], p
             v = _eval_scalar_limit_skip(args.get("value"))
             if v < 0:
                 raise PlanExecutionError("negative SKIP is invalid")
-            state.frame = state.frame.iloc[v:].reset_index(drop=True)
+            delegated = False
+            try:
+                delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                    [gfql_skip(v)],
+                    engine="pandas",
+                )
+                state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                delegated = True
+            except Exception:
+                delegated = False
+            if not delegated:
+                state.frame = state.frame.iloc[v:].reset_index(drop=True)
             continue
 
         if op == "limit":
             v = _eval_scalar_limit_skip(args.get("value"))
             if v < 0:
                 raise PlanExecutionError("negative LIMIT is invalid")
-            state.frame = state.frame.iloc[:v].reset_index(drop=True)
+            delegated = False
+            try:
+                delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                    [gfql_limit(v)],
+                    engine="pandas",
+                )
+                state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                delegated = True
+            except Exception:
+                delegated = False
+            if not delegated:
+                state.frame = state.frame.iloc[:v].reset_index(drop=True)
             continue
 
         if op == "unwind":
