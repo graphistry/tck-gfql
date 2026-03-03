@@ -1838,8 +1838,10 @@ def _materialize_rows_from_match(
             delegated = False
 
     if source_str is not None and not delegated:
-        _mark_impure("rows_local_source_filter", strict_pure, impurity_reasons)
-        rows_df = rows_df.loc[rows_df[source_str].astype(bool)].copy()
+        # Empty delegated match outputs do not require local source filtering.
+        if len(rows_df) > 0:
+            _mark_impure("rows_local_source_filter", strict_pure, impurity_reasons)
+            rows_df = rows_df.loc[rows_df[source_str].astype(bool)].copy()
 
     if source_str is not None:
         rows_df = _drop_match_tag_columns(rows_df, state.fixture, table, source_str)
@@ -2647,6 +2649,13 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
         name = str(expr.args.get("name"))
         return _resolve_expr_column_name(name, frame)
 
+    if expr.op == "index":
+        base_token = _expr_token(expr.args.get("base"))
+        key_token = _expr_token(expr.args.get("key"))
+        if base_token is None or key_token is None:
+            return None
+        return f"{base_token}[{key_token}]"
+
     if expr.op == "unary":
         op = str(expr.args.get("op", "")).lower()
         value_token = _expr_token(expr.args.get("value"))
@@ -2774,6 +2783,20 @@ def _expr_to_gfql_value(expr: Any, frame: pd.DataFrame) -> Optional[Any]:
     return None
 
 
+def _is_explicit_null_expr(expr: Any) -> bool:
+    if expr is None:
+        return True
+    if isinstance(expr, str):
+        return expr.strip().lower() == "null"
+    if isinstance(expr, Expr):
+        if expr.op == "lit":
+            return expr.args.get("value") is None
+        if expr.op == "raw":
+            text = str(expr.args.get("text", "")).strip().lower()
+            return text == "null"
+    return False
+
+
 def _expr_to_column_name(expr: Any, frame: pd.DataFrame, alias_exprs: Optional[Dict[str, str]]) -> Optional[str]:
     expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
     converted = _expr_to_gfql_value(expr_for_eval, frame)
@@ -2884,6 +2907,75 @@ def _where_expr_to_filter_dict(
             return None
         return {col: predicate}
 
+    return None
+
+
+def _parse_constant_literal(token: str) -> Tuple[bool, Any]:
+    txt = token.strip()
+    if txt == "":
+        return False, None
+    low = txt.lower()
+    if low == "null":
+        return True, None
+    if low == "true":
+        return True, True
+    if low == "false":
+        return True, False
+    lit = _literal_expr(txt)
+    if lit is not None:
+        return True, lit
+    return False, None
+
+
+def _where_constant_boolean(expr: Any) -> Optional[bool]:
+    if isinstance(expr, Expr):
+        try:
+            value = _expr_literal_value(expr)
+        except Exception:
+            return None
+        if value is None:
+            return False
+        return bool(value)
+
+    if isinstance(expr, bool):
+        return expr
+    if expr is None:
+        return False
+
+    if not isinstance(expr, str):
+        return None
+
+    txt = expr.strip()
+    if txt == "":
+        return None
+    low = txt.lower()
+    if low == "true":
+        return True
+    if low in {"false", "null"}:
+        return False
+
+    m = re.fullmatch(r"(?s)\s*(.+?)\s*(<=|>=|<>|!=|=|<|>)\s*(.+?)\s*", txt)
+    if m is None:
+        return None
+    left_ok, left = _parse_constant_literal(m.group(1))
+    right_ok, right = _parse_constant_literal(m.group(3))
+    if not left_ok or not right_ok:
+        return None
+    if left is None or right is None:
+        return False
+    op = m.group(2)
+    if op == "=":
+        return left == right
+    if op in {"<>", "!="}:
+        return left != right
+    if op == "<":
+        return left < right
+    if op == "<=":
+        return left <= right
+    if op == ">":
+        return left > right
+    if op == ">=":
+        return left >= right
     return None
 
 
@@ -2999,7 +3091,7 @@ def _select_items_to_gfql(
         if _parse_agg(expr_for_eval) is not None:
             return None
         converted = _expr_to_gfql_value(expr_for_eval, frame)
-        if converted is None:
+        if converted is None and not _is_explicit_null_expr(expr_for_eval):
             return None
         if isinstance(converted, str) and converted not in frame.columns:
             expr_string = _expr_to_gfql_string(expr_for_eval, frame) if isinstance(expr_for_eval, Expr) else None
@@ -3113,7 +3205,8 @@ def execute_plan(
                         delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
                             [_select_call(op, delegated_items)]
                         )
-                        state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                        delegated_frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                        state.frame = _with_context(delegated_frame, source_frame)
                         delegated = True
                     except Exception:
                         delegated = False
@@ -3140,7 +3233,8 @@ def execute_plan(
                             projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
                                 [_select_call(op, post_items)]
                             )
-                            state.frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                            projected_frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                            state.frame = _with_context(projected_frame, grouped_frame)
                             delegated = True
                         except Exception:
                             delegated = False
@@ -3158,7 +3252,8 @@ def execute_plan(
                         projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
                             [_select_call(op, post_items)]
                         )
-                        state.frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                        projected_frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                        state.frame = _with_context(projected_frame, grouped_frame)
                         delegated = True
                     except Exception:
                         delegated = False
@@ -3196,6 +3291,13 @@ def execute_plan(
         if op == "where":
             expr = args.get("expr")
             delegated = False
+            constant_bool = _where_constant_boolean(expr)
+            if constant_bool is not None:
+                if not constant_bool:
+                    state.frame = state.frame.iloc[0:0].copy()
+                state.group_keys = None
+                state.alias_exprs = None
+                continue
             filter_dict = _where_expr_to_filter_dict(state.frame, expr, state.alias_exprs)
             if filter_dict is not None:
                 try:
