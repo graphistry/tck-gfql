@@ -60,6 +60,22 @@ def test_strict_pure_temporal_tostring_projection() -> None:
     _assert_strict_pure_key("expr-temporal6-7")
 
 
+def test_strict_pure_allows_empty_select_projection_plan() -> None:
+    _assert_strict_pure_key("return-orderby6-2")
+
+
+def test_strict_pure_allows_empty_with_projection_plan() -> None:
+    _assert_strict_pure_key("return6-18")
+
+
+def test_strict_pure_dynamic_subscript_unwind_plan() -> None:
+    _assert_strict_pure_key("return-orderby4-1")
+
+
+def test_strict_pure_missing_property_count_distinct_plan() -> None:
+    _assert_strict_pure_key("expr-aggregation8-2")
+
+
 class _FakeFrameWithToPandas:
     def __init__(self, pdf: pd.DataFrame):
         self._pdf = pdf

@@ -3453,6 +3453,59 @@ def _expr_to_column_name(expr: Any, frame: pd.DataFrame, alias_exprs: Optional[D
     return None
 
 
+def _expr_alias_property_parts(expr: Any) -> Optional[Tuple[str, str]]:
+    txt: Optional[str] = None
+    if isinstance(expr, Expr) and expr.op == "col":
+        txt = str(expr.args.get("name", "")).strip()
+    elif isinstance(expr, str):
+        txt = expr.strip()
+    if txt is None or txt == "":
+        return None
+    m = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)", txt)
+    if m is None:
+        return None
+    return m.group(1), m.group(2)
+
+
+def _ensure_missing_property_null_column(
+    frame: pd.DataFrame,
+    expr: Any,
+    null_cols: Dict[str, str],
+) -> Optional[str]:
+    parts = _expr_alias_property_parts(expr)
+    if parts is None:
+        return None
+    alias, prop = parts
+
+    alias_exists = (
+        _resolve_column_case_insensitive(alias, frame) is not None
+        or _resolve_column_case_insensitive(f"{_CTX_PREFIX}{alias}", frame) is not None
+    )
+    if not alias_exists:
+        return None
+
+    existing_prop = _resolve_column_case_insensitive(prop, frame)
+    if existing_prop is not None:
+        return existing_prop
+    existing_ctx_prop = _resolve_column_case_insensitive(f"{_CTX_PREFIX}{prop}", frame)
+    if existing_ctx_prop is not None:
+        return existing_ctx_prop
+
+    key = f"{alias}.{prop}"
+    cached = null_cols.get(key)
+    if cached is not None:
+        return cached
+
+    i = len(null_cols)
+    col = f"__gfql_missing_prop_{i}__"
+    while col in frame.columns:
+        i += 1
+        col = f"__gfql_missing_prop_{i}__"
+    frame[col] = pd.Series([None] * len(frame), index=frame.index, dtype="object")
+    null_cols[key] = col
+    return col
+
+
 _UNSUPPORTED_EXPR = object()
 
 
@@ -3658,9 +3711,15 @@ def _group_projection_to_gfql(
     alias_exprs: Optional[Dict[str, str]],
 ) -> Optional[Tuple[List[str], List[Tuple[Any, ...]], List[Tuple[str, Any]]]]:
     has_explicit_group_keys = len(group_keys) > 0
+    missing_property_null_cols: Dict[str, str] = {}
     key_cols: List[str] = []
     for key_expr in group_keys:
         col = _expr_to_column_name(key_expr, frame, alias_exprs)
+        if col is None:
+            expr_for_eval = _rewrite_with_projection_aliases(key_expr, alias_exprs)
+            col = _ensure_missing_property_null_column(
+                frame, expr_for_eval, missing_property_null_cols
+            )
         if col is None:
             return None
         if col not in key_cols:
@@ -3674,6 +3733,10 @@ def _group_projection_to_gfql(
         agg = _parse_agg(expr_for_eval)
         if agg is None:
             col = _expr_to_column_name(expr_for_eval, frame, alias_exprs)
+            if col is None:
+                col = _ensure_missing_property_null_column(
+                    frame, expr_for_eval, missing_property_null_cols
+                )
             if col is None:
                 return None
             if col not in key_cols:
@@ -3695,11 +3758,21 @@ def _group_projection_to_gfql(
         else:
             col = _expr_to_column_name(agg_arg, frame, alias_exprs)
             if col is None:
+                agg_for_eval = _rewrite_with_projection_aliases(agg_arg, alias_exprs)
+                col = _ensure_missing_property_null_column(
+                    frame, agg_for_eval, missing_property_null_cols
+                )
+            if col is None:
                 return None
             aggregations.append((alias, func_name, col))
         post_items.append((alias, alias))
 
     if not aggregations:
+        return None
+    if len(frame) == 0 and not has_explicit_group_keys:
+        # Cypher global aggregation over empty input should emit a single row
+        # (for example avg(...) -> null, count(...) -> 0). Delegate group_by
+        # cannot preserve that shape on empty input, so keep local projection.
         return None
     return key_cols, aggregations, post_items
 
@@ -4015,7 +4088,9 @@ def execute_plan(
                     except Exception:
                         delegated = False
             if not delegated:
-                if strict_pure:
+                # Empty input frames do not execute row-wise projection work and
+                # are safe to keep in strict-pure mode.
+                if strict_pure and len(state.frame) > 0:
                     _mark_impure(f"{op}_local_projection", strict_pure, impurity_reasons)
                 state.frame = _projection(state.frame, items_list, state.group_keys)
             state.group_keys = None
