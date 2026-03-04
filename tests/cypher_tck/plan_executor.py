@@ -14,7 +14,9 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from graphistry.compute import (
+    contains as pred_contains,
     eq as pred_eq,
+    endswith as pred_endswith,
     ge as pred_ge,
     distinct as gfql_distinct,
     e_forward,
@@ -23,6 +25,7 @@ from graphistry.compute import (
     group_by as gfql_group_by,
     gt as pred_gt,
     isna as pred_isna,
+    is_in as pred_is_in,
     limit as gfql_limit,
     le as pred_le,
     lt as pred_lt,
@@ -33,10 +36,12 @@ from graphistry.compute import (
     rows as gfql_rows,
     select as gfql_select,
     skip as gfql_skip,
+    startswith as pred_startswith,
     unwind as gfql_unwind,
     where_rows as gfql_where_rows,
     with_ as gfql_with,
 )
+from graphistry.compute.predicates.ASTPredicate import ASTPredicate
 from tests.cypher_tck.gfql_plan import Expr, PlanStep
 from tests.cypher_tck.models import GraphFixture
 
@@ -47,6 +52,18 @@ class PlanExecutionError(ValueError):
 
 class PlanPurityError(PlanExecutionError):
     pass
+
+
+class _AndPredicate(ASTPredicate):
+    def __init__(self, left: ASTPredicate, right: ASTPredicate) -> None:
+        self.left = left
+        self.right = right
+
+    def __call__(self, s: Any) -> Any:
+        return self.left(s) & self.right(s)
+
+    def _validate_fields(self) -> None:
+        return
 
 
 _AGG_RE = re.compile(r"(?is)^(count|sum|min|max|avg|collect)\((.*)\)$")
@@ -1975,8 +1992,10 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             raise PlanExecutionError(f"unsupported unary expression op: {op_name}")
         if expr.op == "binary":
             op_name = str(expr.args.get("op", "")).lower()
-            left_series = _eval_expr_series(df, expr.args.get("left"))
-            right_series = _eval_expr_series(df, expr.args.get("right"))
+            left_expr = expr.args.get("left")
+            right_expr = expr.args.get("right")
+            left_series = _eval_expr_series(df, left_expr)
+            right_series = _eval_expr_series(df, right_expr)
             if op_name == "add":
                 return left_series + right_series
             if op_name == "sub":
@@ -2011,6 +2030,45 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
                     right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
                 )
                 return left_mask | right_mask
+            if op_name == "xor":
+                left_mask = left_series.fillna(False).astype(bool) if hasattr(left_series, "fillna") else left_series
+                right_mask = (
+                    right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
+                )
+                return left_mask ^ right_mask
+            if op_name in {"in", "not_in"}:
+                right_lit = _UNSUPPORTED_EXPR
+                try:
+                    right_lit = _expr_literal_value(right_expr)
+                except Exception:
+                    right_lit = _UNSUPPORTED_EXPR
+                if isinstance(right_lit, (list, tuple, set)):
+                    out = left_series.isin(list(right_lit))
+                    if op_name == "not_in":
+                        out = ~out
+                    null_mask = left_series.isna() if hasattr(left_series, "isna") else pd.Series(False, index=df.index)
+                    return out.where(~null_mask, pd.NA)
+            if op_name in {"contains", "starts_with", "ends_with", "not_contains", "not_starts_with", "not_ends_with"}:
+                right_lit = _UNSUPPORTED_EXPR
+                try:
+                    right_lit = _expr_literal_value(right_expr)
+                except Exception:
+                    right_lit = _UNSUPPORTED_EXPR
+                if right_lit is _UNSUPPORTED_EXPR:
+                    raise PlanExecutionError(f"unsupported binary expression op: {op_name}")
+                left_txt = left_series.astype(str)
+                needle = str(right_lit)
+                if op_name in {"contains", "not_contains"}:
+                    out = left_txt.str.contains(needle, regex=False)
+                elif op_name in {"starts_with", "not_starts_with"}:
+                    out = left_txt.str.startswith(needle)
+                else:
+                    out = left_txt.str.endswith(needle)
+                if op_name in {"not_contains", "not_starts_with", "not_ends_with"}:
+                    out = ~out
+                left_null = left_series.isna() if hasattr(left_series, "isna") else pd.Series(False, index=df.index)
+                right_null = pd.Series([_is_null(right_lit)] * len(df), index=df.index)
+                return out.where(~(left_null | right_null), pd.NA)
             raise PlanExecutionError(f"unsupported binary expression op: {op_name}")
         if expr.op == "func":
             name = str(expr.args.get("name", ""))
@@ -3709,6 +3767,19 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
         right_token = _expr_token(expr.args.get("right"))
         if left_token is None or right_token is None:
             return None
+        if op == "xor":
+            return (
+                f"(({left_token}) AND NOT ({right_token})) OR "
+                f"(NOT ({left_token}) AND ({right_token}))"
+            )
+        if op == "not_in":
+            return f"NOT ({left_token} IN {right_token})"
+        if op == "not_contains":
+            return f"NOT ({left_token} CONTAINS {right_token})"
+        if op == "not_starts_with":
+            return f"NOT ({left_token} STARTS WITH {right_token})"
+        if op == "not_ends_with":
+            return f"NOT ({left_token} ENDS WITH {right_token})"
         op_map = {
             "add": "+",
             "sub": "-",
@@ -3723,6 +3794,10 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
             "gte": ">=",
             "and": "AND",
             "or": "OR",
+            "in": "IN",
+            "contains": "CONTAINS",
+            "starts_with": "STARTS WITH",
+            "ends_with": "ENDS WITH",
         }
         op_txt = op_map.get(op)
         if op_txt is None:
@@ -3942,6 +4017,11 @@ _UNSUPPORTED_EXPR = object()
 
 def _expr_to_literal_value(expr: Any, frame: pd.DataFrame, alias_exprs: Optional[Dict[str, str]]) -> Any:
     expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
+    if isinstance(expr_for_eval, Expr) and expr_for_eval.op == "lit":
+        try:
+            return _expr_literal_value(expr_for_eval)
+        except Exception:
+            return _UNSUPPORTED_EXPR
     converted = _expr_to_gfql_value(expr_for_eval, frame)
     if isinstance(converted, str) and converted in frame.columns:
         return _UNSUPPORTED_EXPR
@@ -4001,11 +4081,39 @@ def _where_expr_to_filter_dict(
             if left_dict is None or right_dict is None:
                 return None
             overlap = set(left_dict).intersection(right_dict)
-            if overlap:
-                return None
             merged: Dict[str, Any] = dict(left_dict)
-            merged.update(right_dict)
+            for col in overlap:
+                left_pred = left_dict[col]
+                right_pred = right_dict[col]
+                if not isinstance(left_pred, ASTPredicate) or not isinstance(right_pred, ASTPredicate):
+                    return None
+                merged[col] = _AndPredicate(left_pred, right_pred)
+            for col, pred in right_dict.items():
+                if col not in overlap:
+                    merged[col] = pred
             return merged
+
+        if op in {"contains", "starts_with", "ends_with"}:
+            left_col = _expr_to_column_name(left, frame, alias_exprs)
+            right_lit = _expr_to_literal_value(right, frame, alias_exprs)
+            if left_col is None or right_lit is _UNSUPPORTED_EXPR:
+                return None
+            if not isinstance(right_lit, str):
+                return None
+            if op == "contains":
+                return {left_col: pred_contains(right_lit, regex=False, na=None)}
+            if op == "starts_with":
+                return {left_col: pred_startswith(right_lit, na=None)}
+            return {left_col: pred_endswith(right_lit, na=None)}
+
+        if op == "in":
+            left_col = _expr_to_column_name(left, frame, alias_exprs)
+            right_lit = _expr_to_literal_value(right, frame, alias_exprs)
+            if left_col is None or right_lit is _UNSUPPORTED_EXPR:
+                return None
+            if not isinstance(right_lit, (list, tuple, set)):
+                return None
+            return {left_col: pred_is_in(list(right_lit))}
 
         comparable_ops = {"eq", "neq", "lt", "lte", "gt", "gte"}
         if op not in comparable_ops:
@@ -4654,6 +4762,21 @@ def execute_plan(
                 state.group_keys = None
                 state.alias_exprs = None
                 continue
+            if isinstance(expr, Expr) and expr.op == "binary":
+                op_name = str(expr.args.get("op", "")).lower()
+                if op_name in {"contains", "starts_with", "ends_with"}:
+                    try:
+                        right_lit = _expr_literal_value(expr.args.get("right"))
+                    except Exception:
+                        right_lit = _UNSUPPORTED_EXPR
+                    if right_lit is None:
+                        # String predicate with NULL RHS evaluates to NULL per-row,
+                        # and WHERE treats NULL as filtered-out.
+                        state.frame = state.frame.iloc[0:0].copy()
+                        state.group_keys = None
+                        state.alias_exprs = None
+                        state.last_projection_op = None
+                        continue
             filter_dict = _where_expr_to_filter_dict(state.frame, expr, state.alias_exprs)
             if filter_dict is not None:
                 try:
