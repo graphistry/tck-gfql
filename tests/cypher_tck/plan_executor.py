@@ -1057,6 +1057,25 @@ def _fn_substring(args: Sequence[Any]) -> Any:
     return text[start : start + size]
 
 
+def _sequence_fn_scalar(fn_name: str, value: Any) -> Any:
+    if _is_null(value):
+        return None
+    if fn_name == "reverse":
+        if isinstance(value, str):
+            return _strip_outer_quotes(value)[::-1]
+        if isinstance(value, (list, tuple)):
+            return list(reversed(value))
+    elif fn_name == "head":
+        if isinstance(value, (list, tuple, str)):
+            return value[0] if len(value) > 0 else None
+    elif fn_name == "tail":
+        if isinstance(value, str):
+            return value[1:]
+        if isinstance(value, (list, tuple)):
+            return list(value[1:])
+    raise PlanExecutionError(f"{fn_name}() expects list/string argument, got {type(value).__name__}")
+
+
 def _fn_temporal(name: str, args: Sequence[Any]) -> Any:
     if len(args) == 0:
         if name == "date":
@@ -1826,37 +1845,10 @@ def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
         if len(args) != 1:
             raise PlanExecutionError(f"sqrt() expects 1 argument, got {len(args)}")
         return math.sqrt(float(cast(float, args[0])))
-    if fn_lower == "reverse":
+    if fn_lower in {"reverse", "head", "tail"}:
         if len(args) != 1:
-            raise PlanExecutionError(f"reverse() expects 1 argument, got {len(args)}")
-        value = args[0]
-        if _is_null(value):
-            return None
-        if isinstance(value, str):
-            return _strip_outer_quotes(value)[::-1]
-        if isinstance(value, (list, tuple)):
-            return list(reversed(value))
-        raise PlanExecutionError(f"reverse() expects list/string argument, got {type(value).__name__}")
-    if fn_lower == "head":
-        if len(args) != 1:
-            raise PlanExecutionError(f"head() expects 1 argument, got {len(args)}")
-        value = args[0]
-        if _is_null(value):
-            return None
-        if isinstance(value, (list, tuple, str)):
-            return value[0] if len(value) > 0 else None
-        raise PlanExecutionError(f"head() expects list/string argument, got {type(value).__name__}")
-    if fn_lower == "tail":
-        if len(args) != 1:
-            raise PlanExecutionError(f"tail() expects 1 argument, got {len(args)}")
-        value = args[0]
-        if _is_null(value):
-            return None
-        if isinstance(value, str):
-            return value[1:]
-        if isinstance(value, (list, tuple)):
-            return list(value[1:])
-        raise PlanExecutionError(f"tail() expects list/string argument, got {type(value).__name__}")
+            raise PlanExecutionError(f"{fn_lower}() expects 1 argument, got {len(args)}")
+        return _sequence_fn_scalar(fn_lower, args[0])
     if fn_lower in {"nodes", "relationships"}:
         if len(args) != 1:
             raise PlanExecutionError(f"{name}() expects 1 argument, got {len(args)}")
