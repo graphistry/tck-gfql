@@ -51,7 +51,7 @@ class PlanPurityError(PlanExecutionError):
 
 _AGG_RE = re.compile(r"(?is)^(count|sum|min|max|avg|collect)\((.*)\)$")
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
-_KEYWORDS = {"AND", "OR", "NOT", "TRUE", "FALSE", "NULL"}
+_KEYWORDS = {"AND", "OR", "NOT", "TRUE", "FALSE", "NULL", "IN", "WHERE"}
 _QUANTIFIER_CALL_RE = re.compile(r"(?is)^(any|all|none|single)\s*\((.*)\)$")
 _FN_NAMES = {
     "count",
@@ -3362,6 +3362,26 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
             return None
         return f"{base_token}[{key_token}]"
 
+    if expr.op == "list":
+        item_values = tuple(expr.args.get("items", ()))
+        item_tokens: List[str] = []
+        for item in item_values:
+            token = _expr_token(item)
+            if token is None:
+                return None
+            item_tokens.append(token)
+        return f"[{', '.join(item_tokens)}]"
+
+    if expr.op == "map":
+        item_values = tuple(expr.args.get("items", ()))
+        map_tokens: List[str] = []
+        for key, value in item_values:
+            token = _expr_token(value)
+            if token is None:
+                return None
+            map_tokens.append(f"{str(key)}: {token}")
+        return "{" + ", ".join(map_tokens) + "}"
+
     if expr.op == "unary":
         op = str(expr.args.get("op", "")).lower()
         value_token = _expr_token(expr.args.get("value"))
@@ -3408,7 +3428,7 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
     if expr.op == "func":
         fn_name = str(expr.args.get("name", "")).strip()
         fn_lower = fn_name.lower()
-        if fn_lower not in {"toboolean", "tostring", "coalesce"}:
+        if fn_lower not in {"toboolean", "tostring", "coalesce", "size", "abs"}:
             return None
         arg_values = tuple(expr.args.get("args", ()))
         arg_tokens: List[str] = []
@@ -3468,7 +3488,7 @@ def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
         return None
 
     if re.search(
-        r"\b(?:AND|OR|NOT|IS\s+NULL|IS\s+NOT\s+NULL)\b|[\[\]()+\-*/%<>=:]",
+        r"\b(?:AND|OR|NOT|IS\s+NULL|IS\s+NOT\s+NULL)\b|[\[\]()+\-*/%<>=:|]",
         rewritten,
         flags=re.IGNORECASE,
     ):
