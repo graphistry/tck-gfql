@@ -76,6 +76,14 @@ def test_strict_pure_missing_property_count_distinct_plan() -> None:
     _assert_strict_pure_key("expr-aggregation8-2")
 
 
+def test_strict_pure_boolean_where_delegates_without_local_eval() -> None:
+    _assert_strict_pure_key("expr-boolean4-3")
+
+
+def test_strict_pure_quantifier_where_size_filter_delegates() -> None:
+    _assert_strict_pure_key("expr-quantifier9-1")
+
+
 class _FakeFrameWithToPandas:
     def __init__(self, pdf: pd.DataFrame):
         self._pdf = pdf
@@ -106,3 +114,33 @@ def test_non_strict_tracks_state_materialization_reason() -> None:
     )
     assert out.to_dict("records") == [{"x": 1}]
     assert reasons == ["select_delegate_materialize_to_pandas"]
+
+
+def test_strict_pure_expected_select_error_not_preempted_by_impurity() -> None:
+    scenario = _scenario("expr-list1-6-1")
+    assert scenario.gfql is not None
+    graph = _build_graph(scenario.graph)
+    with pytest.raises(Exception) as exc:
+        execute_plan(
+            graph,
+            scenario.graph,
+            scenario.gfql,
+            params=scenario.params,
+            strict_pure=True,
+        )
+    assert not isinstance(exc.value, PlanPurityError)
+
+
+def test_strict_pure_expected_where_error_not_preempted_by_impurity() -> None:
+    scenario = _scenario("expr-comparison1-17")
+    assert scenario.gfql is not None
+    graph = _build_graph(scenario.graph)
+    with pytest.raises(Exception) as exc:
+        execute_plan(
+            graph,
+            scenario.graph,
+            scenario.gfql,
+            params=scenario.params,
+            strict_pure=True,
+        )
+    assert not isinstance(exc.value, PlanPurityError)

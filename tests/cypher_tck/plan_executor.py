@@ -4005,7 +4005,7 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
         if op == "is_not_null":
             return f"{value_token} IS NOT NULL"
         if op == "not":
-            return f"NOT {value_token}"
+            return f"NOT ({value_token})"
         if op == "neg":
             return f"0 - {value_token}"
         if op == "pos":
@@ -4964,11 +4964,13 @@ def execute_plan(
                     except Exception:
                         delegated = False
             if not delegated:
-                # Empty input frames do not execute row-wise projection work and
-                # are safe to keep in strict-pure mode.
+                # Only mark local projection as impurity after successful execution.
+                # For expected-error scenarios, strict-pure should surface the actual
+                # compile/runtime error instead of an impurity preemption.
+                projected = _projection(state.frame, items_list, state.group_keys)
                 if strict_pure and len(state.frame) > 0:
                     _mark_impure(f"{op}_local_projection", strict_pure, impurity_reasons)
-                state.frame = _projection(state.frame, items_list, state.group_keys)
+                state.frame = projected
             state.group_keys = None
             alias_exprs = {}
             for alias, expr in items_list:
@@ -5045,13 +5047,32 @@ def execute_plan(
                 except Exception:
                     delegated = False
             if not delegated:
-                _mark_impure("where_local_eval", strict_pure, impurity_reasons)
+                expr_for_delegate = _rewrite_with_projection_aliases(expr, state.alias_exprs)
+                expr_string = _expr_to_gfql_string(expr_for_delegate, state.frame)
+                if expr_string is not None:
+                    try:
+                        delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                            [gfql_where_rows(expr=expr_string)],
+                        )
+                        state.frame = _to_pandas_for_state(
+                            delegated_graph._nodes,
+                            strict_pure,
+                            impurity_reasons,
+                            "where_delegate_materialize_to_pandas",
+                        ).reset_index(drop=True)
+                        delegated = True
+                    except Exception:
+                        delegated = False
+            if not delegated:
                 mask = _eval_expr_series(state.frame, expr)
                 if not isinstance(mask, pd.Series):
                     mask = pd.Series([bool(mask)] * len(state.frame), index=state.frame.index)
                 if mask.dtype != bool:
                     mask = mask.astype(bool)
-                state.frame = state.frame.loc[mask].reset_index(drop=True)
+                filtered = state.frame.loc[mask].reset_index(drop=True)
+                if strict_pure:
+                    _mark_impure("where_local_eval", strict_pure, impurity_reasons)
+                state.frame = filtered
             state.group_keys = None
             state.alias_exprs = None
             state.last_projection_op = None
