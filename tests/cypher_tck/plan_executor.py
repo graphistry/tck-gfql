@@ -166,6 +166,20 @@ def _to_pandas(df: Any) -> pd.DataFrame:
     return df
 
 
+def _to_pandas_for_state(
+    df: Any,
+    strict_pure: bool,
+    impurity_reasons: Optional[List[str]],
+    reason: str,
+) -> pd.DataFrame:
+    if df is None:
+        return pd.DataFrame()
+    if hasattr(df, "to_pandas"):
+        _mark_impure(reason, strict_pure, impurity_reasons)
+        return df.to_pandas()
+    return df
+
+
 def _resolve_param(name: str) -> Any:
     key = name.strip()
     if key.startswith("$"):
@@ -2229,9 +2243,19 @@ def _materialize_rows_from_match(
         raise PlanExecutionError("rows step requires a preceding executable match step")
 
     if table == "nodes":
-        rows_df = _to_pandas(state.match_result._nodes).copy()
+        rows_df = _to_pandas_for_state(
+            state.match_result._nodes,
+            strict_pure,
+            impurity_reasons,
+            "rows_materialize_to_pandas",
+        ).copy()
     elif table == "edges":
-        rows_df = _to_pandas(state.match_result._edges).copy()
+        rows_df = _to_pandas_for_state(
+            state.match_result._edges,
+            strict_pure,
+            impurity_reasons,
+            "rows_materialize_to_pandas",
+        ).copy()
     else:
         raise PlanExecutionError(f"unsupported rows table: {table}")
 
@@ -2249,7 +2273,12 @@ def _materialize_rows_from_match(
                 delegated_graph = state.match_result.gfql([gfql_rows(table=table)])
             else:
                 delegated_graph = state.match_result.gfql([gfql_rows(table=table, source=source_str)])
-            rows_df = _to_pandas(delegated_graph._nodes).copy()
+            rows_df = _to_pandas_for_state(
+                delegated_graph._nodes,
+                strict_pure,
+                impurity_reasons,
+                "rows_delegate_materialize_to_pandas",
+            ).copy()
             delegated = True
         except Exception:
             delegated = False
@@ -3908,7 +3937,12 @@ def execute_plan(
                         delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
                             [_select_call(op, delegated_items)]
                         )
-                        delegated_frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                        delegated_frame = _to_pandas_for_state(
+                            delegated_graph._nodes,
+                            strict_pure,
+                            impurity_reasons,
+                            f"{op}_delegate_materialize_to_pandas",
+                        ).reset_index(drop=True)
                         state.frame = _with_context(delegated_frame, source_frame)
                         delegated = True
                     except Exception:
@@ -3932,11 +3966,21 @@ def execute_plan(
                             grouped_graph = _frame_as_row_graph(state.graph, group_source).gfql(
                                 [gfql_group_by(key_cols, aggregations)]
                             )
-                            grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
+                            grouped_frame = _to_pandas_for_state(
+                                grouped_graph._nodes,
+                                strict_pure,
+                                impurity_reasons,
+                                "group_by_delegate_materialize_to_pandas",
+                            ).reset_index(drop=True)
                             projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
                                 [_select_call(op, post_items)]
                             )
-                            projected_frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                            projected_frame = _to_pandas_for_state(
+                                projected_graph._nodes,
+                                strict_pure,
+                                impurity_reasons,
+                                f"{op}_delegate_materialize_to_pandas",
+                            ).reset_index(drop=True)
                             state.frame = _with_context(projected_frame, grouped_frame)
                             delegated = True
                         except Exception:
@@ -3951,11 +3995,21 @@ def execute_plan(
                         grouped_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                             [gfql_group_by(key_cols, aggregations)]
                         )
-                        grouped_frame = _to_pandas(grouped_graph._nodes).reset_index(drop=True)
+                        grouped_frame = _to_pandas_for_state(
+                            grouped_graph._nodes,
+                            strict_pure,
+                            impurity_reasons,
+                            "group_by_delegate_materialize_to_pandas",
+                        ).reset_index(drop=True)
                         projected_graph = _frame_as_row_graph(state.graph, grouped_frame).gfql(
                             [_select_call(op, post_items)]
                         )
-                        projected_frame = _to_pandas(projected_graph._nodes).reset_index(drop=True)
+                        projected_frame = _to_pandas_for_state(
+                            projected_graph._nodes,
+                            strict_pure,
+                            impurity_reasons,
+                            f"{op}_delegate_materialize_to_pandas",
+                        ).reset_index(drop=True)
                         state.frame = _with_context(projected_frame, grouped_frame)
                         delegated = True
                     except Exception:
@@ -3982,7 +4036,12 @@ def execute_plan(
                 delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                     [gfql_distinct()],
                 )
-                state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                state.frame = _to_pandas_for_state(
+                    delegated_graph._nodes,
+                    strict_pure,
+                    impurity_reasons,
+                    "distinct_delegate_materialize_to_pandas",
+                ).reset_index(drop=True)
                 delegated = True
             except Exception:
                 delegated = False
@@ -4007,7 +4066,12 @@ def execute_plan(
                     delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                         [gfql_where_rows(filter_dict)],
                     )
-                    state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                    state.frame = _to_pandas_for_state(
+                        delegated_graph._nodes,
+                        strict_pure,
+                        impurity_reasons,
+                        "where_delegate_materialize_to_pandas",
+                    ).reset_index(drop=True)
                     delegated = True
                 except Exception:
                     delegated = False
@@ -4032,7 +4096,12 @@ def execute_plan(
                     delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                         [gfql_order_by(delegated_keys)],
                     )
-                    state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                    state.frame = _to_pandas_for_state(
+                        delegated_graph._nodes,
+                        strict_pure,
+                        impurity_reasons,
+                        "order_by_delegate_materialize_to_pandas",
+                    ).reset_index(drop=True)
                     continue
                 except Exception:
                     pass
@@ -4067,7 +4136,12 @@ def execute_plan(
                 delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                     [gfql_skip(v)],
                 )
-                state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                state.frame = _to_pandas_for_state(
+                    delegated_graph._nodes,
+                    strict_pure,
+                    impurity_reasons,
+                    "skip_delegate_materialize_to_pandas",
+                ).reset_index(drop=True)
                 delegated = True
             except Exception:
                 delegated = False
@@ -4085,7 +4159,12 @@ def execute_plan(
                 delegated_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
                     [gfql_limit(v)],
                 )
-                state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                state.frame = _to_pandas_for_state(
+                    delegated_graph._nodes,
+                    strict_pure,
+                    impurity_reasons,
+                    "limit_delegate_materialize_to_pandas",
+                ).reset_index(drop=True)
                 delegated = True
             except Exception:
                 delegated = False
@@ -4106,7 +4185,12 @@ def execute_plan(
                     delegated_graph = _frame_as_row_graph(state.graph, source_frame).gfql(
                         [gfql_unwind(converted_expr, as_name)],
                     )
-                    state.frame = _to_pandas(delegated_graph._nodes).reset_index(drop=True)
+                    state.frame = _to_pandas_for_state(
+                        delegated_graph._nodes,
+                        strict_pure,
+                        impurity_reasons,
+                        "unwind_delegate_materialize_to_pandas",
+                    ).reset_index(drop=True)
                     delegated = True
                 except Exception:
                     delegated = False

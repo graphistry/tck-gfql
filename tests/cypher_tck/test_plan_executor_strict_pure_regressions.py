@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from typing import List
 
-from tests.cypher_tck.plan_executor import execute_plan
+import pandas as pd
+import pytest
+
+from tests.cypher_tck.plan_executor import (
+    PlanPurityError,
+    _to_pandas_for_state,
+    execute_plan,
+)
 from tests.cypher_tck.scenarios import SCENARIOS
 from tests.cypher_tck.test_tck_runner import _assert_expected_rows, _build_graph
 
@@ -51,3 +58,35 @@ def test_strict_pure_map_index_projection() -> None:
 
 def test_strict_pure_temporal_tostring_projection() -> None:
     _assert_strict_pure_key("expr-temporal6-7")
+
+
+class _FakeFrameWithToPandas:
+    def __init__(self, pdf: pd.DataFrame):
+        self._pdf = pdf
+
+    def to_pandas(self) -> pd.DataFrame:
+        return self._pdf.copy()
+
+
+def test_strict_pure_rejects_state_materialization_to_pandas() -> None:
+    reasons: List[str] = []
+    with pytest.raises(PlanPurityError, match="delegate_materialize_to_pandas"):
+        _to_pandas_for_state(
+            _FakeFrameWithToPandas(pd.DataFrame({"x": [1]})),
+            strict_pure=True,
+            impurity_reasons=reasons,
+            reason="select_delegate_materialize_to_pandas",
+        )
+    assert reasons == ["select_delegate_materialize_to_pandas"]
+
+
+def test_non_strict_tracks_state_materialization_reason() -> None:
+    reasons: List[str] = []
+    out = _to_pandas_for_state(
+        _FakeFrameWithToPandas(pd.DataFrame({"x": [1]})),
+        strict_pure=False,
+        impurity_reasons=reasons,
+        reason="select_delegate_materialize_to_pandas",
+    )
+    assert out.to_dict("records") == [{"x": 1}]
+    assert reasons == ["select_delegate_materialize_to_pandas"]
