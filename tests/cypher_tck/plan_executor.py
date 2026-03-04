@@ -51,7 +51,21 @@ class PlanPurityError(PlanExecutionError):
 
 _AGG_RE = re.compile(r"(?is)^(count|sum|min|max|avg|collect)\((.*)\)$")
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
-_KEYWORDS = {"AND", "OR", "NOT", "TRUE", "FALSE", "NULL", "IN", "WHERE"}
+_KEYWORDS = {
+    "AND",
+    "OR",
+    "NOT",
+    "TRUE",
+    "FALSE",
+    "NULL",
+    "IN",
+    "WHERE",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+}
 _QUANTIFIER_CALL_RE = re.compile(r"(?is)^(any|all|none|single)\s*\((.*)\)$")
 _FN_NAMES = {
     "count",
@@ -85,11 +99,14 @@ _FN_NAMES = {
     "sqrt",
     "substring",
     "reverse",
+    "tail",
+    "sign",
     "toInteger",
     "ceil",
     "rand",
     "collect",
     "nodes",
+    "relationships",
     "length",
     "head",
     "any",
@@ -1100,7 +1117,7 @@ _TRUNC_DATE_UNITS = {
     "week",
     "day",
 }
-_TRUNC_TIME_UNITS = {"day", "hour", "minute", "second", "millisecond", "microsecond"}
+_TRUNC_TIME_UNITS = {"day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond"}
 _AVG_DAYS_PER_MONTH = 365.2425 / 12.0
 
 
@@ -1185,10 +1202,15 @@ def _canonical_localtime_for_truncate(value: Any) -> str:
     return _coerce_localtime_string(core_time)
 
 
-def _truncate_date_value(unit: str, base_date: str, mapping: Dict[str, Any]) -> str:
+def _truncate_date_value(
+    unit: str, base_date: str, mapping: Dict[str, Any], allow_time_units: bool = False
+) -> str:
     unit_lower = unit.lower()
     if unit_lower not in _TRUNC_DATE_UNITS:
-        raise PlanExecutionError(f"unsupported truncate unit for date: {unit}")
+        if allow_time_units and unit_lower in _TRUNC_TIME_UNITS:
+            unit_lower = "day"
+        else:
+            raise PlanExecutionError(f"unsupported truncate unit for date: {unit}")
 
     year, month, day = _parse_date_parts(base_date)
     d = dt.date(year, month, day)
@@ -1225,14 +1247,19 @@ def _truncate_date_value(unit: str, base_date: str, mapping: Dict[str, Any]) -> 
     return _format_date(out.year, out.month, out.day)
 
 
-def _truncate_localtime_value(unit: str, base_time: str, mapping: Dict[str, Any]) -> str:
+def _truncate_localtime_value(
+    unit: str, base_time: str, mapping: Dict[str, Any], allow_date_units: bool = False
+) -> str:
     unit_lower = unit.lower()
-    if unit_lower not in _TRUNC_TIME_UNITS:
+    if unit_lower not in _TRUNC_TIME_UNITS and not (allow_date_units and unit_lower in _TRUNC_DATE_UNITS):
         raise PlanExecutionError(f"unsupported truncate unit for time: {unit}")
 
     hour, minute, second, nanos, _, _ = _parse_time_literal(base_time)
 
-    if unit_lower == "day":
+    if allow_date_units and unit_lower in _TRUNC_DATE_UNITS:
+        hour = minute = second = 0
+        nanos = 0
+    elif unit_lower == "day":
         hour = minute = second = 0
         nanos = 0
     elif unit_lower == "hour":
@@ -1274,8 +1301,8 @@ def _truncate_temporal(unit: str, base: Any, mapping: Dict[str, Any], mode: str)
     if mode == "localdatetime":
         local_txt = _canonical_localdatetime_for_truncate(base)
         date_part, time_part = local_txt.split("T", 1)
-        trunc_date = _truncate_date_value(unit, date_part, mapping)
-        trunc_time = _truncate_localtime_value(unit, time_part, mapping)
+        trunc_date = _truncate_date_value(unit, date_part, mapping, allow_time_units=True)
+        trunc_time = _truncate_localtime_value(unit, time_part, mapping, allow_date_units=True)
         return f"{trunc_date}T{trunc_time}"
 
     if mode == "datetime":
@@ -1283,8 +1310,8 @@ def _truncate_temporal(unit: str, base: Any, mapping: Dict[str, Any], mode: str)
         body, zone_name = _split_zone_suffix(dt_txt)
         date_part, time_with_offset = body.split("T", 1)
         time_core, offset = _split_time_offset(time_with_offset)
-        trunc_date = _truncate_date_value(unit, date_part, mapping)
-        trunc_time = _truncate_localtime_value(unit, time_core, mapping)
+        trunc_date = _truncate_date_value(unit, date_part, mapping, allow_time_units=True)
+        trunc_time = _truncate_localtime_value(unit, time_core, mapping, allow_date_units=True)
         tz_value = timezone_override or (zone_name if zone_name is not None else (offset or "Z"))
         return _coerce_datetime_from_map({"date": trunc_date, "time": trunc_time, "timezone": tz_value})
 
@@ -1392,6 +1419,13 @@ def _duration_from_map(mapping: Dict[str, Any]) -> str:
                 parts.append(f"{seconds_out}S")
 
     return "".join(parts)
+
+
+def _coerce_duration_string(value: Any) -> str:
+    txt = _strip_outer_quotes(str(value)).strip()
+    if _DURATION_RE.fullmatch(txt) is None:
+        raise PlanExecutionError(f"unsupported duration literal: {value}")
+    return txt
 
 
 def _last_day_of_month(year: int, month: int) -> int:
@@ -1741,6 +1775,8 @@ def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
             return None
         if isinstance(args[0], dict):
             return _duration_from_map(cast(Dict[str, Any], args[0]))
+        if isinstance(args[0], str):
+            return _coerce_duration_string(args[0])
         raise PlanExecutionError(f"duration() expects a map argument, got {type(args[0]).__name__}")
     if fn_lower == "duration.between":
         if len(args) != 2:
@@ -1793,7 +1829,52 @@ def _call_expr_function(name: str, args: Sequence[Any]) -> Any:
     if fn_lower == "reverse":
         if len(args) != 1:
             raise PlanExecutionError(f"reverse() expects 1 argument, got {len(args)}")
-        return _strip_outer_quotes(str(args[0]))[::-1]
+        value = args[0]
+        if _is_null(value):
+            return None
+        if isinstance(value, str):
+            return _strip_outer_quotes(value)[::-1]
+        if isinstance(value, (list, tuple)):
+            return list(reversed(value))
+        raise PlanExecutionError(f"reverse() expects list/string argument, got {type(value).__name__}")
+    if fn_lower == "head":
+        if len(args) != 1:
+            raise PlanExecutionError(f"head() expects 1 argument, got {len(args)}")
+        value = args[0]
+        if _is_null(value):
+            return None
+        if isinstance(value, (list, tuple, str)):
+            return value[0] if len(value) > 0 else None
+        raise PlanExecutionError(f"head() expects list/string argument, got {type(value).__name__}")
+    if fn_lower == "tail":
+        if len(args) != 1:
+            raise PlanExecutionError(f"tail() expects 1 argument, got {len(args)}")
+        value = args[0]
+        if _is_null(value):
+            return None
+        if isinstance(value, str):
+            return value[1:]
+        if isinstance(value, (list, tuple)):
+            return list(value[1:])
+        raise PlanExecutionError(f"tail() expects list/string argument, got {type(value).__name__}")
+    if fn_lower in {"nodes", "relationships"}:
+        if len(args) != 1:
+            raise PlanExecutionError(f"{name}() expects 1 argument, got {len(args)}")
+        return args[0]
+    if fn_lower == "sign":
+        if len(args) != 1:
+            raise PlanExecutionError(f"sign() expects 1 argument, got {len(args)}")
+        value = args[0]
+        if _is_null(value):
+            return None
+        if isinstance(value, bool):
+            raise PlanExecutionError("sign() expects numeric argument, got bool")
+        num = float(cast(float, value))
+        if num > 0:
+            return 1
+        if num < 0:
+            return -1
+        return 0
     if fn_lower == "substring":
         return _fn_substring(args)
     if fn_lower in {"min", "max"}:
@@ -3659,7 +3740,20 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
     if expr.op == "func":
         fn_name = str(expr.args.get("name", "")).strip()
         fn_lower = fn_name.lower()
-        if fn_lower not in {"toboolean", "tostring", "coalesce", "size", "abs"}:
+        if fn_lower not in {
+            "toboolean",
+            "tostring",
+            "coalesce",
+            "size",
+            "abs",
+            "sign",
+            "head",
+            "tail",
+            "reverse",
+            "rand",
+            "nodes",
+            "relationships",
+        }:
             return None
         arg_values = tuple(expr.args.get("args", ()))
         arg_tokens: List[str] = []
@@ -3689,6 +3783,13 @@ def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
     txt = expr.strip()
     if txt == "":
         return None
+
+    for name in sorted(set(_PARAM_REF_RE.findall(txt)), key=len, reverse=True):
+        param_value = _resolve_param(name)
+        param_token = _gfql_token_from_value(param_value, frame)
+        if param_token is None:
+            return None
+        txt = re.sub(rf"\${re.escape(name)}\b", param_token, txt)
 
     if _parse_quantifier_expr_text(txt) is not None:
         return txt

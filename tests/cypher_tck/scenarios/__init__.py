@@ -164,6 +164,66 @@ def _split_top_level(expr: str) -> Tuple[str, ...]:
     return tuple(items)
 
 
+def _split_top_level_keyword(expr: str, keyword: str) -> Optional[Tuple[str, str]]:
+    txt = expr
+    upper = txt.upper()
+    needle = keyword.upper()
+    depth_paren = 0
+    depth_bracket = 0
+    depth_brace = 0
+    in_single = False
+    in_double = False
+    idx = 0
+    while idx < len(txt):
+        ch = txt[idx]
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            idx += 1
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            idx += 1
+            continue
+        if in_single or in_double:
+            idx += 1
+            continue
+        if ch == "(":
+            depth_paren += 1
+            idx += 1
+            continue
+        if ch == ")":
+            depth_paren = max(0, depth_paren - 1)
+            idx += 1
+            continue
+        if ch == "[":
+            depth_bracket += 1
+            idx += 1
+            continue
+        if ch == "]":
+            depth_bracket = max(0, depth_bracket - 1)
+            idx += 1
+            continue
+        if ch == "{":
+            depth_brace += 1
+            idx += 1
+            continue
+        if ch == "}":
+            depth_brace = max(0, depth_brace - 1)
+            idx += 1
+            continue
+        if depth_paren == 0 and depth_bracket == 0 and depth_brace == 0 and upper.startswith(needle, idx):
+            left_ok = idx == 0 or not (upper[idx - 1].isalnum() or upper[idx - 1] == "_")
+            right_idx = idx + len(needle)
+            right_ok = right_idx >= len(upper) or not (upper[right_idx].isalnum() or upper[right_idx] == "_")
+            if left_ok and right_ok:
+                left = txt[:idx].strip()
+                right = txt[right_idx:].strip()
+                if left and right:
+                    return left, right
+        idx += 1
+    return None
+
+
 def _strip_distinct(body: str) -> Tuple[bool, str]:
     if body.upper().startswith("DISTINCT "):
         return True, body[len("DISTINCT ") :].strip()
@@ -563,6 +623,10 @@ class _ExprParser:
 
 
 def _parse_expr(expr_text: str):
+    # Preserve Cypher slice syntax for downstream GFQL string delegation.
+    # The lightweight parser tokenizes `1..3` as numeric/index fragments.
+    if re.search(r"\[[^\]]*\.\.[^\]]*\]", expr_text):
+        return raw(expr_text)
     try:
         tokens = _tokenize(expr_text)
         parser = _ExprParser(tokens)
@@ -626,9 +690,14 @@ def _plan_from_cypher(cypher: str) -> Tuple:
             steps.append(step("unwind", **payload))
         elif clause == "WITH":
             distinct_flag, content = _strip_distinct(body)
-            steps.append(step("with", items=_parse_return_items(content)))
+            where_split = _split_top_level_keyword(content, "WHERE")
+            with_items_text = where_split[0] if where_split is not None else content
+            where_text = where_split[1] if where_split is not None else None
+            steps.append(step("with", items=_parse_return_items(with_items_text)))
             if distinct_flag:
                 steps.append(distinct())
+            if where_text is not None:
+                steps.append(step("where", expr=_parse_expr(where_text)))
         elif clause == "RETURN":
             distinct_flag, content = _strip_distinct(body)
             steps.append(select(_parse_return_items(content)))
