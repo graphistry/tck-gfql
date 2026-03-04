@@ -71,3 +71,35 @@ def test_with_order_by_can_use_pre_projection_scope_variable() -> None:
 
 def test_with_order_by_can_use_previous_with_alias_before_projection() -> None:
     _assert_plan_executes("with-orderby4-8")
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "return6-15",
+        "return6-20",
+        "expr-list12-7",
+        "expr-list5-42-4",
+        "expr-list5-42-5",
+        "expr-literals2-9",
+        "expr-literals2-10",
+        "expr-literals2-12",
+        "expr-literals3-16",
+        "expr-literals3-17",
+        "expr-literals4-9",
+        "expr-literals4-10",
+        "expr-literals5-27",
+        "expr-literals6-13",
+        "expr-literals7-19",
+        "expr-literals7-21",
+        "expr-literals8-21",
+        "expr-literals8-23",
+        "expr-literals8-24",
+    ],
+)
+def test_compile_time_validator_closure_for_aggregation_and_literal_errors(key: str) -> None:
+    _assert_plan_raises(key)
+
+
+def test_in_operator_with_list_literal_remains_valid() -> None:
+    _assert_plan_executes("expr-list5-5")

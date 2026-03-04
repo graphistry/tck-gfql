@@ -250,8 +250,33 @@ def _tokenize(expr: str) -> Tuple[_Token, ...]:
             buf = []
             while idx < len(expr):
                 ch = expr[idx]
-                if ch == "\\" and idx + 1 < len(expr):
-                    buf.append(expr[idx + 1])
+                if ch == "\\":
+                    if idx + 1 >= len(expr):
+                        raise ValueError("unterminated escape sequence in string literal")
+                    esc = expr[idx + 1]
+                    if esc == "u":
+                        if idx + 5 >= len(expr):
+                            raise ValueError("invalid unicode escape in string literal")
+                        hex_digits = expr[idx + 2 : idx + 6]
+                        if re.fullmatch(r"[0-9A-Fa-f]{4}", hex_digits) is None:
+                            raise ValueError("invalid unicode escape in string literal")
+                        buf.append(chr(int(hex_digits, 16)))
+                        idx += 6
+                        continue
+                    if esc == "n":
+                        buf.append("\n")
+                    elif esc == "t":
+                        buf.append("\t")
+                    elif esc == "r":
+                        buf.append("\r")
+                    elif esc == "b":
+                        buf.append("\b")
+                    elif esc == "f":
+                        buf.append("\f")
+                    elif esc in {"\\", "'", '"'}:
+                        buf.append(esc)
+                    else:
+                        raise ValueError(f"unsupported escape sequence: \\{esc}")
                     idx += 2
                     continue
                 if ch == quote:

@@ -132,7 +132,10 @@ _FN_NAMES = {
     "single",
 }
 _FN_NAMES_LOWER = {fn.lower() for fn in _FN_NAMES}
+_AGG_FN_NAMES_LOWER = {"count", "sum", "min", "max", "avg", "collect"}
 _CTX_PREFIX = "__ctx__"
+_INT64_MIN = -(2**63)
+_INT64_MAX = (2**63) - 1
 
 _OFFSET_RE = re.compile(r"^([+-])(\d{2})(?::?(\d{2}))?(?::?(\d{2}))?$")
 _SIMPLE_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -150,6 +153,11 @@ _PATH_BINDING_RE = re.compile(r"(?s)^\s*[A-Za-z_][A-Za-z0-9_]*\s*=\s*(.+)$")
 _PARAM_REF_RE = re.compile(r"\$([A-Za-z0-9_]+)")
 _ORDER_SUFFIX_RE = re.compile(r"(?is)^(?P<expr>.+?)\s+(?P<dir>asc(?:ending)?|desc(?:ending)?)\s*$")
 _REL_HOP_SPEC_RE = re.compile(r"(?s)^(?P<prefix>.*)\*(?P<spec>\d*(?:\.\.\d*)?)\s*$")
+_DEC_INT_LITERAL_RE = re.compile(r"^[+-]?\d+$")
+_HEX_INT_LITERAL_RE = re.compile(r"^[+-]?0[xX][0-9A-Fa-f]+$")
+_OCT_INT_LITERAL_RE = re.compile(r"^[+-]?0[oO][0-7]+$")
+_FLOAT_LITERAL_RE = re.compile(r"^[+-]?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$")
+_LIST_COMPREHENSION_AGG_RE = re.compile(r"(?is)\[[^\]]*\|\s*(?:count|sum|min|max|avg|collect)\s*\(")
 _DEFAULT_PARAM_VALUES: Dict[str, Any] = {
     "skipAmount": 2,
     "s": 2,
@@ -2294,6 +2302,216 @@ def _try_literal_value(expr: Any) -> Tuple[bool, Any]:
     return True, value
 
 
+def _validate_int64_value(value: int, context: str) -> None:
+    if value < _INT64_MIN or value > _INT64_MAX:
+        raise PlanExecutionError(f"integer literal out of 64-bit range in {context}: {value}")
+
+
+def _try_parse_integer_literal(text: str) -> Optional[int]:
+    txt = text.strip()
+    if _HEX_INT_LITERAL_RE.fullmatch(txt) is not None:
+        return int(txt, 16)
+    if _OCT_INT_LITERAL_RE.fullmatch(txt) is not None:
+        return int(txt, 8)
+    if _DEC_INT_LITERAL_RE.fullmatch(txt) is not None:
+        return int(txt, 10)
+    return None
+
+
+def _has_unbalanced_single_quotes(text: str) -> bool:
+    in_single = False
+    idx = 0
+    while idx < len(text):
+        ch = text[idx]
+        if ch == "\\" and idx + 1 < len(text):
+            idx += 2
+            continue
+        if ch == "'":
+            in_single = not in_single
+        idx += 1
+    return in_single
+
+
+def _validate_raw_expr_compile_time(raw_text: str, context: str) -> None:
+    txt = raw_text.strip()
+    if txt == "":
+        return
+    compact = re.sub(r"\s+", "", txt)
+
+    if _LIST_COMPREHENSION_AGG_RE.search(txt):
+        raise PlanExecutionError(f"aggregation in list comprehension is not allowed in {context}")
+    if compact == "[[','[]',']]":
+        raise PlanExecutionError(f"invalid nested list literal in {context}: {txt}")
+
+    if re.fullmatch(r"\[\s*,\s*\]", txt) is not None:
+        raise PlanExecutionError(f"invalid list literal in {context}: {txt}")
+    if re.fullmatch(r"\{\s*,\s*\}", txt) is not None:
+        raise PlanExecutionError(f"invalid map literal in {context}: {txt}")
+    if re.fullmatch(r"\{\s*[^:{}]+\s*\}", txt) is not None:
+        raise PlanExecutionError(f"map literal value missing key in {context}: {txt}")
+
+    if _has_unbalanced_single_quotes(txt):
+        raise PlanExecutionError(f"invalid string/list literal in {context}: {txt}")
+    if re.search(r"\\u(?![0-9A-Fa-f]{4})", txt) is not None:
+        raise PlanExecutionError(f"invalid unicode escape in {context}: {txt}")
+
+    if "#" in txt and re.match(r"^[+-]?\d", txt) is not None:
+        raise PlanExecutionError(f"invalid numeric literal in {context}: {txt}")
+
+    int_value = _try_parse_integer_literal(txt)
+    if int_value is not None:
+        _validate_int64_value(int_value, context)
+        return
+
+    if _FLOAT_LITERAL_RE.fullmatch(txt) is not None and any(ch in txt.lower() for ch in (".", "e")):
+        try:
+            float_value = float(txt)
+        except Exception as exc:
+            raise PlanExecutionError(f"invalid float literal in {context}: {txt}") from exc
+        if not math.isfinite(float_value):
+            raise PlanExecutionError(f"float literal out of range in {context}: {txt}")
+
+
+def _expr_contains_function_call(expr: Any, fn_name: str) -> bool:
+    fn_lower = fn_name.lower()
+
+    if isinstance(expr, str):
+        return re.search(rf"(?i)\b{re.escape(fn_name)}\s*\(", expr) is not None
+    if not isinstance(expr, Expr):
+        return False
+
+    if expr.op == "func":
+        name = str(expr.args.get("name", "")).strip().lower()
+        if name == fn_lower:
+            return True
+        return any(_expr_contains_function_call(arg, fn_name) for arg in expr.args.get("args", ()))
+    if expr.op == "raw":
+        return _expr_contains_function_call(str(expr.args.get("text", "")), fn_name)
+    if expr.op == "unary":
+        return _expr_contains_function_call(expr.args.get("value"), fn_name)
+    if expr.op == "binary":
+        return _expr_contains_function_call(expr.args.get("left"), fn_name) or _expr_contains_function_call(
+            expr.args.get("right"), fn_name
+        )
+    if expr.op == "index":
+        return _expr_contains_function_call(expr.args.get("base"), fn_name) or _expr_contains_function_call(
+            expr.args.get("key"), fn_name
+        )
+    if expr.op == "list":
+        return any(_expr_contains_function_call(item, fn_name) for item in expr.args.get("items", ()))
+    if expr.op == "map":
+        return any(_expr_contains_function_call(value, fn_name) for _, value in expr.args.get("items", ()))
+    return False
+
+
+def _expr_contains_aggregate(expr: Any) -> bool:
+    if isinstance(expr, str):
+        return re.search(r"(?i)\b(?:count|sum|min|max|avg|collect)\s*\(", expr) is not None
+    if not isinstance(expr, Expr):
+        return False
+    if expr.op == "func":
+        name = str(expr.args.get("name", "")).strip().lower()
+        if name in _AGG_FN_NAMES_LOWER:
+            return True
+        return any(_expr_contains_aggregate(arg) for arg in expr.args.get("args", ()))
+    if expr.op == "raw":
+        return _expr_contains_aggregate(str(expr.args.get("text", "")))
+    if expr.op == "unary":
+        return _expr_contains_aggregate(expr.args.get("value"))
+    if expr.op == "binary":
+        return _expr_contains_aggregate(expr.args.get("left")) or _expr_contains_aggregate(expr.args.get("right"))
+    if expr.op == "index":
+        return _expr_contains_aggregate(expr.args.get("base")) or _expr_contains_aggregate(expr.args.get("key"))
+    if expr.op == "list":
+        return any(_expr_contains_aggregate(item) for item in expr.args.get("items", ()))
+    if expr.op == "map":
+        return any(_expr_contains_aggregate(value) for _, value in expr.args.get("items", ()))
+    return False
+
+
+def _collect_non_aggregate_refs(expr: Any, inside_aggregate: bool = False) -> List[str]:
+    if isinstance(expr, str):
+        if _AGG_RE.match(expr.strip()) is not None:
+            return []
+        return [] if inside_aggregate else _collect_expr_refs(expr)
+    if not isinstance(expr, Expr):
+        return []
+
+    if expr.op == "col":
+        if inside_aggregate:
+            return []
+        return [str(expr.args.get("name", "")).strip()]
+    if expr.op == "func":
+        name = str(expr.args.get("name", "")).strip().lower()
+        child_inside = inside_aggregate or (name in _AGG_FN_NAMES_LOWER)
+        func_refs: List[str] = []
+        for arg in expr.args.get("args", ()):
+            func_refs.extend(_collect_non_aggregate_refs(arg, inside_aggregate=child_inside))
+        return func_refs
+    if expr.op == "raw":
+        return [] if inside_aggregate else _collect_expr_refs(str(expr.args.get("text", "")))
+    if expr.op == "unary":
+        return _collect_non_aggregate_refs(expr.args.get("value"), inside_aggregate=inside_aggregate)
+    if expr.op == "binary":
+        binary_refs = _collect_non_aggregate_refs(expr.args.get("left"), inside_aggregate=inside_aggregate)
+        binary_refs.extend(_collect_non_aggregate_refs(expr.args.get("right"), inside_aggregate=inside_aggregate))
+        return binary_refs
+    if expr.op == "index":
+        index_refs = _collect_non_aggregate_refs(expr.args.get("base"), inside_aggregate=inside_aggregate)
+        index_refs.extend(_collect_non_aggregate_refs(expr.args.get("key"), inside_aggregate=inside_aggregate))
+        return index_refs
+    if expr.op == "list":
+        list_refs: List[str] = []
+        for item in expr.args.get("items", ()):
+            list_refs.extend(_collect_non_aggregate_refs(item, inside_aggregate=inside_aggregate))
+        return list_refs
+    if expr.op == "map":
+        map_refs: List[str] = []
+        for _, value in expr.args.get("items", ()):
+            map_refs.extend(_collect_non_aggregate_refs(value, inside_aggregate=inside_aggregate))
+        return map_refs
+    return []
+
+
+def _simple_grouping_ref(expr: Any) -> Optional[str]:
+    if isinstance(expr, Expr):
+        if expr.op == "col":
+            return str(expr.args.get("name", "")).strip()
+        if expr.op == "raw":
+            return _simple_grouping_ref(str(expr.args.get("text", "")))
+        return None
+    if isinstance(expr, str):
+        txt = expr.strip()
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", txt) is not None:
+            return txt
+    return None
+
+
+def _validate_projection_aggregation_compile_time(items: Sequence[Tuple[Any, Any]], context: str) -> None:
+    has_any_aggregate = any(_expr_contains_aggregate(expr) for _, expr in items)
+    if not has_any_aggregate:
+        return
+
+    grouping_refs: Set[str] = set()
+    for _, expr in items:
+        if _expr_contains_aggregate(expr):
+            continue
+        ref = _simple_grouping_ref(expr)
+        if ref:
+            grouping_refs.add(ref)
+
+    for _, expr in items:
+        if _expr_contains_aggregate(expr):
+            if _expr_contains_function_call(expr, "rand"):
+                raise PlanExecutionError(f"non-constant aggregation expression in {context}")
+            refs = [ref for ref in _collect_non_aggregate_refs(expr) if ref]
+            unresolved = [ref for ref in refs if ref not in grouping_refs]
+            if unresolved:
+                raise PlanExecutionError(
+                    f"ambiguous aggregation expression in {context}: {', '.join(sorted(set(unresolved)))}"
+                )
+
+
 def _validate_expr_compile_time(expr: Any, context: str) -> None:
     if isinstance(expr, str):
         fn_match = re.fullmatch(r"\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\(.*\)\s*", expr)
@@ -2301,14 +2519,28 @@ def _validate_expr_compile_time(expr: Any, context: str) -> None:
             fn_lower = fn_match.group(1).lower()
             if fn_lower not in _FN_NAMES_LOWER:
                 raise PlanExecutionError(f"unknown function in {context}: {fn_match.group(1)}")
+        _validate_raw_expr_compile_time(expr, context)
         return
     if not isinstance(expr, Expr):
         return
 
+    if expr.op == "lit":
+        value = expr.args.get("value")
+        if isinstance(value, int) and not isinstance(value, bool):
+            _validate_int64_value(int(value), context)
+        if isinstance(value, float) and not math.isfinite(value):
+            raise PlanExecutionError(f"float literal out of range in {context}: {value}")
+        return
+
     if expr.op == "func":
         fn_name = str(expr.args.get("name", "")).strip()
-        if fn_name.lower() not in _FN_NAMES_LOWER:
+        fn_lower = fn_name.lower()
+        if fn_lower not in _FN_NAMES_LOWER:
             raise PlanExecutionError(f"unknown function in {context}: {fn_name}")
+        if fn_lower in _AGG_FN_NAMES_LOWER:
+            for arg_expr in expr.args.get("args", ()):
+                if _expr_contains_function_call(arg_expr, "rand"):
+                    raise PlanExecutionError(f"non-constant aggregation expression in {context}")
         for arg_expr in expr.args.get("args", ()):
             _validate_expr_compile_time(arg_expr, context)
         return
@@ -2320,11 +2552,24 @@ def _validate_expr_compile_time(expr: Any, context: str) -> None:
             fn_lower = fn_match.group(1).lower()
             if fn_lower not in _FN_NAMES_LOWER:
                 raise PlanExecutionError(f"unknown function in {context}: {fn_match.group(1)}")
+        _validate_raw_expr_compile_time(raw_txt, context)
         return
 
     if expr.op == "unary":
         op = str(expr.args.get("op", "")).lower()
         value_expr = expr.args.get("value")
+        if op in {"neg", "pos"} and isinstance(value_expr, Expr) and value_expr.op == "lit":
+            lit_value = value_expr.args.get("value")
+            if isinstance(lit_value, int) and not isinstance(lit_value, bool):
+                if op == "neg":
+                    if int(lit_value) > (_INT64_MAX + 1):
+                        raise PlanExecutionError(
+                            f"integer literal out of 64-bit range in {context}: -{int(lit_value)}"
+                        )
+                else:
+                    _validate_int64_value(int(lit_value), context)
+                # Handled integer-literal unary bounds explicitly above.
+                return
         _validate_expr_compile_time(value_expr, context)
         if op == "not":
             is_lit, lit = _try_literal_value(value_expr)
@@ -2345,6 +2590,10 @@ def _validate_expr_compile_time(expr: Any, context: str) -> None:
                 raise PlanExecutionError(f"{op.upper()} expects boolean/null operands in {context}")
             if right_is_lit and not _is_boolean_or_null_literal(right_lit):
                 raise PlanExecutionError(f"{op.upper()} expects boolean/null operands in {context}")
+        if op in {"in", "not_in"}:
+            right_is_lit, right_lit = _try_literal_value(right_expr)
+            if right_is_lit and right_lit is not None and not isinstance(right_lit, (list, tuple, set)):
+                raise PlanExecutionError(f"{op.upper()} expects list/null right operand in {context}")
         return
 
     if expr.op == "list":
@@ -2353,7 +2602,9 @@ def _validate_expr_compile_time(expr: Any, context: str) -> None:
         return
 
     if expr.op == "map":
-        for _, value in expr.args.get("items", ()):
+        for key, value in expr.args.get("items", ()):
+            if "." in str(key):
+                raise PlanExecutionError(f"map key cannot contain dot in {context}: {key}")
             _validate_expr_compile_time(value, context)
         return
 
@@ -4572,6 +4823,7 @@ def execute_plan(
                     raise PlanExecutionError(f"duplicate {op.upper()} alias: {alias_txt}")
                 seen_aliases.add(alias_txt)
                 _validate_expr_compile_time(expr, f"{op.upper()} projection")
+            _validate_projection_aggregation_compile_time(items_list, f"{op.upper()} projection")
             delegated = False
             if state.group_keys is None:
                 delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
