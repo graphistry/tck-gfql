@@ -105,6 +105,7 @@ def _tag_scenario(scenario: Scenario) -> Scenario:
 _CLAUSE_RE = re.compile(
     r"(?im)^\s*(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\b"
 )
+_ORDER_DIR_RE = re.compile(r"(?is)^(?P<expr>.+?)\s+(?P<dir>asc(?:ending)?|desc(?:ending)?)$")
 
 
 def _split_clauses(cypher: str) -> Tuple[Tuple[str, str], ...]:
@@ -587,10 +588,11 @@ def _parse_return_items(body: str) -> Tuple[Tuple[str, object], ...]:
 def _parse_order_by(body: str) -> Tuple[Tuple[object, str], ...]:
     items = []
     for item in _split_top_level(body):
-        match = re.match(r"(?is)(.+?)\s+(ASC|DESC)$", item.strip())
+        match = _ORDER_DIR_RE.match(item.strip())
         if match:
-            expr_text = match.group(1).strip()
-            direction = match.group(2).lower()
+            expr_text = match.group("expr").strip()
+            direction_raw = match.group("dir").strip().lower()
+            direction = "asc" if direction_raw in {"asc", "ascending"} else "desc"
         else:
             expr_text = item.strip()
             direction = "asc"

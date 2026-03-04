@@ -1881,6 +1881,62 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             if resolved is None:
                 raise PlanExecutionError(f"unknown column in expression: {name}")
             return df[resolved]
+        if expr.op == "unary":
+            op_name = str(expr.args.get("op", "")).lower()
+            value_series = _eval_expr_series(df, expr.args.get("value"))
+            if op_name == "is_null":
+                return value_series.isna()
+            if op_name == "is_not_null":
+                return ~value_series.isna()
+            if op_name == "not":
+                out = value_series
+                if hasattr(out, "fillna"):
+                    out = out.fillna(False)
+                return out.astype(bool).map(lambda v: not bool(v))
+            if op_name == "neg":
+                return 0 - value_series
+            if op_name == "pos":
+                return value_series
+            raise PlanExecutionError(f"unsupported unary expression op: {op_name}")
+        if expr.op == "binary":
+            op_name = str(expr.args.get("op", "")).lower()
+            left_series = _eval_expr_series(df, expr.args.get("left"))
+            right_series = _eval_expr_series(df, expr.args.get("right"))
+            if op_name == "add":
+                return left_series + right_series
+            if op_name == "sub":
+                return left_series - right_series
+            if op_name == "mul":
+                return left_series * right_series
+            if op_name == "div":
+                return left_series / right_series
+            if op_name == "mod":
+                return left_series % right_series
+            if op_name == "eq":
+                return left_series == right_series
+            if op_name == "neq":
+                return left_series != right_series
+            if op_name == "lt":
+                return left_series < right_series
+            if op_name == "lte":
+                return left_series <= right_series
+            if op_name == "gt":
+                return left_series > right_series
+            if op_name == "gte":
+                return left_series >= right_series
+            if op_name == "and":
+                left_mask = left_series.fillna(False).astype(bool) if hasattr(left_series, "fillna") else left_series
+                right_mask = (
+                    right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
+                )
+                return left_mask & right_mask
+            if op_name == "or":
+                left_mask = left_series.fillna(False).astype(bool) if hasattr(left_series, "fillna") else left_series
+                right_mask = (
+                    right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
+                )
+                return left_mask | right_mask
+            raise PlanExecutionError(f"unsupported binary expression op: {op_name}")
         if expr.op == "func":
             name = str(expr.args.get("name", ""))
             arg_exprs = tuple(expr.args.get("args", ()))
