@@ -97,6 +97,7 @@ _FN_NAMES = {
     "none",
     "single",
 }
+_FN_NAMES_LOWER = {fn.lower() for fn in _FN_NAMES}
 _CTX_PREFIX = "__ctx__"
 
 _OFFSET_RE = re.compile(r"^([+-])(\d{2})(?::?(\d{2}))?(?::?(\d{2}))?$")
@@ -141,6 +142,7 @@ class PlanState:
     alias_exprs: Optional[Dict[str, str]] = None
     match_node_aliases: List[str] = field(default_factory=list)
     match_edge_aliases: List[str] = field(default_factory=list)
+    last_projection_op: Optional[str] = None
 
 
 @dataclass
@@ -2138,6 +2140,189 @@ def _eval_scalar_limit_skip(value: Any) -> int:
     return int(result)
 
 
+def _is_boolean_or_null_literal(value: Any) -> bool:
+    return value is None or isinstance(value, bool)
+
+
+def _try_literal_value(expr: Any) -> Tuple[bool, Any]:
+    if isinstance(expr, str):
+        lit = _literal_expr(expr.strip())
+        if lit is None and expr.strip().lower() != "null":
+            return False, None
+        return True, lit
+    if not isinstance(expr, Expr):
+        return True, expr
+    try:
+        value = _expr_literal_value(expr)
+    except Exception:
+        return False, None
+    if expr.op == "raw":
+        raw_txt = str(expr.args.get("text", "")).strip()
+        if isinstance(value, str) and value == raw_txt:
+            return False, None
+    return True, value
+
+
+def _validate_expr_compile_time(expr: Any, context: str) -> None:
+    if isinstance(expr, str):
+        fn_match = re.fullmatch(r"\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\(.*\)\s*", expr)
+        if fn_match is not None:
+            fn_lower = fn_match.group(1).lower()
+            if fn_lower not in _FN_NAMES_LOWER:
+                raise PlanExecutionError(f"unknown function in {context}: {fn_match.group(1)}")
+        return
+    if not isinstance(expr, Expr):
+        return
+
+    if expr.op == "func":
+        fn_name = str(expr.args.get("name", "")).strip()
+        if fn_name.lower() not in _FN_NAMES_LOWER:
+            raise PlanExecutionError(f"unknown function in {context}: {fn_name}")
+        for arg_expr in expr.args.get("args", ()):
+            _validate_expr_compile_time(arg_expr, context)
+        return
+
+    if expr.op == "raw":
+        raw_txt = str(expr.args.get("text", ""))
+        fn_match = re.fullmatch(r"\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\(.*\)\s*", raw_txt)
+        if fn_match is not None:
+            fn_lower = fn_match.group(1).lower()
+            if fn_lower not in _FN_NAMES_LOWER:
+                raise PlanExecutionError(f"unknown function in {context}: {fn_match.group(1)}")
+        return
+
+    if expr.op == "unary":
+        op = str(expr.args.get("op", "")).lower()
+        value_expr = expr.args.get("value")
+        _validate_expr_compile_time(value_expr, context)
+        if op == "not":
+            is_lit, lit = _try_literal_value(value_expr)
+            if is_lit and not _is_boolean_or_null_literal(lit):
+                raise PlanExecutionError(f"NOT expects boolean/null operands in {context}")
+        return
+
+    if expr.op == "binary":
+        op = str(expr.args.get("op", "")).lower()
+        left_expr = expr.args.get("left")
+        right_expr = expr.args.get("right")
+        _validate_expr_compile_time(left_expr, context)
+        _validate_expr_compile_time(right_expr, context)
+        if op in {"and", "or", "xor"}:
+            left_is_lit, left_lit = _try_literal_value(left_expr)
+            right_is_lit, right_lit = _try_literal_value(right_expr)
+            if left_is_lit and not _is_boolean_or_null_literal(left_lit):
+                raise PlanExecutionError(f"{op.upper()} expects boolean/null operands in {context}")
+            if right_is_lit and not _is_boolean_or_null_literal(right_lit):
+                raise PlanExecutionError(f"{op.upper()} expects boolean/null operands in {context}")
+        return
+
+    if expr.op == "list":
+        for item in expr.args.get("items", ()):
+            _validate_expr_compile_time(item, context)
+        return
+
+    if expr.op == "map":
+        for _, value in expr.args.get("items", ()):
+            _validate_expr_compile_time(value, context)
+        return
+
+    if expr.op == "index":
+        _validate_expr_compile_time(expr.args.get("base"), context)
+        _validate_expr_compile_time(expr.args.get("key"), context)
+        return
+
+
+def _collect_expr_refs(expr: Any) -> List[str]:
+    refs: List[str] = []
+
+    if isinstance(expr, str):
+        txt = expr.strip()
+        tokens = sorted(set(_IDENT_RE.findall(txt)), key=len, reverse=True)
+        for token in tokens:
+            up = token.upper()
+            if up in _KEYWORDS:
+                continue
+            if token in _FN_NAMES and re.search(rf"(?i)\b{re.escape(token)}\s*\(", txt):
+                continue
+            refs.append(token)
+        return refs
+
+    if not isinstance(expr, Expr):
+        return refs
+
+    if expr.op == "col":
+        refs.append(str(expr.args.get("name", "")).strip())
+        return refs
+    if expr.op == "raw":
+        return _collect_expr_refs(str(expr.args.get("text", "")))
+    if expr.op == "unary":
+        return _collect_expr_refs(expr.args.get("value"))
+    if expr.op == "binary":
+        refs.extend(_collect_expr_refs(expr.args.get("left")))
+        refs.extend(_collect_expr_refs(expr.args.get("right")))
+        return refs
+    if expr.op == "func":
+        for arg in expr.args.get("args", ()):
+            refs.extend(_collect_expr_refs(arg))
+        return refs
+    if expr.op == "index":
+        refs.extend(_collect_expr_refs(expr.args.get("base")))
+        refs.extend(_collect_expr_refs(expr.args.get("key")))
+        return refs
+    if expr.op == "list":
+        for item in expr.args.get("items", ()):
+            refs.extend(_collect_expr_refs(item))
+        return refs
+    if expr.op == "map":
+        for _, value in expr.args.get("items", ()):
+            refs.extend(_collect_expr_refs(value))
+        return refs
+
+    return refs
+
+
+def _ref_in_scope(ref: str, frame: pd.DataFrame, allow_context: bool) -> bool:
+    token = ref.strip()
+    if token == "":
+        return True
+    if _resolve_column_case_insensitive(token, frame) is not None:
+        return True
+    if allow_context and _resolve_column_case_insensitive(f"{_CTX_PREFIX}{token}", frame) is not None:
+        return True
+    prop_match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)", token)
+    if prop_match is None:
+        return False
+    alias = prop_match.group(1)
+    if _resolve_column_case_insensitive(alias, frame) is not None:
+        return True
+    return allow_context and _resolve_column_case_insensitive(f"{_CTX_PREFIX}{alias}", frame) is not None
+
+
+def _validate_order_keys_compile_time(
+    frame: pd.DataFrame,
+    keys: Sequence[Tuple[Any, Any]],
+    alias_exprs: Optional[Dict[str, str]],
+    projection_op: Optional[str],
+) -> None:
+    # ORDER BY attached to WITH may reference variables from the incoming scope.
+    # Those are carried in __ctx__* columns and remain valid when present.
+    allow_context = True
+    scope_frame = frame
+
+    for expr, direction in keys:
+        expr_norm, _ = _normalize_order_key(expr, direction)
+        expr_for_eval = _rewrite_with_projection_aliases(expr_norm, alias_exprs)
+
+        if _parse_agg(expr_for_eval) is not None:
+            raise PlanExecutionError("ORDER BY aggregation expression not allowed")
+
+        _validate_expr_compile_time(expr_for_eval, "ORDER BY")
+        refs = _collect_expr_refs(expr_for_eval)
+        for ref in refs:
+            if not _ref_in_scope(ref, scope_frame, allow_context):
+                raise PlanExecutionError(f"ORDER BY references variable outside current scope: {ref}")
+
+
 def _parse_agg(expr: Any) -> Optional[Tuple[str, Any]]:
     if isinstance(expr, Expr):
         if expr.op != "func":
@@ -4080,6 +4265,7 @@ def execute_plan(
                         raise
                 state.group_keys = None
                 state.alias_exprs = None
+                state.last_projection_op = None
                 state.match_node_aliases = node_aliases
                 state.match_edge_aliases = edge_aliases
                 continue
@@ -4094,6 +4280,7 @@ def execute_plan(
                 strict_pure=strict_pure,
                 impurity_reasons=impurity_reasons,
             )
+            state.last_projection_op = None
             continue
 
         if op == "group_by":
@@ -4110,11 +4297,19 @@ def execute_plan(
             if strict_pure and not convertible:
                 _mark_impure("group_by_local", strict_pure, impurity_reasons)
             state.group_keys = key_cols if convertible else [str(k) for k in keys]
+            state.last_projection_op = None
             continue
 
         if op in {"select", "with"}:
             items = args.get("items", ())
             items_list = list(items)
+            seen_aliases = set()
+            for alias, expr in items_list:
+                alias_txt = str(alias)
+                if alias_txt in seen_aliases:
+                    raise PlanExecutionError(f"duplicate {op.upper()} alias: {alias_txt}")
+                seen_aliases.add(alias_txt)
+                _validate_expr_compile_time(expr, f"{op.upper()} projection")
             delegated = False
             if state.group_keys is None:
                 delegated_items = _select_items_to_gfql(state.frame, items_list, state.alias_exprs)
@@ -4270,6 +4465,7 @@ def execute_plan(
                 elif isinstance(expr_for_eval, str):
                     alias_exprs[str(expr_for_eval)] = str(alias)
             state.alias_exprs = alias_exprs
+            state.last_projection_op = op
             continue
 
         if op == "distinct":
@@ -4290,10 +4486,12 @@ def execute_plan(
             if not delegated:
                 _mark_impure("distinct_local_fallback", strict_pure, impurity_reasons)
                 state.frame = _drop_duplicates_safe(state.frame)
+            state.last_projection_op = None
             continue
 
         if op == "where":
             expr = args.get("expr")
+            _validate_expr_compile_time(expr, "WHERE")
             delegated = False
             constant_bool = _where_constant_boolean(expr)
             if constant_bool is not None:
@@ -4327,11 +4525,18 @@ def execute_plan(
                 state.frame = state.frame.loc[mask].reset_index(drop=True)
             state.group_keys = None
             state.alias_exprs = None
+            state.last_projection_op = None
             continue
 
         if op == "order_by":
             keys = list(args.get("keys", ()))
             keys = [cast(Tuple[Any, Any], _normalize_order_key(expr, direction)) for expr, direction in keys]
+            _validate_order_keys_compile_time(
+                state.frame,
+                keys,
+                state.alias_exprs,
+                state.last_projection_op,
+            )
             delegated_keys = _order_keys_to_gfql(state.frame, keys, state.alias_exprs)
             if delegated_keys is not None:
                 try:

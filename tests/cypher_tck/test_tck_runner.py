@@ -52,7 +52,7 @@ def _expand_label_columns(nodes_df: pd.DataFrame, label_col: str = "labels") -> 
 
 
 def _build_graph(fixture: GraphFixture) -> Any:
-    g = CGFull()
+    g: Any = CGFull()  # type: ignore[abstract]
     nodes_df = _df_from_records(fixture.nodes, fixture.node_columns)
     nodes_df = _expand_label_columns(nodes_df)
     g = g.nodes(nodes_df, fixture.node_id)
@@ -212,14 +212,25 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     )
 
     if is_plan:
-        plan_rows_df = execute_plan(
-            g,
-            scenario.graph,
-            scenario.gfql,
-            params=scenario.params,
-            strict_pure=_STRICT_PURE,
-        )
-        _assert_expected_rows(scenario, plan_rows_df.to_dict("records"))
+        expects_error = scenario.expected.rows is None and "phase1-executor-error" in scenario.tags
+        if expects_error:
+            with pytest.raises(Exception):
+                execute_plan(
+                    g,
+                    scenario.graph,
+                    scenario.gfql,
+                    params=scenario.params,
+                    strict_pure=_STRICT_PURE,
+                )
+        else:
+            plan_rows_df = execute_plan(
+                g,
+                scenario.graph,
+                scenario.gfql,
+                params=scenario.params,
+                strict_pure=_STRICT_PURE,
+            )
+            _assert_expected_rows(scenario, plan_rows_df.to_dict("records"))
         return
 
     oracle = enumerate_chain(g, scenario.gfql, caps=OracleCaps(max_nodes=100, max_edges=100))

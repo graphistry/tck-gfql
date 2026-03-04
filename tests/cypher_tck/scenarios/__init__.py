@@ -30,7 +30,9 @@ from tests.cypher_tck.gfql_plan import (
 )
 from tests.cypher_tck.models import Scenario
 from tests.cypher_tck.phase_support import (
+    PHASE1_EXECUTOR_PURE_ERROR_KEYS,
     PHASE1_EXECUTOR_PURE_KEYS,
+    PHASE1_EXECUTOR_SUPPORTED_ERROR_KEYS,
     PHASE1_EXECUTOR_SUPPORTED_KEYS,
 )
 
@@ -669,21 +671,38 @@ def _is_executable_plan_tuple(gfql: object) -> bool:
     return True
 
 
+def _is_error_plan_tuple(gfql: object) -> bool:
+    if not isinstance(gfql, tuple) or not gfql:
+        return False
+    if not all(isinstance(step_obj, PlanStep) for step_obj in gfql):
+        return False
+    return not any(step_obj.op == "raw" for step_obj in gfql)
+
+
 def _promote_executor_support(scenario: Scenario) -> Scenario:
     if scenario.status != "xfail":
         return scenario
-    if scenario.key not in PHASE1_EXECUTOR_SUPPORTED_KEYS:
+    supports_rows = scenario.key in PHASE1_EXECUTOR_SUPPORTED_KEYS and scenario.expected.rows is not None
+    supports_error = scenario.key in PHASE1_EXECUTOR_SUPPORTED_ERROR_KEYS and scenario.expected.rows is None
+    if not supports_rows and not supports_error:
         return scenario
-    if scenario.expected.rows is None:
+
+    if supports_rows and not _is_executable_plan_tuple(scenario.gfql):
         return scenario
-    if not _is_executable_plan_tuple(scenario.gfql):
+    if supports_error and not _is_error_plan_tuple(scenario.gfql):
         return scenario
 
     tags = list(_without_tag(scenario.tags, "xfail"))
     if "phase1-executor" not in tags:
         tags.append("phase1-executor")
-    if scenario.key in PHASE1_EXECUTOR_PURE_KEYS and "phase1-executor-pure" not in tags:
+    if supports_error and "phase1-executor-error" not in tags:
+        tags.append("phase1-executor-error")
+
+    pure_row = scenario.key in PHASE1_EXECUTOR_PURE_KEYS
+    pure_error = scenario.key in PHASE1_EXECUTOR_PURE_ERROR_KEYS
+    if (pure_row or pure_error) and "phase1-executor-pure" not in tags:
         tags.append("phase1-executor-pure")
+
     return replace(
         scenario,
         status="supported",
