@@ -8,7 +8,7 @@ import numbers
 import random
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, cast
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -2848,11 +2848,57 @@ def _split_top_level_keyword(text: str, keyword: str) -> Optional[Tuple[str, str
 
 
 def _parse_quantifier_expr_text(text: str) -> Optional[Tuple[str, str, str, str]]:
-    match = _QUANTIFIER_CALL_RE.fullmatch(text.strip())
-    if match is None:
+    txt = text.strip()
+    head = re.match(r"(?is)^(any|all|none|single)\s*\(", txt)
+    if head is None:
         return None
-    fn = match.group(1).lower()
-    body = match.group(2).strip()
+    fn = head.group(1).lower()
+    open_idx = txt.find("(", head.start())
+    if open_idx < 0:
+        return None
+
+    depth = 0
+    in_single = False
+    in_double = False
+    escaped = False
+    close_idx = -1
+    for idx in range(open_idx, len(txt)):
+        ch = txt[idx]
+        if in_single or in_double:
+            if escaped:
+                escaped = False
+                continue
+            if ch == "\\":
+                escaped = True
+                continue
+            if in_single and ch == "'":
+                in_single = False
+            elif in_double and ch == '"':
+                in_double = False
+            continue
+        if ch == "'":
+            in_single = True
+            continue
+        if ch == '"':
+            in_double = True
+            continue
+        if ch == "(":
+            depth += 1
+            continue
+        if ch == ")":
+            depth -= 1
+            if depth == 0:
+                close_idx = idx
+                break
+            if depth < 0:
+                return None
+
+    if close_idx < 0:
+        return None
+    if txt[close_idx + 1 :].strip() != "":
+        return None
+
+    body = txt[open_idx + 1 : close_idx].strip()
     in_split = _split_top_level_keyword(body, "IN")
     if in_split is None:
         return None
@@ -3627,6 +3673,18 @@ def _expr_to_gfql_string(expr: Any, frame: pd.DataFrame) -> Optional[str]:
     return None
 
 
+def _collect_local_expr_identifiers(text: str) -> Set[str]:
+    ids: Set[str] = set()
+    for m in re.finditer(
+        r"(?is)\b(?:ANY|ALL|NONE|SINGLE)\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s+IN\b",
+        text,
+    ):
+        ids.add(m.group(1))
+    for m in re.finditer(r"(?is)\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+IN\b", text):
+        ids.add(m.group(1))
+    return ids
+
+
 def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
     txt = expr.strip()
     if txt == "":
@@ -3652,6 +3710,7 @@ def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
 
     tokens = sorted(set(_IDENT_RE.findall(txt)), key=len, reverse=True)
     rewritten = txt
+    local_identifiers = _collect_local_expr_identifiers(txt)
     unresolved_ident = False
     for token in tokens:
         up = token.upper()
@@ -3661,6 +3720,8 @@ def _string_expr_to_gfql(expr: str, frame: pd.DataFrame) -> Optional[Any]:
             continue
         resolved_token = _resolve_expr_column_name(token, frame)
         if resolved_token is None:
+            if token in local_identifiers:
+                continue
             unresolved_ident = True
             continue
         rewritten = re.sub(

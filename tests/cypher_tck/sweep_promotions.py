@@ -30,7 +30,7 @@ def _is_error_plan(gfql: object) -> bool:
 
 def _expects_error_scenario(scenario: object) -> bool:
     status = getattr(scenario, "status", None)
-    if status != "xfail":
+    if status == "skip":
         return False
     expected = getattr(scenario, "expected", None)
     if expected is None or getattr(expected, "rows", None) is not None:
