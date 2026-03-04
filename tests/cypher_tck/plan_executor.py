@@ -2918,17 +2918,33 @@ def _flip_edge_matcher(edge: Any) -> Any:
     direction = getattr(edge, "direction", None)
     name = _matcher_name(edge)
     edge_filter = _edge_match_dict(edge)
-    hop_kwargs = {
-        "hops": getattr(edge, "hops", None),
-        "min_hops": getattr(edge, "min_hops", None),
-        "max_hops": getattr(edge, "max_hops", None),
-    }
+    hops = cast(Optional[int], getattr(edge, "hops", None))
+    min_hops = cast(Optional[int], getattr(edge, "min_hops", None))
+    max_hops = cast(Optional[int], getattr(edge, "max_hops", None))
     if direction == "forward":
-        return e_reverse(edge_match=edge_filter or None, name=name, **hop_kwargs)
+        return e_reverse(
+            edge_match=edge_filter or None,
+            hops=hops,
+            min_hops=min_hops,
+            max_hops=max_hops,
+            name=name,
+        )
     if direction == "reverse":
-        return e_forward(edge_match=edge_filter or None, name=name, **hop_kwargs)
+        return e_forward(
+            edge_match=edge_filter or None,
+            hops=hops,
+            min_hops=min_hops,
+            max_hops=max_hops,
+            name=name,
+        )
     if direction == "undirected":
-        return e_undirected(edge_match=edge_filter or None, name=name, **hop_kwargs)
+        return e_undirected(
+            edge_match=edge_filter or None,
+            hops=hops,
+            min_hops=min_hops,
+            max_hops=max_hops,
+            name=name,
+        )
     raise PlanExecutionError("unsupported edge matcher direction while normalizing comma MATCH")
 
 
@@ -3709,17 +3725,54 @@ def _group_projection_to_gfql(
     group_keys: Sequence[Any],
     items: Sequence[Tuple[Any, Any]],
     alias_exprs: Optional[Dict[str, str]],
-) -> Optional[Tuple[List[str], List[Tuple[Any, ...]], List[Tuple[str, Any]]]]:
+) -> Optional[Tuple[List[Tuple[str, Any]], List[str], List[Tuple[Any, ...]], List[Tuple[str, Any]]]]:
     has_explicit_group_keys = len(group_keys) > 0
     missing_property_null_cols: Dict[str, str] = {}
+    pre_items: List[Tuple[str, Any]] = []
+    pre_cache: Dict[str, str] = {}
+
+    def _next_pre_alias() -> str:
+        i = len(pre_items)
+        alias = f"__gfql_group_expr_{i}__"
+        existing_aliases = {a for a, _ in pre_items}
+        while alias in frame.columns or alias in existing_aliases:
+            i += 1
+            alias = f"__gfql_group_expr_{i}__"
+        return alias
+
+    def _ensure_group_expr_column(expr_input: Any) -> Optional[str]:
+        expr_for_eval = _rewrite_with_projection_aliases(expr_input, alias_exprs)
+
+        col = _expr_to_column_name(expr_for_eval, frame, alias_exprs)
+        if col is not None:
+            return col
+
+        col = _ensure_missing_property_null_column(frame, expr_for_eval, missing_property_null_cols)
+        if col is not None:
+            return col
+
+        converted = _expr_to_gfql_value(expr_for_eval, frame)
+        if converted is None and not _is_explicit_null_expr(expr_for_eval):
+            return None
+
+        if isinstance(converted, str):
+            resolved = _resolve_expr_column_name(converted, frame)
+            if resolved is not None:
+                return resolved
+
+        cache_key = repr((expr_for_eval, converted))
+        cached_col = pre_cache.get(cache_key)
+        if cached_col is not None:
+            return cached_col
+
+        alias = _next_pre_alias()
+        pre_items.append((alias, converted))
+        pre_cache[cache_key] = alias
+        return alias
+
     key_cols: List[str] = []
     for key_expr in group_keys:
-        col = _expr_to_column_name(key_expr, frame, alias_exprs)
-        if col is None:
-            expr_for_eval = _rewrite_with_projection_aliases(key_expr, alias_exprs)
-            col = _ensure_missing_property_null_column(
-                frame, expr_for_eval, missing_property_null_cols
-            )
+        col = _ensure_group_expr_column(key_expr)
         if col is None:
             return None
         if col not in key_cols:
@@ -3732,11 +3785,7 @@ def _group_projection_to_gfql(
         expr_for_eval = _rewrite_with_projection_aliases(expr, alias_exprs)
         agg = _parse_agg(expr_for_eval)
         if agg is None:
-            col = _expr_to_column_name(expr_for_eval, frame, alias_exprs)
-            if col is None:
-                col = _ensure_missing_property_null_column(
-                    frame, expr_for_eval, missing_property_null_cols
-                )
+            col = _ensure_group_expr_column(expr_for_eval)
             if col is None:
                 return None
             if col not in key_cols:
@@ -3756,12 +3805,7 @@ def _group_projection_to_gfql(
         if func_name == "count" and agg_arg == "*":
             aggregations.append((alias, "count"))
         else:
-            col = _expr_to_column_name(agg_arg, frame, alias_exprs)
-            if col is None:
-                agg_for_eval = _rewrite_with_projection_aliases(agg_arg, alias_exprs)
-                col = _ensure_missing_property_null_column(
-                    frame, agg_for_eval, missing_property_null_cols
-                )
+            col = _ensure_group_expr_column(agg_arg)
             if col is None:
                 return None
             aggregations.append((alias, func_name, col))
@@ -3774,7 +3818,7 @@ def _group_projection_to_gfql(
         # (for example avg(...) -> null, count(...) -> 0). Delegate group_by
         # cannot preserve that shape on empty input, so keep local projection.
         return None
-    return key_cols, aggregations, post_items
+    return pre_items, key_cols, aggregations, post_items
 
 
 def _select_call(op: str, items: List[Tuple[str, Any]]) -> Any:
@@ -4025,8 +4069,31 @@ def execute_plan(
                         state.frame, (), items_list, state.alias_exprs
                     )
                     if implicit_group_plan is not None:
-                        key_cols, aggregations, post_items = implicit_group_plan
+                        pre_items, key_cols, aggregations, post_items = implicit_group_plan
                         group_source = state.frame
+                        if pre_items:
+                            pre_aliases = {alias for alias, _ in pre_items}
+                            required_cols = set(key_cols)
+                            required_cols.update(
+                                str(agg[2])
+                                for agg in aggregations
+                                if len(agg) == 3 and isinstance(agg[2], str)
+                            )
+                            prep_items: List[Tuple[str, Any]] = [
+                                (col, col)
+                                for col in sorted(required_cols)
+                                if col in group_source.columns and col not in pre_aliases
+                            ]
+                            prep_items.extend(pre_items)
+                            prepared_graph = _frame_as_row_graph(state.graph, group_source).gfql(
+                                [gfql_select(prep_items)]
+                            )
+                            group_source = _to_pandas_for_state(
+                                prepared_graph._nodes,
+                                strict_pure,
+                                impurity_reasons,
+                                f"{op}_group_prep_delegate_materialize_to_pandas",
+                            ).reset_index(drop=True)
                         if not key_cols:
                             synthetic_key = "__gfql_group_all__"
                             i = 0
@@ -4063,9 +4130,33 @@ def execute_plan(
                     state.frame, state.group_keys, items_list, state.alias_exprs
                 )
                 if group_plan is not None:
-                    key_cols, aggregations, post_items = group_plan
+                    pre_items, key_cols, aggregations, post_items = group_plan
+                    group_source = state.frame
+                    if pre_items:
+                        pre_aliases = {alias for alias, _ in pre_items}
+                        required_cols = set(key_cols)
+                        required_cols.update(
+                            str(agg[2])
+                            for agg in aggregations
+                            if len(agg) == 3 and isinstance(agg[2], str)
+                        )
+                        prep_items = [
+                            (col, col)
+                            for col in sorted(required_cols)
+                            if col in group_source.columns and col not in pre_aliases
+                        ]
+                        prep_items.extend(pre_items)
+                        prepared_graph = _frame_as_row_graph(state.graph, group_source).gfql(
+                            [gfql_select(prep_items)]
+                        )
+                        group_source = _to_pandas_for_state(
+                            prepared_graph._nodes,
+                            strict_pure,
+                            impurity_reasons,
+                            f"{op}_group_prep_delegate_materialize_to_pandas",
+                        ).reset_index(drop=True)
                     try:
-                        grouped_graph = _frame_as_row_graph(state.graph, state.frame).gfql(
+                        grouped_graph = _frame_as_row_graph(state.graph, group_source).gfql(
                             [gfql_group_by(key_cols, aggregations)]
                         )
                         grouped_frame = _to_pandas_for_state(
