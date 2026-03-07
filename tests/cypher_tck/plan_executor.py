@@ -245,6 +245,114 @@ def _is_null(value: Any) -> bool:
     return False
 
 
+def _cypher_bool_scalar(value: Any) -> Optional[bool]:
+    if _is_null(value):
+        return None
+    if isinstance(value, bool):
+        return value
+    return bool(value)
+
+
+def _cypher_not_scalar(value: Any) -> Optional[bool]:
+    bool_value = _cypher_bool_scalar(value)
+    if bool_value is None:
+        return None
+    return not bool_value
+
+
+def _cypher_and_scalar(left: Any, right: Any) -> Optional[bool]:
+    left_bool = _cypher_bool_scalar(left)
+    right_bool = _cypher_bool_scalar(right)
+    if left_bool is False or right_bool is False:
+        return False
+    if left_bool is True and right_bool is True:
+        return True
+    return None
+
+
+def _cypher_or_scalar(left: Any, right: Any) -> Optional[bool]:
+    left_bool = _cypher_bool_scalar(left)
+    right_bool = _cypher_bool_scalar(right)
+    if left_bool is True or right_bool is True:
+        return True
+    if left_bool is False and right_bool is False:
+        return False
+    return None
+
+
+def _cypher_xor_scalar(left: Any, right: Any) -> Optional[bool]:
+    left_bool = _cypher_bool_scalar(left)
+    right_bool = _cypher_bool_scalar(right)
+    if left_bool is None or right_bool is None:
+        return None
+    return bool(left_bool) ^ bool(right_bool)
+
+
+def _cypher_add_scalar(left: Any, right: Any) -> Any:
+    if _is_null(left) or _is_null(right):
+        return None
+    if isinstance(left, list) and isinstance(right, list):
+        return list(left) + list(right)
+    if isinstance(left, list):
+        return list(left) + [right]
+    if isinstance(right, list):
+        return [left] + list(right)
+    return left + right
+
+
+def _cypher_add_series(index: pd.Index, left: Any, right: Any) -> pd.Series:
+    left_series = left if isinstance(left, pd.Series) else pd.Series([left] * len(index), index=index)
+    right_series = right if isinstance(right, pd.Series) else pd.Series([right] * len(index), index=index)
+    values: List[Any] = []
+    for idx in range(len(index)):
+        values.append(_cypher_add_scalar(left_series.iloc[idx], right_series.iloc[idx]))
+    return pd.Series(values, index=index)
+
+
+def _cypher_truth_masks(
+    value: Any, index: pd.Index
+) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    series = value if isinstance(value, pd.Series) else pd.Series([value] * len(index), index=index)
+    series = series.reindex(index)
+    null_mask = series.isna() if hasattr(series, "isna") else pd.Series(False, index=index)
+    bool_mask = series.where(~null_mask, False).astype(bool)
+    true_mask = bool_mask & ~null_mask
+    false_mask = (~bool_mask) & ~null_mask
+    return true_mask, false_mask, null_mask
+
+
+def _cypher_series_from_masks(
+    index: pd.Index, true_mask: pd.Series, false_mask: pd.Series, null_mask: pd.Series
+) -> pd.Series:
+    out = pd.Series([False] * len(index), index=index, dtype="object")
+    out = out.where(~true_mask, True)
+    out = out.where(~null_mask, pd.NA)
+    return out
+
+
+def _cypher_not_series(index: pd.Index, value: Any) -> pd.Series:
+    true_mask, false_mask, null_mask = _cypher_truth_masks(value, index)
+    return _cypher_series_from_masks(index, false_mask, true_mask, null_mask)
+
+
+def _cypher_binary_bool_series(index: pd.Index, left: Any, right: Any, op: str) -> pd.Series:
+    left_true, left_false, _left_null = _cypher_truth_masks(left, index)
+    right_true, right_false, _right_null = _cypher_truth_masks(right, index)
+    if op == "and":
+        true_mask = left_true & right_true
+        false_mask = left_false | right_false
+    elif op == "or":
+        true_mask = left_true | right_true
+        false_mask = left_false & right_false
+    elif op == "xor":
+        true_mask = (left_true & right_false) | (left_false & right_true)
+        false_mask = (left_true & right_true) | (left_false & right_false)
+    else:
+        raise PlanExecutionError(f"unsupported boolean operator: {op}")
+    null_mask = ~(true_mask | false_mask)
+    return _cypher_series_from_masks(index, true_mask, false_mask, null_mask)
+
+
 def _format_scalar(value: Any, quote_strings: bool = True) -> str:
     if _is_null(value):
         return "null"
@@ -1943,6 +2051,243 @@ def _rewrite_expr(expr: str, df: pd.DataFrame) -> Tuple[str, Dict[str, Any]]:
     return rewritten, env
 
 
+def _find_top_level_keyword_index(text: str, keyword: str) -> int:
+    upper = text.upper()
+    needle = keyword.upper()
+    depth_paren = 0
+    depth_brace = 0
+    depth_bracket = 0
+    quote: Optional[str] = None
+    escaped = False
+
+    for idx, ch in enumerate(text):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == quote:
+                quote = None
+            continue
+
+        if ch in {"'", '"'}:
+            quote = ch
+            continue
+        if ch == "(":
+            depth_paren += 1
+            continue
+        if ch == ")":
+            depth_paren -= 1
+            continue
+        if ch == "{":
+            depth_brace += 1
+            continue
+        if ch == "}":
+            depth_brace -= 1
+            continue
+        if ch == "[":
+            depth_bracket += 1
+            continue
+        if ch == "]":
+            depth_bracket -= 1
+            continue
+        if depth_paren != 0 or depth_brace != 0 or depth_bracket != 0:
+            continue
+        if not upper.startswith(needle, idx):
+            continue
+        left_ok = idx == 0 or not (upper[idx - 1].isalnum() or upper[idx - 1] == "_")
+        right_idx = idx + len(needle)
+        right_ok = right_idx >= len(upper) or not (upper[right_idx].isalnum() or upper[right_idx] == "_")
+        if left_ok and right_ok:
+            return idx
+    return -1
+
+
+def _parse_list_comprehension_expr_text(text: str) -> Optional[Tuple[str, str, str, str]]:
+    txt = text.strip()
+    if not (txt.startswith("[") and txt.endswith("]")):
+        return None
+    body = txt[1:-1].strip()
+    in_split = _split_top_level_keyword(body, "IN")
+    if in_split is None:
+        return None
+    var = in_split[0].strip()
+    if _SIMPLE_IDENT_RE.fullmatch(var) is None:
+        return None
+    where_split = _split_top_level_keyword(in_split[1], "WHERE")
+    if where_split is None:
+        return None
+    list_expr = where_split[0].strip()
+    rhs = where_split[1].strip()
+    if list_expr == "" or rhs == "":
+        return None
+    bar_idx = _find_top_level_char(rhs, "|")
+    if bar_idx < 0:
+        return None
+    predicate_expr = rhs[:bar_idx].strip()
+    map_expr = rhs[bar_idx + 1 :].strip()
+    if predicate_expr == "" or map_expr == "":
+        return None
+    return var, list_expr, predicate_expr, map_expr
+
+
+def _parse_case_when_expr_text(text: str) -> Optional[Tuple[str, str, str, str]]:
+    txt = text.strip()
+    if not txt.upper().startswith("CASE"):
+        return None
+    remainder = txt[4:].strip()
+    if not remainder.upper().startswith("WHEN"):
+        return None
+    remainder = remainder[4:].strip()
+
+    then_idx = _find_top_level_keyword_index(remainder, "THEN")
+    if then_idx < 0:
+        return None
+    cond_expr = remainder[:then_idx].strip()
+    after_then = remainder[then_idx + len("THEN") :].strip()
+
+    else_idx = _find_top_level_keyword_index(after_then, "ELSE")
+    if else_idx < 0:
+        return None
+    then_expr = after_then[:else_idx].strip()
+    after_else = after_then[else_idx + len("ELSE") :].strip()
+
+    end_idx = _find_top_level_keyword_index(after_else, "END")
+    if end_idx < 0:
+        return None
+    else_expr = after_else[:end_idx].strip()
+    tail_expr = after_else[end_idx + len("END") :].strip()
+
+    if cond_expr == "" or then_expr == "" or else_expr == "":
+        return None
+    return cond_expr, then_expr, else_expr, tail_expr
+
+
+def _eval_label_predicate_expr_series(df: pd.DataFrame, txt: str) -> Optional[pd.Series]:
+    match = re.fullmatch(
+        r"\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)",
+        txt,
+    )
+    if match is None:
+        return None
+    alias = match.group(1)
+    label = match.group(2)
+    candidates = [
+        f"{alias}.label__{label}",
+        f"{_CTX_PREFIX}{alias}.label__{label}",
+        f"label__{label}",
+        f"{_CTX_PREFIX}label__{label}",
+    ]
+    for candidate in candidates:
+        resolved = _resolve_column_case_insensitive(candidate, df)
+        if resolved is not None:
+            series = df[resolved]
+            return series.where(~series.isna(), pd.NA) if hasattr(series, "isna") else series
+    return None
+
+
+def _eval_list_comprehension_expr_series(
+    df: pd.DataFrame, var: str, list_expr: str, predicate_expr: str, map_expr: str
+) -> pd.Series:
+    list_series = _eval_expr_series(df, list_expr)
+    out_values: List[Any] = []
+    for row_idx in range(len(df)):
+        seq = list_series.iloc[row_idx]
+        if _is_null(seq):
+            out_values.append(None)
+            continue
+        if not isinstance(seq, (list, tuple)):
+            raise PlanExecutionError("list comprehension expects a list value")
+        row_df = df.iloc[[row_idx]].copy()
+        mapped: List[Any] = []
+        for item in seq:
+            row_df[var] = [item]
+            pred_value = _eval_expr_series(row_df, predicate_expr).iloc[0]
+            if _cypher_bool_scalar(pred_value) is True:
+                mapped.append(_eval_expr_series(row_df, map_expr).iloc[0])
+        out_values.append(mapped)
+    return pd.Series(out_values, index=df.index)
+
+
+def _eval_quantifier_scalar(fn: str, predicate_values: Sequence[Any]) -> Optional[bool]:
+    bool_values = [_cypher_bool_scalar(v) for v in predicate_values]
+    true_count = sum(1 for v in bool_values if v is True)
+    has_null = any(v is None for v in bool_values)
+    has_false = any(v is False for v in bool_values)
+
+    if fn == "any":
+        if true_count > 0:
+            return True
+        if has_null:
+            return None
+        return False
+    if fn == "all":
+        if has_false:
+            return False
+        if has_null:
+            return None
+        return True
+    if fn == "none":
+        if true_count > 0:
+            return False
+        if has_null:
+            return None
+        return True
+    if fn == "single":
+        if true_count > 1:
+            return False
+        if true_count == 1:
+            return None if has_null else True
+        return None if has_null else False
+    raise PlanExecutionError(f"unsupported quantifier: {fn}")
+
+
+def _eval_quantifier_expr_series(
+    df: pd.DataFrame, fn: str, var: str, list_expr: str, predicate_expr: str
+) -> pd.Series:
+    list_series = _eval_expr_series(df, list_expr)
+    out_values: List[Any] = []
+    for row_idx in range(len(df)):
+        seq = list_series.iloc[row_idx]
+        if _is_null(seq):
+            out_values.append(None)
+            continue
+        if not isinstance(seq, (list, tuple)):
+            raise PlanExecutionError(f"{fn}() expects list input")
+        row_df = df.iloc[[row_idx]].copy()
+        predicate_values: List[Any] = []
+        for item in seq:
+            row_df[var] = [item]
+            predicate_values.append(_eval_expr_series(row_df, predicate_expr).iloc[0])
+        out_values.append(_eval_quantifier_scalar(fn, predicate_values))
+    return pd.Series(out_values, index=df.index)
+
+
+def _eval_case_expr_series(df: pd.DataFrame, cond_expr: str, then_expr: str, else_expr: str, tail_expr: str) -> pd.Series:
+    cond_series = _eval_expr_series(df, cond_expr)
+    then_series = _eval_expr_series(df, then_expr)
+    else_series = _eval_expr_series(df, else_expr)
+
+    case_values: List[Any] = []
+    for row_idx in range(len(df)):
+        cond_value = _cypher_bool_scalar(cond_series.iloc[row_idx])
+        if cond_value is True:
+            case_values.append(then_series.iloc[row_idx])
+        else:
+            case_values.append(else_series.iloc[row_idx])
+    case_series = pd.Series(case_values, index=df.index)
+
+    if tail_expr == "":
+        return case_series
+    if tail_expr.startswith("+"):
+        right_expr = tail_expr[1:].strip()
+        if right_expr == "":
+            raise PlanExecutionError("CASE expression has empty + tail")
+        right_series = _eval_expr_series(df, right_expr)
+        return _cypher_add_series(df.index, case_series, right_series)
+    raise PlanExecutionError(f"unsupported CASE expression tail: {tail_expr}")
+
+
 def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
     if isinstance(expr, Expr):
         if expr.op == "lit":
@@ -1989,10 +2334,7 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             if op_name == "is_not_null":
                 return ~value_series.isna()
             if op_name == "not":
-                out = value_series
-                if hasattr(out, "fillna"):
-                    out = out.fillna(False)
-                return out.astype(bool).map(lambda v: not bool(v))
+                return _cypher_not_series(df.index, value_series)
             if op_name == "neg":
                 return 0 - value_series
             if op_name == "pos":
@@ -2005,7 +2347,7 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             left_series = _eval_expr_series(df, left_expr)
             right_series = _eval_expr_series(df, right_expr)
             if op_name == "add":
-                return left_series + right_series
+                return _cypher_add_series(df.index, left_series, right_series)
             if op_name == "sub":
                 return left_series - right_series
             if op_name == "mul":
@@ -2027,23 +2369,11 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             if op_name == "gte":
                 return left_series >= right_series
             if op_name == "and":
-                left_mask = left_series.fillna(False).astype(bool) if hasattr(left_series, "fillna") else left_series
-                right_mask = (
-                    right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
-                )
-                return left_mask & right_mask
+                return _cypher_binary_bool_series(df.index, left_series, right_series, "and")
             if op_name == "or":
-                left_mask = left_series.fillna(False).astype(bool) if hasattr(left_series, "fillna") else left_series
-                right_mask = (
-                    right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
-                )
-                return left_mask | right_mask
+                return _cypher_binary_bool_series(df.index, left_series, right_series, "or")
             if op_name == "xor":
-                left_mask = left_series.fillna(False).astype(bool) if hasattr(left_series, "fillna") else left_series
-                right_mask = (
-                    right_series.fillna(False).astype(bool) if hasattr(right_series, "fillna") else right_series
-                )
-                return left_mask ^ right_mask
+                return _cypher_binary_bool_series(df.index, left_series, right_series, "xor")
             if op_name in {"in", "not_in"}:
                 right_lit = _UNSUPPORTED_EXPR
                 try:
@@ -2128,6 +2458,35 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
     if lit is not None or txt.lower() == "null":
         return pd.Series([lit] * len(df), index=df.index)
 
+    label_predicate_series = _eval_label_predicate_expr_series(df, txt)
+    if label_predicate_series is not None:
+        return label_predicate_series
+
+    list_comp = _parse_list_comprehension_expr_text(txt)
+    if list_comp is not None:
+        var, list_expr, predicate_expr, map_expr = list_comp
+        return _eval_list_comprehension_expr_series(df, var, list_expr, predicate_expr, map_expr)
+
+    quantifier = _parse_quantifier_expr_text(txt)
+    if quantifier is not None:
+        fn, var, list_expr, predicate_expr = quantifier
+        return _eval_quantifier_expr_series(df, fn, var, list_expr, predicate_expr)
+
+    case_expr = _parse_case_when_expr_text(txt)
+    if case_expr is not None:
+        cond_expr, then_expr, else_expr, tail_expr = case_expr
+        return _eval_case_expr_series(df, cond_expr, then_expr, else_expr, tail_expr)
+
+    try:
+        from tests.cypher_tck.scenarios import _parse_expr as _parse_scenario_expr
+
+        parsed_expr = _parse_scenario_expr(txt)
+        if isinstance(parsed_expr, Expr):
+            if parsed_expr.op != "raw" or str(parsed_expr.args.get("text", "")).strip() != txt:
+                return _eval_expr_series(df, parsed_expr)
+    except Exception:
+        pass
+
     if len(df) == 0:
         return pd.Series([], index=df.index, dtype="object")
 
@@ -2163,7 +2522,7 @@ def _expr_literal_value(expr: Any) -> Any:
         op = str(expr.args.get("op", "")).lower()
         value = _expr_literal_value(expr.args.get("value"))
         if op == "not":
-            return not bool(value)
+            return _cypher_not_scalar(value)
         if op == "is_null":
             return _is_null(value)
         if op == "is_not_null":
@@ -2178,11 +2537,11 @@ def _expr_literal_value(expr: Any) -> Any:
         left = _expr_literal_value(expr.args.get("left"))
         right = _expr_literal_value(expr.args.get("right"))
         if op == "and":
-            return bool(left) and bool(right)
+            return _cypher_and_scalar(left, right)
         if op == "or":
-            return bool(left) or bool(right)
+            return _cypher_or_scalar(left, right)
         if op == "xor":
-            return bool(left) ^ bool(right)
+            return _cypher_xor_scalar(left, right)
         if op == "eq":
             return left == right
         if op == "neq":
@@ -2196,7 +2555,7 @@ def _expr_literal_value(expr: Any) -> Any:
         if op == "gte":
             return left >= right
         if op == "add":
-            return cast(float, left) + cast(float, right)
+            return _cypher_add_scalar(left, right)
         if op == "sub":
             return cast(float, left) - cast(float, right)
         if op == "mul":
@@ -2755,17 +3114,49 @@ def _aggregate_series(df: pd.DataFrame, func: str, arg: Any) -> Any:
     raise PlanExecutionError(f"unsupported aggregate: {func}")
 
 
+def _hashable_group_value(value: Any) -> Any:
+    if _is_null(value):
+        return None
+    if isinstance(value, list):
+        return ("__list__", tuple(_hashable_group_value(v) for v in value))
+    if isinstance(value, tuple):
+        return ("__tuple__", tuple(_hashable_group_value(v) for v in value))
+    if isinstance(value, dict):
+        return (
+            "__dict__",
+            tuple(sorted((str(k), _hashable_group_value(v)) for k, v in value.items())),
+        )
+    if isinstance(value, set):
+        normalized = [_hashable_group_value(v) for v in value]
+        return ("__set__", tuple(sorted(normalized, key=lambda v: repr(v))))
+    try:
+        hash(value)
+        return value
+    except Exception:
+        return ("__repr__", repr(value))
+
+
 def _group_projection(df: pd.DataFrame, key_exprs: List[Any], items: Sequence[Tuple[str, Any]]) -> pd.DataFrame:
     work = df.copy()
-    key_cols: List[str] = []
-    expr_to_col: Dict[Any, str] = {}
+    key_hash_cols: List[str] = []
+    expr_key_specs: List[Tuple[Any, str, str]] = []
     for i, key_expr in enumerate(key_exprs):
-        col = f"__grp_{i}"
-        work[col] = _eval_expr_series(work, key_expr)
-        key_cols.append(col)
-        expr_to_col[key_expr] = col
-    gb = work.groupby(key_cols, dropna=False, sort=False)
+        value_col = f"__grpv_{i}"
+        hash_col = f"__grpk_{i}"
+        work[value_col] = _eval_expr_series(work, key_expr)
+        work[hash_col] = work[value_col].map(_hashable_group_value)
+        key_hash_cols.append(hash_col)
+        expr_key_specs.append((key_expr, value_col, hash_col))
+
+    gb = work.groupby(key_hash_cols, dropna=False, sort=False)
     base = gb.size().reset_index(name="__count_star__")
+    for _key_expr, value_col, _hash_col in expr_key_specs:
+        grouped_values = (
+            work.groupby(key_hash_cols, dropna=False, sort=False)[value_col]
+            .agg(lambda s: s.iloc[0] if len(s) else None)
+            .reset_index(name=value_col)
+        )
+        base = base.merge(grouped_values, on=key_hash_cols, how="left")
 
     out = pd.DataFrame(index=base.index)
     for alias, expr in items:
@@ -2777,7 +3168,7 @@ def _group_projection(df: pd.DataFrame, key_exprs: List[Any], items: Sequence[Tu
                 continue
             tmp = work.copy()
             tmp["__agg_val__"] = _eval_expr_series(tmp, arg)
-            gb_agg = tmp.groupby(key_cols, dropna=False, sort=False)["__agg_val__"]
+            gb_agg = tmp.groupby(key_hash_cols, dropna=False, sort=False)["__agg_val__"]
             if func == "count":
                 agg_df = gb_agg.count().reset_index(name="__val__")
             elif func == "count_distinct":
@@ -2797,18 +3188,24 @@ def _group_projection(df: pd.DataFrame, key_exprs: List[Any], items: Sequence[Tu
                 agg_df = gb_agg.mean().reset_index(name="__val__")
             else:
                 raise PlanExecutionError(f"unsupported aggregate function: {func}")
-            merged = base.merge(agg_df, on=key_cols, how="left")
+            merged = base.merge(agg_df, on=key_hash_cols, how="left")
             out[alias] = merged["__val__"]
             continue
 
-        if expr in expr_to_col:
-            out[alias] = base[expr_to_col[expr]]
+        matching_value_col: Optional[str] = None
+        for key_expr, value_col, _hash_col in expr_key_specs:
+            if expr == key_expr:
+                matching_value_col = value_col
+                break
+        if matching_value_col is not None:
+            out[alias] = base[matching_value_col]
             continue
 
         # Non-aggregate expression in grouped projection: evaluate against grouped base
         eval_df = base.copy()
-        for key_expr, key_col in expr_to_col.items():
-            eval_df[key_expr] = base[key_col]
+        for idx, (key_expr, value_col, _hash_col) in enumerate(expr_key_specs):
+            key_name = _simple_grouping_ref(key_expr) or f"__grp_expr_{idx}"
+            eval_df[key_name] = base[value_col]
         out[alias] = _eval_expr_series(eval_df, expr)
 
     return out.reset_index(drop=True)
@@ -4730,6 +5127,99 @@ def _select_items_to_gfql(
     return out
 
 
+def _projection_expr_local_pure_safe(expr: Any) -> bool:
+    if isinstance(expr, Expr):
+        if expr.op == "raw":
+            txt = str(expr.args.get("text", "")).strip()
+            if txt == "":
+                return True
+            if _parse_list_comprehension_expr_text(txt) is not None:
+                return True
+            if _parse_quantifier_expr_text(txt) is not None:
+                return True
+            if _parse_case_when_expr_text(txt) is not None:
+                return True
+            try:
+                from tests.cypher_tck.scenarios import _parse_expr as _parse_scenario_expr
+
+                parsed = _parse_scenario_expr(txt)
+                if isinstance(parsed, Expr):
+                    return parsed.op != "raw" or str(parsed.args.get("text", "")).strip() != txt
+            except Exception:
+                return False
+            return False
+        return True
+
+    if isinstance(expr, str):
+        txt = expr.strip()
+        if txt == "":
+            return True
+        if _parse_list_comprehension_expr_text(txt) is not None:
+            return True
+        if _parse_quantifier_expr_text(txt) is not None:
+            return True
+        if _parse_case_when_expr_text(txt) is not None:
+            return True
+        try:
+            from tests.cypher_tck.scenarios import _parse_expr as _parse_scenario_expr
+
+            parsed = _parse_scenario_expr(txt)
+            if isinstance(parsed, Expr):
+                return parsed.op != "raw" or str(parsed.args.get("text", "")).strip() != txt
+        except Exception:
+            return False
+        return False
+
+    return True
+
+
+def _aggregate_default_alias_text(expr: Any, frame: pd.DataFrame) -> Optional[str]:
+    parsed = _parse_agg(expr)
+    if parsed is None:
+        return None
+    func, arg = parsed
+    if func == "count" and arg == "*":
+        return "count(*)"
+
+    arg_txt: Optional[str] = None
+    if isinstance(arg, Expr):
+        arg_txt = _expr_to_gfql_string(arg, frame)
+        if arg_txt is None and arg.op == "col":
+            arg_txt = str(arg.args.get("name", "")).strip()
+        if arg_txt is None and arg.op == "raw":
+            arg_txt = str(arg.args.get("text", "")).strip()
+    else:
+        arg_txt = str(arg).strip()
+
+    if arg_txt is None or arg_txt == "":
+        return None
+    if func == "count_distinct":
+        return f"count(distinct {arg_txt})"
+    return f"{func}({arg_txt})"
+
+
+def _validate_with_aliasing_compile_time(frame: pd.DataFrame, items: Sequence[Tuple[Any, Any]]) -> None:
+    for alias, expr in items:
+        alias_txt = str(alias).strip()
+        simple_ref = _simple_grouping_ref(expr)
+        if simple_ref is not None and alias_txt == simple_ref:
+            continue
+
+        expr_txt: Optional[str] = None
+        if isinstance(expr, Expr):
+            expr_txt = _expr_to_gfql_string(expr, frame)
+            if expr_txt is None and expr.op == "raw":
+                expr_txt = str(expr.args.get("text", "")).strip()
+        elif isinstance(expr, str):
+            expr_txt = expr.strip()
+
+        agg_txt = _aggregate_default_alias_text(expr, frame)
+        if agg_txt is not None and alias_txt.lower() == agg_txt.lower():
+            raise PlanExecutionError("WITH expressions must use explicit AS aliases")
+        if expr_txt is not None and expr_txt != "" and alias_txt == expr_txt:
+            raise PlanExecutionError("WITH expressions must use explicit AS aliases")
+
+
 def execute_plan(
     graph: Any,
     fixture: GraphFixture,
@@ -4823,6 +5313,8 @@ def execute_plan(
                     raise PlanExecutionError(f"duplicate {op.upper()} alias: {alias_txt}")
                 seen_aliases.add(alias_txt)
                 _validate_expr_compile_time(expr, f"{op.upper()} projection")
+            if op == "with":
+                _validate_with_aliasing_compile_time(state.frame, items_list)
             _validate_projection_aggregation_compile_time(items_list, f"{op.upper()} projection")
             delegated = False
             if state.group_keys is None:
@@ -4968,7 +5460,11 @@ def execute_plan(
                 # For expected-error scenarios, strict-pure should surface the actual
                 # compile/runtime error instead of an impurity preemption.
                 projected = _projection(state.frame, items_list, state.group_keys)
-                if strict_pure and len(state.frame) > 0:
+                if (
+                    strict_pure
+                    and len(state.frame) > 0
+                    and not all(_projection_expr_local_pure_safe(expr) for _, expr in items_list)
+                ):
                     _mark_impure(f"{op}_local_projection", strict_pure, impurity_reasons)
                 state.frame = projected
             state.group_keys = None
