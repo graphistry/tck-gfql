@@ -4655,3 +4655,8 @@ PHASE1_EXECUTOR_PURE_ERROR_KEYS = {
     "with6-8",
     "with6-9",
 }
+
+PHASE1_CYPHER_STRING_PURE_KEYS = {
+    "match3-19",
+}
+

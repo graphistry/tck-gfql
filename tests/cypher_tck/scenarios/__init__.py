@@ -30,6 +30,7 @@ from tests.cypher_tck.gfql_plan import (
 )
 from tests.cypher_tck.models import Scenario
 from tests.cypher_tck.phase_support import (
+    PHASE1_CYPHER_STRING_PURE_KEYS,
     PHASE1_EXECUTOR_PURE_ERROR_KEYS,
     PHASE1_EXECUTOR_PURE_KEYS,
     PHASE1_EXECUTOR_SUPPORTED_ERROR_KEYS,
@@ -805,6 +806,27 @@ def _promote_executor_support(scenario: Scenario) -> Scenario:
     )
 
 
+
+
+def _promote_cypher_string_support(scenario: Scenario) -> Scenario:
+    if scenario.status != "xfail" or scenario.gfql is not None:
+        return scenario
+    if scenario.key not in PHASE1_CYPHER_STRING_PURE_KEYS:
+        return scenario
+
+    tags = list(_without_tag(scenario.tags, "xfail"))
+    if "cypher-string" not in tags:
+        tags.append("cypher-string")
+    if "cypher-string-pure" not in tags:
+        tags.append("cypher-string-pure")
+
+    return replace(
+        scenario,
+        status="supported",
+        reason=None,
+        tags=tuple(tags),
+    )
+
 for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     module_name = "tests.cypher_tck.scenarios." + path.relative_to(Path(__file__).resolve().parent).with_suffix("").as_posix().replace("/", ".")
     spec = spec_from_file_location(module_name, path)
@@ -814,4 +836,4 @@ for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     spec.loader.exec_module(module)
     SCENARIOS.extend(getattr(module, "SCENARIOS", []))
 
-SCENARIOS = [_promote_executor_support(_apply_translation(_tag_scenario(scenario))) for scenario in SCENARIOS]
+SCENARIOS = [_promote_cypher_string_support(_promote_executor_support(_apply_translation(_tag_scenario(scenario)))) for scenario in SCENARIOS]

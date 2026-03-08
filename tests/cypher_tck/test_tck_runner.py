@@ -174,6 +174,20 @@ def _alias_nodes(df: Any, id_col: str, alias: str) -> set:
     return set(pdf.loc[pdf[alias].astype(bool), id_col])
 
 
+
+
+def _is_cypher_string_supported(scenario: Scenario) -> bool:
+    return scenario.gfql is None and "cypher-string" in scenario.tags
+
+
+def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
+    if result._nodes is None:
+        return []
+    pdf = _to_pandas(result._nodes)
+    if pdf is None:
+        return []
+    return pdf.to_dict("records")
+
 def _assert_ids(
     expected: Expected,
     oracle_nodes: set,
@@ -201,9 +215,18 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     if scenario.status == "xfail":
         pytest.xfail(scenario.reason or "expected failure")
 
+    g = _build_graph(scenario.graph)
+
+    if _is_cypher_string_supported(scenario):
+        pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+        _assert_expected_rows(scenario, _rows_from_result(pandas_result))
+        if _TEST_CUDF and _HAS_CUDF:
+            cudf_result = g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
+            _assert_expected_rows(scenario, _rows_from_result(cudf_result))
+        return
+
     assert scenario.gfql is not None
 
-    g = _build_graph(scenario.graph)
 
     is_plan = (
         isinstance(scenario.gfql, Sequence)

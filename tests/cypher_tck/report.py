@@ -5,7 +5,10 @@ from collections import Counter, defaultdict
 from typing import Dict, List, Optional, Tuple, cast
 
 from tests.cypher_tck.gfql_plan import PlanStep
-from tests.cypher_tck.phase_support import PHASE1_EXECUTOR_PURE_KEYS
+from tests.cypher_tck.phase_support import (
+    PHASE1_CYPHER_STRING_PURE_KEYS,
+    PHASE1_EXECUTOR_PURE_KEYS,
+)
 from tests.cypher_tck.scenarios import SCENARIOS
 
 
@@ -53,10 +56,26 @@ def _is_executable_plan(gfql: object) -> bool:
     return not any(step.op in {"raw", "invalid"} for step in gfql)
 
 
+
+
+def _is_cypher_string_supported_scenario(scenario: object) -> bool:
+    status = getattr(scenario, "status", None)
+    gfql = getattr(scenario, "gfql", None)
+    key = getattr(scenario, "key", "")
+    tags = getattr(scenario, "tags", ())
+    return (
+        status == "supported"
+        and gfql is None
+        and "cypher-string" in tags
+        and key in PHASE1_CYPHER_STRING_PURE_KEYS
+    )
+
 def _is_pure_supported_scenario(scenario: object) -> bool:
     status = getattr(scenario, "status", None)
     gfql = getattr(scenario, "gfql", None)
     key = getattr(scenario, "key", "")
+    if _is_cypher_string_supported_scenario(scenario):
+        return True
     if status != "supported" or gfql is None:
         return False
     if _is_executable_plan(gfql):
@@ -66,6 +85,9 @@ def _is_pure_supported_scenario(scenario: object) -> bool:
 
 def _impure_bucket(scenario: object) -> str:
     gfql = getattr(scenario, "gfql", None)
+    tags = getattr(scenario, "tags", ())
+    if "cypher-string" in tags:
+        return "cypher-string"
     if not _is_executable_plan(gfql):
         return "non-plan-supported"
     plan = cast(Tuple[PlanStep, ...], gfql)
@@ -95,6 +117,11 @@ def build_report() -> str:
         for scenario in SCENARIOS
         if scenario.status == "supported" and scenario.gfql is not None
     )
+    cypher_string_supported = sum(
+        1
+        for scenario in SCENARIOS
+        if _is_cypher_string_supported_scenario(scenario)
+    )
     translated_xfail = sum(
         1
         for scenario in SCENARIOS
@@ -108,7 +135,9 @@ def build_report() -> str:
     supported_missing = sum(
         1
         for scenario in SCENARIOS
-        if scenario.status == "supported" and scenario.gfql is None
+        if scenario.status == "supported"
+        and scenario.gfql is None
+        and not _is_cypher_string_supported_scenario(scenario)
     )
 
     supported_count = status_counts.get("supported", 0)
@@ -138,8 +167,9 @@ def build_report() -> str:
         "",
         f"Scenarios represented (ported): {total}",
         f"GFQL translated (non-None): {gfql_defined} ({_percent(gfql_defined, total)})",
+        f"Translated + expected pass (supported via translated GFQL): {supported_defined}",
+        f"Supported via direct Cypher string only (untranslated): {cypher_string_supported}",
         f"GFQL missing: {missing_gfql} ({_percent(missing_gfql, total)})",
-        f"Translated + expected pass (supported): {supported_defined}",
         f"Translated but xfail: {translated_xfail}",
         f"Translated but skip: {translated_skip}",
         f"Supported but missing GFQL: {supported_missing}",
