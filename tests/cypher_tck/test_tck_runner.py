@@ -177,7 +177,11 @@ def _alias_nodes(df: Any, id_col: str, alias: str) -> set:
 
 
 def _is_cypher_string_supported(scenario: Scenario) -> bool:
-    return scenario.gfql is None and "cypher-string" in scenario.tags
+    return scenario.status == "supported" and "cypher-string" in scenario.tags
+
+
+def _is_cypher_string_error(scenario: Scenario) -> bool:
+    return _is_cypher_string_supported(scenario) and "cypher-string-error" in scenario.tags
 
 
 def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
@@ -218,11 +222,18 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     g = _build_graph(scenario.graph)
 
     if _is_cypher_string_supported(scenario):
-        pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
-        _assert_expected_rows(scenario, _rows_from_result(pandas_result))
-        if _TEST_CUDF and _HAS_CUDF:
-            cudf_result = g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
-            _assert_expected_rows(scenario, _rows_from_result(cudf_result))
+        if _is_cypher_string_error(scenario):
+            with pytest.raises(Exception):
+                g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+            if _TEST_CUDF and _HAS_CUDF:
+                with pytest.raises(Exception):
+                    g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
+        else:
+            pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+            _assert_expected_rows(scenario, _rows_from_result(pandas_result))
+            if _TEST_CUDF and _HAS_CUDF:
+                cudf_result = g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
+                _assert_expected_rows(scenario, _rows_from_result(cudf_result))
         return
 
     assert scenario.gfql is not None

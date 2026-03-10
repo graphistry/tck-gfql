@@ -68,6 +68,7 @@ SCENARIOS = [
                 {"n": "({name: 'D'})"},
             ],
         ),
+        params={"s": 2, "l": 2},
         gfql=None,
         status="xfail",
         reason="WITH pipelines, SKIP/LIMIT, ORDER BY, and parameter binding are not supported",

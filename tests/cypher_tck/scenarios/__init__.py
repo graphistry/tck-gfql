@@ -6,6 +6,10 @@ from pathlib import Path
 import re
 from typing import Iterable, Optional, Tuple
 
+from tests.cypher_tck.direct_cypher_support import (
+    DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
+    DIRECT_CYPHER_PROMOTION_ROW_KEYS,
+)
 from tests.cypher_tck.gfql_plan import (
     PlanStep,
     binary,
@@ -809,9 +813,18 @@ def _promote_executor_support(scenario: Scenario) -> Scenario:
 
 
 def _promote_cypher_string_support(scenario: Scenario) -> Scenario:
-    if scenario.status != "xfail" or scenario.gfql is not None:
+    if scenario.status != "xfail":
         return scenario
-    if scenario.key not in PHASE1_CYPHER_STRING_PURE_KEYS:
+
+    supports_rows = (
+        scenario.key in DIRECT_CYPHER_PROMOTION_ROW_KEYS
+        and scenario.expected.rows is not None
+    )
+    supports_error = (
+        scenario.key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
+        and scenario.expected.rows is None
+    )
+    if not supports_rows and not supports_error:
         return scenario
 
     tags = list(_without_tag(scenario.tags, "xfail"))
@@ -819,6 +832,8 @@ def _promote_cypher_string_support(scenario: Scenario) -> Scenario:
         tags.append("cypher-string")
     if "cypher-string-pure" not in tags:
         tags.append("cypher-string-pure")
+    if supports_error and "cypher-string-error" not in tags:
+        tags.append("cypher-string-error")
 
     return replace(
         scenario,

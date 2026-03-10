@@ -4,11 +4,15 @@ import os
 from collections import Counter, defaultdict
 from typing import Dict, List, Optional, Tuple, cast
 
-from tests.cypher_tck.gfql_plan import PlanStep
-from tests.cypher_tck.phase_support import (
-    PHASE1_CYPHER_STRING_PURE_KEYS,
-    PHASE1_EXECUTOR_PURE_KEYS,
+
+from tests.cypher_tck.direct_cypher_support import (
+    DIRECT_CYPHER_OVERLAP_KEYS,
+    DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
+    DIRECT_CYPHER_PROMOTION_KEYS,
+    DIRECT_CYPHER_PROMOTION_ROW_KEYS,
 )
+from tests.cypher_tck.gfql_plan import PlanStep
+from tests.cypher_tck.phase_support import PHASE1_EXECUTOR_PURE_KEYS
 from tests.cypher_tck.scenarios import SCENARIOS
 
 
@@ -60,15 +64,8 @@ def _is_executable_plan(gfql: object) -> bool:
 
 def _is_cypher_string_supported_scenario(scenario: object) -> bool:
     status = getattr(scenario, "status", None)
-    gfql = getattr(scenario, "gfql", None)
-    key = getattr(scenario, "key", "")
     tags = getattr(scenario, "tags", ())
-    return (
-        status == "supported"
-        and gfql is None
-        and "cypher-string" in tags
-        and key in PHASE1_CYPHER_STRING_PURE_KEYS
-    )
+    return status == "supported" and "cypher-string" in tags
 
 def _is_pure_supported_scenario(scenario: object) -> bool:
     status = getattr(scenario, "status", None)
@@ -115,12 +112,26 @@ def build_report() -> str:
     supported_defined = sum(
         1
         for scenario in SCENARIOS
-        if scenario.status == "supported" and scenario.gfql is not None
+        if scenario.status == "supported"
+        and scenario.gfql is not None
+        and not _is_cypher_string_supported_scenario(scenario)
     )
     cypher_string_supported = sum(
         1
         for scenario in SCENARIOS
         if _is_cypher_string_supported_scenario(scenario)
+    )
+    cypher_string_supported_rows = sum(
+        1
+        for scenario in SCENARIOS
+        if _is_cypher_string_supported_scenario(scenario)
+        and getattr(getattr(scenario, "expected", None), "rows", None) is not None
+    )
+    cypher_string_supported_errors = sum(
+        1
+        for scenario in SCENARIOS
+        if _is_cypher_string_supported_scenario(scenario)
+        and getattr(getattr(scenario, "expected", None), "rows", None) is None
     )
     translated_xfail = sum(
         1
@@ -168,8 +179,16 @@ def build_report() -> str:
         f"Scenarios represented (ported): {total}",
         f"GFQL translated (non-None): {gfql_defined} ({_percent(gfql_defined, total)})",
         f"Translated + expected pass (supported via translated GFQL): {supported_defined}",
-        f"Supported via direct Cypher string only (untranslated): {cypher_string_supported}",
+        f"Promoted via direct Cypher string only (status/tagged): {cypher_string_supported} "
+        f"(rows {cypher_string_supported_rows}, errors {cypher_string_supported_errors})",
         f"GFQL missing: {missing_gfql} ({_percent(missing_gfql, total)})",
+        f"Direct Cypher overlap on translated-supported scenarios: {len(DIRECT_CYPHER_OVERLAP_KEYS)} / {supported_defined} "
+        f"({_percent(len(DIRECT_CYPHER_OVERLAP_KEYS), supported_defined)})",
+        f"Direct Cypher promoted-only snapshot: {len(DIRECT_CYPHER_PROMOTION_KEYS)} "
+        f"(rows {len(DIRECT_CYPHER_PROMOTION_ROW_KEYS)}, errors {len(DIRECT_CYPHER_PROMOTION_ERROR_KEYS)})",
+        f"Direct Cypher total snapshot across represented scenarios: "
+        f"{len(DIRECT_CYPHER_OVERLAP_KEYS) + len(DIRECT_CYPHER_PROMOTION_KEYS)} / {total} "
+        f"({_percent(len(DIRECT_CYPHER_OVERLAP_KEYS) + len(DIRECT_CYPHER_PROMOTION_KEYS), total)})",
         f"Translated but xfail: {translated_xfail}",
         f"Translated but skip: {translated_skip}",
         f"Supported but missing GFQL: {supported_missing}",

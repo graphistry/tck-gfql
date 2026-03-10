@@ -86,6 +86,7 @@ SCENARIOS = [
                 {"n": "({name: 'E'})"},
             ],
         ),
+        params={"skipAmount": 2},
         gfql=plan(
             match(n(name="n")),
             rows(table="nodes", source="n"),
