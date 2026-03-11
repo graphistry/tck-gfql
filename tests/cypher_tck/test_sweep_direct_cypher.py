@@ -20,6 +20,22 @@ def test_compute_direct_cypher_sets_tracks_overlap_row_and_error_promotions() ->
     assert error_keys == ["call1-7"]
 
 
+def test_compute_direct_cypher_sets_uses_entity_projection_meta_for_graph_oracle_rows() -> None:
+    scenarios = [
+        scenario
+        for scenario in SCENARIOS
+        if scenario.key in {"match1-3", "match-where1-4"}
+    ]
+
+    overlap_keys, row_keys, error_keys, overlap_failures, promotion_failures = _compute_direct_cypher_sets(scenarios)
+
+    assert overlap_keys == ["match-where1-4", "match1-3"]
+    assert row_keys == []
+    assert error_keys == []
+    assert overlap_failures == []
+    assert promotion_failures == []
+
+
 def test_build_report_includes_direct_cypher_metrics() -> None:
     report = build_report()
 

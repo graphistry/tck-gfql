@@ -20,9 +20,55 @@ from tests.cypher_tck.test_tck_runner import (
 _SUPPORT_FILE = Path(__file__).resolve().parent / "direct_cypher_support.py"
 
 
+def _ids_from_entity_projection_meta(
+    result: object,
+    *,
+    table: str,
+    alias_hint: str | None = None,
+) -> set:
+    meta = getattr(result, "_cypher_entity_projection_meta", None)
+    if not isinstance(meta, dict):
+        return set()
+
+    candidates: List[object] = []
+    if alias_hint is not None:
+        candidate = meta.get(alias_hint)
+        if candidate is not None:
+            candidates = [candidate]
+    else:
+        candidates = [candidate for candidate in meta.values() if isinstance(candidate, dict) and candidate.get("table") == table]
+
+    if len(candidates) != 1:
+        return set()
+
+    candidate = candidates[0]
+    if not isinstance(candidate, dict) or candidate.get("table") != table:
+        return set()
+
+    ids = candidate.get("ids")
+    if ids is None:
+        return set()
+
+    values = ids.tolist() if hasattr(ids, "tolist") else list(ids)
+    normalized = set()
+    for value in values:
+        if hasattr(value, "item") and not isinstance(value, (str, bytes, list, tuple, dict)):
+            try:
+                value = value.item()
+            except Exception:
+                pass
+        if value is not None:
+            normalized.add(value)
+    return normalized
+
+
 def _compare_graph_result(scenario: Scenario, result: object) -> None:
     actual_nodes = _ids_from_df(getattr(result, "_nodes", None), scenario.graph.node_id)
     actual_edges = _ids_from_df(getattr(result, "_edges", None), scenario.graph.edge_id)
+    if scenario.expected.node_ids is not None and not actual_nodes:
+        actual_nodes = _ids_from_entity_projection_meta(result, table="nodes", alias_hint=scenario.return_alias)
+    if scenario.expected.edge_ids is not None and not actual_edges:
+        actual_edges = _ids_from_entity_projection_meta(result, table="edges", alias_hint=scenario.return_alias)
 
     if scenario.expected.node_ids is not None:
         assert set(scenario.expected.node_ids) == actual_nodes, (
