@@ -3,6 +3,9 @@ from tests.cypher_tck.gap_priority import (
     build_priority_lane_summaries,
     classify_primary_xfail_family,
 )
+from tests.cypher_tck.direct_cypher_xfail_contract import (
+    DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+)
 from tests.cypher_tck.report import build_report
 from tests.cypher_tck.scenarios import SCENARIOS
 
@@ -49,3 +52,9 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert "TODO(meta-issue): multiplicity carrier PR2-PR4" in report
     assert "Representative tracked scenarios:" in report
+    assert "Direct local Cypher xfail contract:" in report
+    assert "validation-safe xfails:" in report
+    assert (
+        f"tracked non-validation debt: {len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY)}"
+        in report
+    )

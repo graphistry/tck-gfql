@@ -4,10 +4,16 @@ from typing import Any, Dict, Iterable, List, Sequence
 import pandas as pd
 import pytest
 
+from graphistry.compute.exceptions import GFQLValidationError
 from graphistry.embed_utils import check_cudf
 from graphistry.gfql.ref.enumerator import OracleCaps, enumerate_chain
 from graphistry.tests.test_compute import CGFull
 
+from tests.cypher_tck.direct_cypher_xfail_contract import (
+    DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+    DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
+    expected_direct_cypher_xfail_outcome,
+)
 from tests.cypher_tck.gfql_plan import PlanStep
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.plan_executor import execute_plan
@@ -323,6 +329,42 @@ def test_match7_9_is_not_direct_promoted() -> None:
     scenario = next(s for s in SCENARIOS if s.key == "match7-9")
     assert scenario.status == "xfail"
     assert "cypher-string" not in scenario.tags
+
+
+def _direct_cypher_xfail_outcome(scenario: Scenario) -> str:
+    g = _build_graph(scenario.graph)
+    try:
+        result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+    except GFQLValidationError:
+        return DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME
+    except Exception as exc:
+        return type(exc).__name__
+
+    if scenario.expected.rows is None:
+        return "unexpected_success_expected_error"
+
+    try:
+        _assert_expected_rows(scenario, _rows_from_result(result))
+    except AssertionError:
+        return "success_wrong_rows"
+    return "success_matches_expected"
+
+
+def test_direct_cypher_xfail_contract_map_only_targets_current_xfails() -> None:
+    xfail_keys = {scenario.key for scenario in SCENARIOS if scenario.status == "xfail"}
+    assert set(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY).issubset(xfail_keys)
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    tuple(scenario for scenario in SCENARIOS if scenario.status == "xfail"),
+    ids=lambda scenario: scenario.key,
+)
+def test_direct_cypher_xfail_contract(scenario: Scenario) -> None:
+    assert (
+        _direct_cypher_xfail_outcome(scenario)
+        == expected_direct_cypher_xfail_outcome(scenario.key)
+    )
 
 
 def _assert_ids(
