@@ -288,6 +288,15 @@ def test_direct_cypher_only_error_support_regression_typeconversion2() -> None:
     assert "phase1-executor" not in scenario.tags
 
 
+@pytest.mark.parametrize("key", ["expr-typeconversion3-6-1", "expr-typeconversion3-6-4"])
+def test_direct_cypher_only_error_support_regression_typeconversion3(key: str) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
+
+
 def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
     scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier11-3-4")
     assert scenario.status == "xfail"
