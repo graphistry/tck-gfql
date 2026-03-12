@@ -319,6 +319,12 @@ def test_counting_subgraph_match_count_star_cases_are_not_direct_promoted(key: s
     assert "cypher-string" not in scenario.tags
 
 
+def test_match7_9_is_not_direct_promoted() -> None:
+    scenario = next(s for s in SCENARIOS if s.key == "match7-9")
+    assert scenario.status == "xfail"
+    assert "cypher-string" not in scenario.tags
+
+
 def _assert_ids(
     expected: Expected,
     oracle_nodes: set,
