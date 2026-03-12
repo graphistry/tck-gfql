@@ -11,6 +11,10 @@ from tests.cypher_tck.direct_cypher_support import (
     DIRECT_CYPHER_PROMOTION_KEYS,
     DIRECT_CYPHER_PROMOTION_ROW_KEYS,
 )
+from tests.cypher_tck.gap_priority import (
+    build_primary_family_summaries,
+    build_priority_lane_summaries,
+)
 from tests.cypher_tck.gfql_plan import PlanStep
 from tests.cypher_tck.phase_support import PHASE1_EXECUTOR_PURE_KEYS
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -231,6 +235,51 @@ def build_report() -> str:
     if impure_buckets:
         for tag, count in impure_buckets.most_common(10):
             lines.append(f"- {tag}: {count}")
+    else:
+        lines.append("- none")
+
+    priority_lanes = build_priority_lane_summaries(SCENARIOS)
+    primary_families = build_primary_family_summaries(SCENARIOS)
+
+    lines.extend(
+        [
+            "",
+            "Primary xfail families (disjoint heuristic):",
+            "| family | xfail | priority | class | top reason | tracker |",
+            "|---|---:|---|---|---|---|",
+        ]
+    )
+    for family in primary_families:
+        lines.append(
+            f"| {family.definition.title} | {family.xfail_count} | "
+            f"{family.definition.priority} | {family.definition.class_name} | "
+            f"{family.top_reason or 'n/a'} | {family.definition.tracker_ref} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "Priority candidate lanes:",
+            "| lane | class | priority | signal | user value | cost | architecture risk | tracker |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+    )
+    for lane in priority_lanes:
+        lines.append(
+            f"| {lane.definition.title} | {lane.definition.class_name} | "
+            f"{lane.definition.priority} | {lane.signal} | {lane.definition.user_value} | "
+            f"{lane.definition.implementation_cost} | {lane.definition.architecture_risk} | "
+            f"{lane.definition.tracker_ref} |"
+        )
+
+    lines.append("")
+    lines.append("Representative tracked scenarios:")
+    if priority_lanes:
+        for lane in priority_lanes:
+            lines.append(
+                f"- {lane.definition.title} [{lane.definition.tracker_ref}]: "
+                + (", ".join(lane.sample_keys) if lane.sample_keys else "none")
+            )
     else:
         lines.append("- none")
 

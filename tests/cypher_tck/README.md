@@ -28,6 +28,7 @@ optional cuDF runs when enabled.
 ```bash
 pytest tests/cypher_tck -xvs
 TEST_CUDF=1 pytest tests/cypher_tck -xvs
+PYGRAPHISTRY_PATH=/path/to/pygraphistry python -m tests.cypher_tck.report
 ```
 
 ## Porting backlog
@@ -46,3 +47,6 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   target-table-ops or target-expr-dsl scenario lacks a manual plan, a minimal
   clause-based plan is generated from the Cypher text at load time.
 - Track feature gaps and workarounds in `tests/cypher_tck/GAP_ANALYSIS.md`.
+- `tests.cypher_tck.report` now emits both conformance counts and a reusable
+  lane-priority view for backlog planning, including tracker placeholders for
+  the current top candidate workstreams.
