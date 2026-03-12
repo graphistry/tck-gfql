@@ -2428,7 +2428,22 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
                     index_values.append(None)
                     continue
                 try:
-                    index_values.append(base[key])
+                    if isinstance(base, dict):
+                        if not isinstance(key, str):
+                            raise PlanExecutionError("index access failed: map indices must be strings")
+                        index_values.append(base.get(key))
+                        continue
+                    if isinstance(base, (list, tuple)):
+                        if isinstance(key, bool) or not isinstance(key, numbers.Integral):
+                            raise PlanExecutionError("index access failed: list indices must be integers")
+                        try:
+                            index_values.append(base[int(key)])
+                        except IndexError:
+                            index_values.append(None)
+                        continue
+                    raise PlanExecutionError("index access failed: dynamic index base must be list or map")
+                except PlanExecutionError:
+                    raise
                 except Exception as exc:
                     raise PlanExecutionError(f"index access failed: {exc}") from exc
             return pd.Series(index_values, index=df.index)
@@ -5076,6 +5091,8 @@ def _select_items_to_gfql(
             try:
                 folded_series = _eval_expr_series(eval_frame, expr_for_eval)
             except Exception:
+                if isinstance(expr_for_eval, Expr) and expr_for_eval.op == "index":
+                    return None
                 folded_series = None
             if folded_series is not None:
                 if len(folded_series) == 0:

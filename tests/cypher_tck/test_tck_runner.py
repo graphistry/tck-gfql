@@ -192,6 +192,49 @@ def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
         return []
     return pdf.to_dict("records")
 
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "expr-comparison3-9",
+        "expr-precedence1-20-1",
+        "expr-precedence1-20-2",
+        "expr-precedence1-24-2",
+        "expr-precedence1-25-6",
+        "expr-precedence1-27",
+        "expr-quantifier1-10-1",
+        "expr-quantifier1-10-2",
+        "expr-quantifier1-10-3",
+        "expr-quantifier1-10-7",
+        "expr-quantifier1-7-2",
+        "expr-quantifier1-7-4",
+        "expr-quantifier1-7-5",
+        "expr-quantifier1-7-6",
+        "expr-quantifier1-7-7",
+        "expr-quantifier1-7-8",
+    ],
+)
+def test_direct_cypher_only_support_regressions(key: str) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
+
+
+def test_direct_cypher_only_error_support_regression() -> None:
+    scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier1-15-2")
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
+
+
+def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
+    scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier11-3-4")
+    assert scenario.status == "xfail"
+    assert "phase1-executor" not in scenario.tags
+
+
 def _assert_ids(
     expected: Expected,
     oracle_nodes: set,

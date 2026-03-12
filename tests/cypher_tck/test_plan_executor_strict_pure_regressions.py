@@ -116,8 +116,9 @@ def test_non_strict_tracks_state_materialization_reason() -> None:
     assert reasons == ["select_delegate_materialize_to_pandas"]
 
 
-def test_strict_pure_expected_select_error_not_preempted_by_impurity() -> None:
-    scenario = _scenario("expr-list1-6-1")
+@pytest.mark.parametrize("key", ["expr-list1-6-1", "expr-list1-8-1"])
+def test_strict_pure_expected_select_error_not_preempted_by_impurity(key: str) -> None:
+    scenario = _scenario(key)
     assert scenario.gfql is not None
     graph = _build_graph(scenario.graph)
     with pytest.raises(Exception) as exc:

@@ -75,6 +75,14 @@ def test_with_order_by_can_use_previous_with_alias_before_projection() -> None:
 
 @pytest.mark.parametrize(
     "key",
+    ["expr-list1-6-1", "expr-list1-8-1"],
+)
+def test_list_index_runtime_error_regressions(key: str) -> None:
+    _assert_plan_raises(key)
+
+
+@pytest.mark.parametrize(
+    "key",
     [
         "return6-15",
         "return6-20",
