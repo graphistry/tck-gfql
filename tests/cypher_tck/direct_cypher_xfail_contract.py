@@ -125,7 +125,11 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-10-2",
 )
 
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = ("match7-9",)
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
+    "expr-aggregation2-7",
+    "expr-aggregation2-8",
+    "match7-9",
+)
 
 DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
     dict[str, DirectCypherXfailOutcome]
