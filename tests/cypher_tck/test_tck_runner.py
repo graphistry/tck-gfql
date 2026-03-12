@@ -222,6 +222,16 @@ def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
         "expr-quantifier2-7-4",
         "expr-quantifier2-7-5",
         "expr-quantifier2-7-7",
+        "expr-quantifier3-10-1",
+        "expr-quantifier3-10-2",
+        "expr-quantifier3-10-3",
+        "expr-quantifier3-10-7",
+        "expr-quantifier3-7-2",
+        "expr-quantifier3-7-4",
+        "expr-quantifier3-7-5",
+        "expr-quantifier3-7-6",
+        "expr-quantifier3-7-7",
+        "expr-quantifier3-7-8",
     ],
 )
 def test_direct_cypher_only_support_regressions(key: str) -> None:
@@ -241,6 +251,14 @@ def test_direct_cypher_only_error_support_regression() -> None:
 
 def test_direct_cypher_only_error_support_regression_quantifier2() -> None:
     scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier2-16-2")
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
+
+
+def test_direct_cypher_only_error_support_regression_quantifier3() -> None:
+    scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier3-15-2")
     assert scenario.status == "supported"
     assert "cypher-string" in scenario.tags
     assert "cypher-string-error" in scenario.tags
