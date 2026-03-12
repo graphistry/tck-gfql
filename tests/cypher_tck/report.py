@@ -5,6 +5,10 @@ from collections import Counter, defaultdict
 from typing import Dict, List, Optional, Tuple, cast
 
 
+from tests.cypher_tck.direct_cypher_xfail_contract import (
+    DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS,
+    DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+)
 from tests.cypher_tck.direct_cypher_support import (
     DIRECT_CYPHER_OVERLAP_KEYS,
     DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
@@ -161,6 +165,9 @@ def build_report() -> str:
     other_count = total - supported_count - xfail_count - skip_count
     supported_pure = sum(1 for scenario in SCENARIOS if _is_pure_supported_scenario(scenario))
     supported_impure = supported_count - supported_pure
+    direct_cypher_validation_safe_xfails = xfail_count - len(
+        DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY
+    )
 
     group_counts: Dict[str, Counter] = defaultdict(Counter)
     area_counts: Dict[str, Counter] = defaultdict(Counter)
@@ -237,6 +244,19 @@ def build_report() -> str:
             lines.append(f"- {tag}: {count}")
     else:
         lines.append("- none")
+
+    lines.extend(
+        [
+            "",
+            "Direct local Cypher xfail contract:",
+            f"- validation-safe xfails: {direct_cypher_validation_safe_xfails} "
+            f"({_percent(direct_cypher_validation_safe_xfails, xfail_count)})",
+            f"- tracked non-validation debt: {len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY)} "
+            f"({_percent(len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY), xfail_count)})",
+        ]
+    )
+    for outcome, count in DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS.items():
+        lines.append(f"- {outcome}: {count}")
 
     priority_lanes = build_priority_lane_summaries(SCENARIOS)
     primary_families = build_primary_family_summaries(SCENARIOS)
