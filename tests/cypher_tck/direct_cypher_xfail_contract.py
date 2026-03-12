@@ -7,6 +7,7 @@ from typing import Final, Literal
 DirectCypherXfailOutcome = Literal[
     "GFQLValidationError",
     "ValueError",
+    "success_matches_expected",
     "success_wrong_rows",
     "unexpected_success_expected_error",
 ]
@@ -16,11 +17,14 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
     "GFQLValidationError"
 )
 
+# Audit snapshot is pinned to the current sibling CI target: pygraphistry@master.
 DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-1",
     "match-where5-1",
     "match-where5-2",
     "match-where5-3",
+    "with-skip-limit2-3",
+    "with1-2",
 )
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
@@ -91,6 +95,8 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-3",
     "expr-typeconversion4-4",
     "expr-typeconversion4-5",
+    "match-where6-2",
+    "match7-8",
     "return2-10",
     "return2-9",
     "return7-1",
@@ -108,7 +114,9 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "with-orderby3-2-4",
     "with-orderby3-2-5",
     "with-orderby3-2-6",
+    "with-where6-1",
     "with1-1",
+    "with7-2",
 )
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
@@ -117,10 +125,16 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-10-2",
 )
 
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = ("match7-9",)
+
 DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
     dict[str, DirectCypherXfailOutcome]
 ] = {
     **{key: "ValueError" for key in DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS},
+    **{
+        key: "success_matches_expected"
+        for key in DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS
+    },
     **{key: "success_wrong_rows" for key in DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS},
     **{
         key: "unexpected_success_expected_error"
@@ -134,6 +148,7 @@ DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS: Final[dict[str, int]] = dict(
 
 assert len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY) == (
     len(DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS)
+    + len(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS)
     + len(DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS)
     + len(DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS)
 )
