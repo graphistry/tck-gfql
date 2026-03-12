@@ -2615,6 +2615,16 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-quantifier1-7-6",
     "expr-quantifier1-7-7",
     "expr-quantifier1-7-8",
+    "expr-quantifier2-10-1",
+    "expr-quantifier2-10-2",
+    "expr-quantifier2-10-3",
+    "expr-quantifier2-10-4",
+    "expr-quantifier2-10-5",
+    "expr-quantifier2-10-7",
+    "expr-quantifier2-7-2",
+    "expr-quantifier2-7-4",
+    "expr-quantifier2-7-5",
+    "expr-quantifier2-7-7",
 }
 
 DIRECT_CYPHER_PROMOTION_ERROR_KEYS = {
@@ -2725,6 +2735,7 @@ DIRECT_CYPHER_PROMOTION_ERROR_KEYS = {
     "union3-1",
     "union3-2",
     "expr-quantifier1-15-2",
+    "expr-quantifier2-16-2",
 }
 
 DIRECT_CYPHER_PROMOTION_KEYS = DIRECT_CYPHER_PROMOTION_ROW_KEYS | DIRECT_CYPHER_PROMOTION_ERROR_KEYS
