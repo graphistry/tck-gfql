@@ -280,6 +280,14 @@ def test_direct_cypher_only_error_support_regression_quantifier4() -> None:
     assert "phase1-executor" not in scenario.tags
 
 
+def test_direct_cypher_only_error_support_regression_typeconversion2() -> None:
+    scenario = next(s for s in SCENARIOS if s.key == "expr-typeconversion2-8-3")
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
+
+
 def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
     scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier11-3-4")
     assert scenario.status == "xfail"

@@ -2755,6 +2755,7 @@ DIRECT_CYPHER_PROMOTION_ERROR_KEYS = {
     "expr-quantifier2-16-2",
     "expr-quantifier3-15-2",
     "expr-quantifier4-15-2",
+    "expr-typeconversion2-8-3",
 }
 
 DIRECT_CYPHER_PROMOTION_KEYS = DIRECT_CYPHER_PROMOTION_ROW_KEYS | DIRECT_CYPHER_PROMOTION_ERROR_KEYS
