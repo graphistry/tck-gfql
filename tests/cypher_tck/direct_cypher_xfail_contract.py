@@ -128,6 +128,8 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation2-7",
     "expr-aggregation2-8",
+    "expr-comparison2-4-3",
+    "expr-comparison2-4-4",
     "match7-9",
 )
 
