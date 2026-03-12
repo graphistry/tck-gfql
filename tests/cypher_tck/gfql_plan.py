@@ -41,11 +41,11 @@ def func(name: str, args: Iterable[Any]) -> Expr:
 
 
 def unary(op: str, value: Any) -> Expr:
-    return expr("unary", op=op, value=value)
+    return Expr(op="unary", args={"op": op, "value": value})
 
 
 def binary(op: str, left: Any, right: Any) -> Expr:
-    return expr("binary", op=op, left=left, right=right)
+    return Expr(op="binary", args={"op": op, "left": left, "right": right})
 
 
 def list_(items: Iterable[Any]) -> Expr:
@@ -91,7 +91,7 @@ def select(items: Iterable[Tuple[str, Any]]) -> PlanStep:
     return step("select", items=tuple(items))
 
 
-def order_by(keys: Iterable[Tuple[str, Any]]) -> PlanStep:
+def order_by(keys: Iterable[Tuple[Any, Any]]) -> PlanStep:
     return step("order_by", keys=tuple(keys))
 
 

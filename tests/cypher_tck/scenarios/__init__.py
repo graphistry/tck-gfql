@@ -6,7 +6,12 @@ from pathlib import Path
 import re
 from typing import Iterable, Optional, Tuple
 
+from tests.cypher_tck.direct_cypher_support import (
+    DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
+    DIRECT_CYPHER_PROMOTION_ROW_KEYS,
+)
 from tests.cypher_tck.gfql_plan import (
+    PlanStep,
     binary,
     col,
     distinct,
@@ -28,9 +33,16 @@ from tests.cypher_tck.gfql_plan import (
     unary,
 )
 from tests.cypher_tck.models import Scenario
+from tests.cypher_tck.phase_support import (
+    PHASE1_CYPHER_STRING_PURE_KEYS,
+    PHASE1_EXECUTOR_PURE_ERROR_KEYS,
+    PHASE1_EXECUTOR_PURE_KEYS,
+    PHASE1_EXECUTOR_SUPPORTED_ERROR_KEYS,
+    PHASE1_EXECUTOR_SUPPORTED_KEYS,
+)
 
 _SCENARIO_ROOT = Path(__file__).resolve().parent / "tck" / "features"
-SCENARIOS = []
+SCENARIOS: list[Scenario] = []
 
 _TARGET_TABLE_PREFIXES = (
     "clauses/return",
@@ -47,6 +59,7 @@ _TARGET_EXPR_PREFIXES = (
     "expressions/mathematical",
     "expressions/null",
     "expressions/precedence",
+    "expressions/quantifier",
     "expressions/string",
     "expressions/temporal",
     "expressions/typeConversion",
@@ -97,8 +110,9 @@ def _tag_scenario(scenario: Scenario) -> Scenario:
 
 
 _CLAUSE_RE = re.compile(
-    r"(?im)^(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\\b"
+    r"(?im)^\s*(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\b"
 )
+_ORDER_DIR_RE = re.compile(r"(?is)^(?P<expr>.+?)\s+(?P<dir>asc(?:ending)?|desc(?:ending)?)$")
 
 
 def _split_clauses(cypher: str) -> Tuple[Tuple[str, str], ...]:
@@ -148,11 +162,71 @@ def _split_top_level(expr: str) -> Tuple[str, ...]:
             buf.append(ch)
         else:
             buf.append(ch)
-        raise ValueError(f"Unexpected character: {ch}")
+        idx += 1
     tail = "".join(buf).strip()
     if tail:
         items.append(tail)
     return tuple(items)
+
+
+def _split_top_level_keyword(expr: str, keyword: str) -> Optional[Tuple[str, str]]:
+    txt = expr
+    upper = txt.upper()
+    needle = keyword.upper()
+    depth_paren = 0
+    depth_bracket = 0
+    depth_brace = 0
+    in_single = False
+    in_double = False
+    idx = 0
+    while idx < len(txt):
+        ch = txt[idx]
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            idx += 1
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            idx += 1
+            continue
+        if in_single or in_double:
+            idx += 1
+            continue
+        if ch == "(":
+            depth_paren += 1
+            idx += 1
+            continue
+        if ch == ")":
+            depth_paren = max(0, depth_paren - 1)
+            idx += 1
+            continue
+        if ch == "[":
+            depth_bracket += 1
+            idx += 1
+            continue
+        if ch == "]":
+            depth_bracket = max(0, depth_bracket - 1)
+            idx += 1
+            continue
+        if ch == "{":
+            depth_brace += 1
+            idx += 1
+            continue
+        if ch == "}":
+            depth_brace = max(0, depth_brace - 1)
+            idx += 1
+            continue
+        if depth_paren == 0 and depth_bracket == 0 and depth_brace == 0 and upper.startswith(needle, idx):
+            left_ok = idx == 0 or not (upper[idx - 1].isalnum() or upper[idx - 1] == "_")
+            right_idx = idx + len(needle)
+            right_ok = right_idx >= len(upper) or not (upper[right_idx].isalnum() or upper[right_idx] == "_")
+            if left_ok and right_ok:
+                left = txt[:idx].strip()
+                right = txt[right_idx:].strip()
+                if left and right:
+                    return left, right
+        idx += 1
+    return None
 
 
 def _strip_distinct(body: str) -> Tuple[bool, str]:
@@ -181,8 +255,33 @@ def _tokenize(expr: str) -> Tuple[_Token, ...]:
             buf = []
             while idx < len(expr):
                 ch = expr[idx]
-                if ch == "\\" and idx + 1 < len(expr):
-                    buf.append(expr[idx + 1])
+                if ch == "\\":
+                    if idx + 1 >= len(expr):
+                        raise ValueError("unterminated escape sequence in string literal")
+                    esc = expr[idx + 1]
+                    if esc == "u":
+                        if idx + 5 >= len(expr):
+                            raise ValueError("invalid unicode escape in string literal")
+                        hex_digits = expr[idx + 2 : idx + 6]
+                        if re.fullmatch(r"[0-9A-Fa-f]{4}", hex_digits) is None:
+                            raise ValueError("invalid unicode escape in string literal")
+                        buf.append(chr(int(hex_digits, 16)))
+                        idx += 6
+                        continue
+                    if esc == "n":
+                        buf.append("\n")
+                    elif esc == "t":
+                        buf.append("\t")
+                    elif esc == "r":
+                        buf.append("\r")
+                    elif esc == "b":
+                        buf.append("\b")
+                    elif esc == "f":
+                        buf.append("\f")
+                    elif esc in {"\\", "'", '"'}:
+                        buf.append(esc)
+                    else:
+                        raise ValueError(f"unsupported escape sequence: \\{esc}")
                     idx += 2
                     continue
                 if ch == quote:
@@ -554,6 +653,10 @@ class _ExprParser:
 
 
 def _parse_expr(expr_text: str):
+    # Preserve Cypher slice syntax for downstream GFQL string delegation.
+    # The lightweight parser tokenizes `1..3` as numeric/index fragments.
+    if re.search(r"\[[^\]]*\.\.[^\]]*\]", expr_text):
+        return raw(expr_text)
     try:
         tokens = _tokenize(expr_text)
         parser = _ExprParser(tokens)
@@ -568,7 +671,7 @@ def _parse_expr(expr_text: str):
 def _parse_return_items(body: str) -> Tuple[Tuple[str, object], ...]:
     items = []
     for item in _split_top_level(body):
-        parts = re.split(r"(?i)\\s+AS\\s+", item, maxsplit=1)
+        parts = re.split(r"(?i)\s+AS\s+", item, maxsplit=1)
         if len(parts) == 2:
             expr_text, alias = parts[0].strip(), parts[1].strip()
         else:
@@ -581,10 +684,11 @@ def _parse_return_items(body: str) -> Tuple[Tuple[str, object], ...]:
 def _parse_order_by(body: str) -> Tuple[Tuple[object, str], ...]:
     items = []
     for item in _split_top_level(body):
-        match = re.match(r"(?is)(.+?)\\s+(ASC|DESC)$", item.strip())
+        match = _ORDER_DIR_RE.match(item.strip())
         if match:
-            expr_text = match.group(1).strip()
-            direction = match.group(2).lower()
+            expr_text = match.group("expr").strip()
+            direction_raw = match.group("dir").strip().lower()
+            direction = "asc" if direction_raw in {"asc", "ascending"} else "desc"
         else:
             expr_text = item.strip()
             direction = "asc"
@@ -594,9 +698,9 @@ def _parse_order_by(body: str) -> Tuple[Tuple[object, str], ...]:
 
 def _parse_value(token: str):
     value = token.strip()
-    if re.fullmatch(r"-?\\d+", value):
+    if re.fullmatch(r"-?\d+", value):
         return int(value)
-    if re.fullmatch(r"-?\\d+\\.\\d+", value):
+    if re.fullmatch(r"-?\d+\.\d+", value):
         return float(value)
     return value
 
@@ -609,16 +713,21 @@ def _plan_from_cypher(cypher: str) -> Tuple:
         elif clause == "WHERE":
             steps.append(step("where", expr=_parse_expr(body)))
         elif clause == "UNWIND":
-            parts = re.split(r"(?i)\\s+AS\\s+", body, maxsplit=1)
+            parts = re.split(r"(?i)\s+AS\s+", body, maxsplit=1)
             payload = {"expr": _parse_expr(parts[0].strip())}
             if len(parts) == 2:
                 payload["as_"] = parts[1].strip()
             steps.append(step("unwind", **payload))
         elif clause == "WITH":
             distinct_flag, content = _strip_distinct(body)
-            steps.append(step("with", items=_parse_return_items(content)))
+            where_split = _split_top_level_keyword(content, "WHERE")
+            with_items_text = where_split[0] if where_split is not None else content
+            where_text = where_split[1] if where_split is not None else None
+            steps.append(step("with", items=_parse_return_items(with_items_text)))
             if distinct_flag:
                 steps.append(distinct())
+            if where_text is not None:
+                steps.append(step("where", expr=_parse_expr(where_text)))
         elif clause == "RETURN":
             distinct_flag, content = _strip_distinct(body)
             steps.append(select(_parse_return_items(content)))
@@ -647,6 +756,92 @@ def _apply_translation(scenario: Scenario) -> Scenario:
     return scenario
 
 
+def _without_tag(tags: Tuple[str, ...], target: str) -> Tuple[str, ...]:
+    return tuple(tag for tag in tags if tag != target)
+
+
+def _is_executable_plan_tuple(gfql: object) -> bool:
+    if not isinstance(gfql, tuple) or not gfql:
+        return False
+    if not all(isinstance(step_obj, PlanStep) for step_obj in gfql):
+        return False
+    if any(step_obj.op in {"raw", "invalid"} for step_obj in gfql):
+        return False
+    return True
+
+
+def _is_error_plan_tuple(gfql: object) -> bool:
+    if not isinstance(gfql, tuple) or not gfql:
+        return False
+    if not all(isinstance(step_obj, PlanStep) for step_obj in gfql):
+        return False
+    return not any(step_obj.op == "raw" for step_obj in gfql)
+
+
+def _promote_executor_support(scenario: Scenario) -> Scenario:
+    if scenario.status != "xfail":
+        return scenario
+    supports_rows = scenario.key in PHASE1_EXECUTOR_SUPPORTED_KEYS and scenario.expected.rows is not None
+    supports_error = scenario.key in PHASE1_EXECUTOR_SUPPORTED_ERROR_KEYS and scenario.expected.rows is None
+    if not supports_rows and not supports_error:
+        return scenario
+
+    if supports_rows and not _is_executable_plan_tuple(scenario.gfql):
+        return scenario
+    if supports_error and not _is_error_plan_tuple(scenario.gfql):
+        return scenario
+
+    tags = list(_without_tag(scenario.tags, "xfail"))
+    if "phase1-executor" not in tags:
+        tags.append("phase1-executor")
+    if supports_error and "phase1-executor-error" not in tags:
+        tags.append("phase1-executor-error")
+
+    pure_row = scenario.key in PHASE1_EXECUTOR_PURE_KEYS
+    pure_error = scenario.key in PHASE1_EXECUTOR_PURE_ERROR_KEYS
+    if (pure_row or pure_error) and "phase1-executor-pure" not in tags:
+        tags.append("phase1-executor-pure")
+
+    return replace(
+        scenario,
+        status="supported",
+        reason=None,
+        tags=tuple(tags),
+    )
+
+
+
+
+def _promote_cypher_string_support(scenario: Scenario) -> Scenario:
+    if scenario.status != "xfail":
+        return scenario
+
+    supports_rows = (
+        scenario.key in DIRECT_CYPHER_PROMOTION_ROW_KEYS
+        and scenario.expected.rows is not None
+    )
+    supports_error = (
+        scenario.key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
+        and scenario.expected.rows is None
+    )
+    if not supports_rows and not supports_error:
+        return scenario
+
+    tags = list(_without_tag(scenario.tags, "xfail"))
+    if "cypher-string" not in tags:
+        tags.append("cypher-string")
+    if "cypher-string-pure" not in tags:
+        tags.append("cypher-string-pure")
+    if supports_error and "cypher-string-error" not in tags:
+        tags.append("cypher-string-error")
+
+    return replace(
+        scenario,
+        status="supported",
+        reason=None,
+        tags=tuple(tags),
+    )
+
 for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     module_name = "tests.cypher_tck.scenarios." + path.relative_to(Path(__file__).resolve().parent).with_suffix("").as_posix().replace("/", ".")
     spec = spec_from_file_location(module_name, path)
@@ -656,4 +851,4 @@ for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     spec.loader.exec_module(module)
     SCENARIOS.extend(getattr(module, "SCENARIOS", []))
 
-SCENARIOS = [_apply_translation(_tag_scenario(scenario)) for scenario in SCENARIOS]
+SCENARIOS = [_promote_cypher_string_support(_promote_executor_support(_apply_translation(_tag_scenario(scenario)))) for scenario in SCENARIOS]

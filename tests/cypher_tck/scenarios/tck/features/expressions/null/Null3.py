@@ -135,6 +135,7 @@ SCENARIOS = [
             {'result': 'false'}
             ],
         ),
+        params={"elt": 1, "coll": []},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
