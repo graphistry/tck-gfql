@@ -303,6 +303,22 @@ def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
     assert "phase1-executor" not in scenario.tags
 
 
+@pytest.mark.parametrize(
+    "key",
+    [
+        "usecase-countingsubgraphmatches1-1",
+        "usecase-countingsubgraphmatches1-2",
+        "usecase-countingsubgraphmatches1-3",
+        "usecase-countingsubgraphmatches1-4",
+        "usecase-countingsubgraphmatches1-5",
+    ],
+)
+def test_counting_subgraph_match_count_star_cases_are_not_direct_promoted(key: str) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "xfail"
+    assert "cypher-string" not in scenario.tags
+
+
 def _assert_ids(
     expected: Expected,
     oracle_nodes: set,
