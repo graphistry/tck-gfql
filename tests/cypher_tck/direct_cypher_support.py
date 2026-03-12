@@ -2462,7 +2462,6 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "match7-24",
     "match7-28",
     "match7-7",
-    "match7-9",
     "return-orderby2-3",
     "return-orderby2-6",
     "return-orderby3-1",
