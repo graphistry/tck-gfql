@@ -112,6 +112,27 @@ def _impure_bucket(scenario: object) -> str:
     return "plan-other"
 
 
+def _live_direct_cypher_snapshot_sets(
+    scenarios: List[object],
+) -> Tuple[set[str], set[str], set[str]]:
+    represented_keys = {getattr(scenario, "key", "") for scenario in scenarios}
+    translated_supported_keys = {
+        getattr(scenario, "key", "")
+        for scenario in scenarios
+        if getattr(scenario, "status", None) == "supported"
+        and getattr(scenario, "gfql", None) is not None
+        and not _is_cypher_string_supported_scenario(scenario)
+    }
+    overlap_keys = DIRECT_CYPHER_OVERLAP_KEYS & translated_supported_keys
+    promotion_row_keys = (
+        DIRECT_CYPHER_PROMOTION_ROW_KEYS & represented_keys
+    ) - translated_supported_keys
+    promotion_error_keys = (
+        DIRECT_CYPHER_PROMOTION_ERROR_KEYS & represented_keys
+    ) - translated_supported_keys
+    return overlap_keys, promotion_row_keys, promotion_error_keys
+
+
 def build_report() -> str:
     total = len(SCENARIOS)
     status_counts = Counter(scenario.status for scenario in SCENARIOS)
@@ -168,6 +189,14 @@ def build_report() -> str:
     direct_cypher_validation_safe_xfails = xfail_count - len(
         DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY
     )
+    (
+        direct_cypher_overlap_keys,
+        direct_cypher_promotion_row_keys,
+        direct_cypher_promotion_error_keys,
+    ) = _live_direct_cypher_snapshot_sets(SCENARIOS)
+    direct_cypher_promotion_keys = (
+        direct_cypher_promotion_row_keys | direct_cypher_promotion_error_keys
+    )
 
     group_counts: Dict[str, Counter] = defaultdict(Counter)
     area_counts: Dict[str, Counter] = defaultdict(Counter)
@@ -193,13 +222,13 @@ def build_report() -> str:
         f"Promoted via direct Cypher string only (status/tagged): {cypher_string_supported} "
         f"(rows {cypher_string_supported_rows}, errors {cypher_string_supported_errors})",
         f"GFQL missing: {missing_gfql} ({_percent(missing_gfql, total)})",
-        f"Direct Cypher overlap on translated-supported scenarios: {len(DIRECT_CYPHER_OVERLAP_KEYS)} / {supported_defined} "
-        f"({_percent(len(DIRECT_CYPHER_OVERLAP_KEYS), supported_defined)})",
-        f"Direct Cypher promoted-only snapshot: {len(DIRECT_CYPHER_PROMOTION_KEYS)} "
-        f"(rows {len(DIRECT_CYPHER_PROMOTION_ROW_KEYS)}, errors {len(DIRECT_CYPHER_PROMOTION_ERROR_KEYS)})",
+        f"Direct Cypher overlap on translated-supported scenarios: {len(direct_cypher_overlap_keys)} / {supported_defined} "
+        f"({_percent(len(direct_cypher_overlap_keys), supported_defined)})",
+        f"Direct Cypher promoted-only snapshot: {len(direct_cypher_promotion_keys)} "
+        f"(rows {len(direct_cypher_promotion_row_keys)}, errors {len(direct_cypher_promotion_error_keys)})",
         f"Direct Cypher total snapshot across represented scenarios: "
-        f"{len(DIRECT_CYPHER_OVERLAP_KEYS) + len(DIRECT_CYPHER_PROMOTION_KEYS)} / {total} "
-        f"({_percent(len(DIRECT_CYPHER_OVERLAP_KEYS) + len(DIRECT_CYPHER_PROMOTION_KEYS), total)})",
+        f"{len(direct_cypher_overlap_keys) + len(direct_cypher_promotion_keys)} / {total} "
+        f"({_percent(len(direct_cypher_overlap_keys) + len(direct_cypher_promotion_keys), total)})",
         f"Translated but xfail: {translated_xfail}",
         f"Translated but skip: {translated_skip}",
         f"Supported but missing GFQL: {supported_missing}",

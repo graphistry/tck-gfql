@@ -1,8 +1,10 @@
+from tests.cypher_tck import report as report_module
 from tests.cypher_tck.gap_priority import (
     build_primary_family_summaries,
     build_priority_lane_summaries,
     classify_primary_xfail_family,
 )
+from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
 )
@@ -12,6 +14,26 @@ from tests.cypher_tck.scenarios import SCENARIOS
 
 def _scenario(key: str):
     return next(scenario for scenario in SCENARIOS if scenario.key == key)
+
+
+def _dummy_scenario(
+    key: str,
+    *,
+    gfql: object,
+    status: str,
+    tags: tuple[str, ...] = (),
+) -> Scenario:
+    return Scenario(
+        key=key,
+        feature_path="features/test/Area.feature",
+        scenario=key,
+        cypher="RETURN 1",
+        graph=GraphFixture(nodes=(), edges=()),
+        expected=Expected(rows=[{"value": 1}]),
+        gfql=gfql,
+        status=status,
+        tags=tags,
+    )
 
 
 def test_classify_primary_xfail_family_maps_representative_keys() -> None:
@@ -58,3 +80,40 @@ def test_build_report_includes_gap_priority_sections() -> None:
         f"tracked non-validation debt: {len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY)}"
         in report
     )
+
+
+def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None:
+    scenarios = [
+        _dummy_scenario("translated", gfql=("match",), status="supported"),
+        _dummy_scenario(
+            "direct-row-only",
+            gfql=None,
+            status="supported",
+            tags=("cypher-string",),
+        ),
+        _dummy_scenario("direct-error-only", gfql=None, status="xfail"),
+    ]
+
+    monkeypatch.setattr(
+        report_module,
+        "DIRECT_CYPHER_OVERLAP_KEYS",
+        {"translated", "stale-overlap"},
+    )
+    monkeypatch.setattr(
+        report_module,
+        "DIRECT_CYPHER_PROMOTION_ROW_KEYS",
+        {"direct-row-only", "stale-promotion", "translated"},
+    )
+    monkeypatch.setattr(
+        report_module,
+        "DIRECT_CYPHER_PROMOTION_ERROR_KEYS",
+        {"direct-error-only", "stale-error"},
+    )
+
+    overlap_keys, promotion_row_keys, promotion_error_keys = (
+        report_module._live_direct_cypher_snapshot_sets(scenarios)
+    )
+
+    assert overlap_keys == {"translated"}
+    assert promotion_row_keys == {"direct-row-only"}
+    assert promotion_error_keys == {"direct-error-only"}
