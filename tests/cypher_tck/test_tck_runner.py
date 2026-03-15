@@ -11,6 +11,10 @@ from graphistry.tests.test_compute import CGFull
 
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+    DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
+    DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS,
+    DIRECT_CYPHER_XFAIL_PANDAS_GTE3_MATCHES_EXPECTED_KEYS,
+    DIRECT_CYPHER_XFAIL_PANDAS_LT3_MATCHES_EXPECTED_KEYS,
     DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
     expected_direct_cypher_xfail_outcome,
 )
@@ -353,6 +357,21 @@ def _direct_cypher_xfail_outcome(scenario: Scenario) -> str:
 def test_direct_cypher_xfail_contract_map_only_targets_current_xfails() -> None:
     xfail_keys = {scenario.key for scenario in SCENARIOS if scenario.status == "xfail"}
     assert set(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY).issubset(xfail_keys)
+
+
+def test_direct_cypher_list_order_contract_keys_follow_pandas_major() -> None:
+    all_match_keys = set(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS)
+    lt3_keys = set(DIRECT_CYPHER_XFAIL_PANDAS_LT3_MATCHES_EXPECTED_KEYS)
+    gte3_keys = set(DIRECT_CYPHER_XFAIL_PANDAS_GTE3_MATCHES_EXPECTED_KEYS)
+    base_keys = set(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS)
+
+    assert base_keys.issubset(all_match_keys)
+    if int(str(pd.__version__).split(".", 1)[0]) >= 3:
+        assert all_match_keys & lt3_keys == set()
+        assert all_match_keys & gte3_keys == gte3_keys
+    else:
+        assert all_match_keys & lt3_keys == lt3_keys
+        assert all_match_keys & gte3_keys == set()
 
 
 @pytest.mark.parametrize(

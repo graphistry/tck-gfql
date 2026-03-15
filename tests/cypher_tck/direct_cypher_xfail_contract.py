@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Final, Literal
 
+import pandas as pd
+
 
 DirectCypherXfailOutcome = Literal[
     "GFQLValidationError",
@@ -117,7 +119,22 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-10-2",
 )
 
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
+_PANDAS_MAJOR: Final[int] = int(str(pd.__version__).split(".", 1)[0])
+
+DIRECT_CYPHER_XFAIL_PANDAS_LT3_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
+    "with-orderby2-10-1",
+    "with-orderby2-10-2",
+    "with-orderby2-9-1",
+    "with-orderby2-9-2",
+    "with-orderby2-9-3",
+)
+
+DIRECT_CYPHER_XFAIL_PANDAS_GTE3_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
+    "expr-aggregation2-7",
+    "expr-aggregation2-8",
+)
+
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-4-3",
     "expr-comparison2-4-4",
     "expr-pattern1-7",
@@ -132,11 +149,22 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     "match5-9",
     "match7-13",
     "match7-9",
-    "with-orderby2-10-1",
-    "with-orderby2-10-2",
-    "with-orderby2-9-1",
-    "with-orderby2-9-2",
-    "with-orderby2-9-3",
+)
+
+# A small direct-Cypher tail still differs across pandas major versions.
+# Keep the contract honest in both local-dev and sibling-CI environments.
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
+    *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
+    *(
+        ()
+        if _PANDAS_MAJOR >= 3
+        else DIRECT_CYPHER_XFAIL_PANDAS_LT3_MATCHES_EXPECTED_KEYS
+    ),
+    *(
+        DIRECT_CYPHER_XFAIL_PANDAS_GTE3_MATCHES_EXPECTED_KEYS
+        if _PANDAS_MAJOR >= 3
+        else ()
+    ),
 )
 
 DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
