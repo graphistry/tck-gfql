@@ -17,7 +17,7 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
     "GFQLValidationError"
 )
 
-# Audit snapshot is pinned to the current sibling CI target: pygraphistry@master.
+# Audit snapshot is pinned to the current sibling CI target for this branch pair.
 DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-1",
     "match-where5-1",
@@ -69,7 +69,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-precedence2-1-7",
     "expr-precedence2-1-8",
     "expr-precedence2-1-9",
-    "expr-pattern1-10",
     "expr-string10-4",
     "expr-string10-5",
     "expr-string8-4",
@@ -96,18 +95,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-5",
     "return2-10",
     "return2-9",
-    "return7-1",
-    "match4-1",
-    "match4-5",
-    "match4-6",
-    "match5-21",
-    "match5-23",
-    "match5-25",
-    "match5-26",
-    "match9-2",
-    "match9-3",
-    "match9-4",
-    "match9-5",
     "with-orderby1-31-1",
     "with-orderby1-31-2",
     "with-orderby1-31-3",
@@ -131,8 +118,6 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 )
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
-    "expr-aggregation2-7",
-    "expr-aggregation2-8",
     "expr-comparison2-4-3",
     "expr-comparison2-4-4",
     "expr-pattern1-7",
@@ -141,14 +126,15 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     "match4-2",
     "match5-1",
     "match5-10",
-    "match5-22",
-    "match5-24",
     "match5-4",
     "match5-5",
     "match5-7",
     "match5-9",
-    "match7-13",
-    "match7-9",
+    "with-orderby2-10-1",
+    "with-orderby2-10-2",
+    "with-orderby2-9-1",
+    "with-orderby2-9-2",
+    "with-orderby2-9-3",
 )
 
 DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
