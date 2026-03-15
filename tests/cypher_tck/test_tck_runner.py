@@ -11,6 +11,8 @@ from graphistry.tests.test_compute import CGFull
 
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+    DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
+    DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS,
     DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
     expected_direct_cypher_xfail_outcome,
 )
@@ -353,6 +355,12 @@ def _direct_cypher_xfail_outcome(scenario: Scenario) -> str:
 def test_direct_cypher_xfail_contract_map_only_targets_current_xfails() -> None:
     xfail_keys = {scenario.key for scenario in SCENARIOS if scenario.status == "xfail"}
     assert set(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY).issubset(xfail_keys)
+
+
+def test_direct_cypher_matches_expected_contract_keys_are_stable() -> None:
+    assert set(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS) == set(
+        DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS
+    )
 
 
 @pytest.mark.parametrize(

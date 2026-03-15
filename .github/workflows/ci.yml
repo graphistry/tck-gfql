@@ -9,7 +9,7 @@ on:
       pygraphistry_ref:
         description: "pygraphistry ref (branch/tag/sha)"
         required: false
-        default: "master"
+        default: ""
       pygraphistry_repo:
         description: "pygraphistry repo URL"
         required: false
@@ -18,20 +18,42 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    env:
-      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
-      PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
-      PYGRAPHISTRY_INSTALL: "1"
-      PYGRAPHISTRY_PATH: pygraphistry
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve pygraphistry ref
+        id: pygraphistry
+        env:
+          PYGRAPHISTRY_REF_INPUT: ${{ github.event.inputs.pygraphistry_ref || '' }}
+          PYGRAPHISTRY_REPO_INPUT: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
+        run: |
+          pygraphistry_repo="${PYGRAPHISTRY_REPO_INPUT}"
+          pygraphistry_ref="${PYGRAPHISTRY_REF_INPUT}"
+          candidate_ref="master"
+
+          if [[ "${{ github.event_name }}" == "pull_request" && -n "${{ github.head_ref }}" ]]; then
+            candidate_ref="${{ github.head_ref }}"
+          elif [[ -n "${{ github.ref_name }}" ]]; then
+            candidate_ref="${{ github.ref_name }}"
+          fi
+
+          if [[ -z "${pygraphistry_ref}" ]]; then
+            pygraphistry_ref="master"
+            if git ls-remote --exit-code --heads "${pygraphistry_repo}" "${candidate_ref}" >/dev/null 2>&1; then
+              pygraphistry_ref="${candidate_ref}"
+            fi
+          fi
+
+          echo "repo=${pygraphistry_repo}" >> "$GITHUB_OUTPUT"
+          echo "ref=${pygraphistry_ref}" >> "$GITHUB_OUTPUT"
+          echo "Using pygraphistry ref: ${pygraphistry_ref}"
+
       - name: Checkout pygraphistry
         run: |
-          git clone --depth 1 "${PYGRAPHISTRY_REPO}" "${PYGRAPHISTRY_PATH}"
-          cd "${PYGRAPHISTRY_PATH}"
-          git fetch --depth 1 origin "${PYGRAPHISTRY_REF}"
+          git clone --depth 1 "${{ steps.pygraphistry.outputs.repo }}" pygraphistry
+          cd pygraphistry
+          git fetch --depth 1 origin "${{ steps.pygraphistry.outputs.ref }}"
           git checkout FETCH_HEAD
 
       - name: Set up Python
@@ -45,5 +67,9 @@ jobs:
           pip install pytest pandas
 
       - name: Run tests
+        env:
+          PYGRAPHISTRY_INSTALL: "1"
+          PYGRAPHISTRY_PATH: pygraphistry
         run: |
+          echo "Using pygraphistry ref: ${{ steps.pygraphistry.outputs.ref }}"
           ./bin/ci.sh
