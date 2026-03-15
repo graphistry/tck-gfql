@@ -147,11 +147,6 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     "match5-9",
     "match7-13",
     "match7-9",
-    "with-orderby2-10-1",
-    "with-orderby2-10-2",
-    "with-orderby2-9-1",
-    "with-orderby2-9-2",
-    "with-orderby2-9-3",
 )
 
 DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
