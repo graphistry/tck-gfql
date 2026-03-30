@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import List
 
-from tests.cypher_tck.plan_executor import execute_plan
+import pytest
+
+from tests.cypher_tck.plan_executor import PlanExecutionError, _call_expr_function, execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
 from tests.cypher_tck.test_tck_runner import _assert_expected_rows, _build_graph
 
@@ -64,3 +66,25 @@ def test_select_in_expression_delegates_pure() -> None:
 
 def test_select_xor_expression_delegates_pure() -> None:
     _assert_semantic_and_strict_pure("expr-boolean3-4")
+
+
+def test_toboolean_invalid_strings_return_null_pure() -> None:
+    _assert_semantic_and_strict_pure("expr-typeconversion1-4")
+
+
+def test_tointeger_invalid_strings_return_null_pure() -> None:
+    _assert_semantic_and_strict_pure("expr-typeconversion2-2")
+
+
+def test_tofloat_invalid_strings_return_null_pure() -> None:
+    _assert_semantic_and_strict_pure("expr-typeconversion3-2")
+
+
+def test_toboolean_float_raises_runtime_error() -> None:
+    with pytest.raises(PlanExecutionError, match="toBoolean\\(\\) unsupported argument value"):
+        _call_expr_function("toBoolean", [1.0])
+
+
+def test_tofloat_bool_raises_runtime_error() -> None:
+    with pytest.raises(PlanExecutionError, match="toFloat\\(\\) unsupported argument type"):
+        _call_expr_function("toFloat", [True])

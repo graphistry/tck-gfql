@@ -1134,7 +1134,10 @@ def _fn_to_integer(args: Sequence[Any]) -> Any:
         return int(value)
     if isinstance(value, str):
         txt = _strip_outer_quotes(value)
-        return int(float(txt)) if "." in txt else int(txt)
+        try:
+            return int(float(txt)) if "." in txt else int(txt)
+        except ValueError:
+            return None
     raise PlanExecutionError(f"toInteger() unsupported argument type: {type(value).__name__}")
 
 
@@ -1145,11 +1148,14 @@ def _fn_to_float(args: Sequence[Any]) -> Any:
     if _is_null(value):
         return None
     if isinstance(value, bool):
-        return 1.0 if value else 0.0
+        raise PlanExecutionError(f"toFloat() unsupported argument type: {type(value).__name__}")
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
-        return float(_strip_outer_quotes(value))
+        try:
+            return float(_strip_outer_quotes(value))
+        except ValueError:
+            return None
     raise PlanExecutionError(f"toFloat() unsupported argument type: {type(value).__name__}")
 
 
@@ -1162,13 +1168,14 @@ def _fn_to_boolean(args: Sequence[Any]) -> Any:
     if isinstance(value, bool):
         return value
     if isinstance(value, (int, float)):
-        return value != 0
+        raise PlanExecutionError(f"toBoolean() unsupported argument value: {value!r}")
     if isinstance(value, str):
         txt = _strip_outer_quotes(value).strip().lower()
         if txt in {"true", "t", "1", "yes"}:
             return True
         if txt in {"false", "f", "0", "no"}:
             return False
+        return None
     raise PlanExecutionError(f"toBoolean() unsupported argument value: {value!r}")
 
 
