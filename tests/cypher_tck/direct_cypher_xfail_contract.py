@@ -98,8 +98,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "with-orderby1-31-1",
     "with-orderby1-31-2",
     "with-orderby1-31-3",
-    "with-orderby1-32-1",
-    "with-orderby1-32-2",
     "with-orderby2-7-1",
     "with-orderby2-7-2",
     "with-orderby2-7-3",
@@ -118,27 +116,6 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 )
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    "expr-comparison2-4-3",
-    "expr-aggregation2-7",
-    "expr-aggregation2-8",
-    "expr-comparison2-4-4",
-    "expr-pattern1-7",
-    "expr-pattern1-8",
-    "expr-pattern1-9",
-    "match4-2",
-    "match5-1",
-    "match5-10",
-    "match5-4",
-    "match5-5",
-    "match5-7",
-    "match5-9",
-    "match7-13",
-    "match7-9",
-    "with-orderby2-10-1",
-    "with-orderby2-10-2",
-    "with-orderby2-9-1",
-    "with-orderby2-9-2",
-    "with-orderby2-9-3",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

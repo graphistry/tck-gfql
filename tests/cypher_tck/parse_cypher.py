@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 from tests.cypher_tck.models import GraphFixture
 
@@ -83,21 +83,27 @@ def _parse_properties(prop_text: str) -> Dict[str, Any]:
             continue
         key, raw = item.split(':', 1)
         key = key.strip()
-        raw = raw.strip()
-        if raw.startswith("'") and raw.endswith("'"):
-            value: Any = raw[1:-1]
-        elif re.fullmatch(r"-?\d+", raw):
-            value = int(raw)
-        elif re.fullmatch(r"-?\d+\.\d+", raw):
-            value = float(raw)
-        elif raw.lower() == "null":
-            value = None
-        elif raw.lower() in {"true", "false"}:
-            value = raw.lower() == "true"
-        else:
-            value = raw
-        props[key] = value
+        props[key] = _parse_literal(raw.strip())
     return props
+
+
+def _parse_literal(raw: str) -> Any:
+    if raw.startswith("'") and raw.endswith("'"):
+        return raw[1:-1]
+    if raw.startswith("[") and raw.endswith("]"):
+        inner = raw[1:-1].strip()
+        if not inner:
+            return []
+        return [_parse_literal(item.strip()) for item in _split_top_level(inner)]
+    if re.fullmatch(r"-?\d+", raw):
+        return int(raw)
+    if re.fullmatch(r"-?\d+\.\d+", raw):
+        return float(raw)
+    if raw.lower() == "null":
+        return None
+    if raw.lower() in {"true", "false"}:
+        return raw.lower() == "true"
+    return raw
 
 
 def _parse_node(node_text: str, ctx: ParseContext) -> str:

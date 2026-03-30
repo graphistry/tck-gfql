@@ -1,7 +1,10 @@
 
 from tests.cypher_tck.report import build_report
 from tests.cypher_tck.scenarios import SCENARIOS
-from tests.cypher_tck.sweep_direct_cypher import _compute_direct_cypher_sets
+from tests.cypher_tck.sweep_direct_cypher import (
+    _compute_direct_cypher_sets,
+    _run_direct_cypher_scenario,
+)
 
 
 def test_compute_direct_cypher_sets_tracks_overlap_row_and_error_promotions() -> None:
@@ -34,6 +37,14 @@ def test_compute_direct_cypher_sets_uses_entity_projection_meta_for_graph_oracle
     assert error_keys == []
     assert overlap_failures == []
     assert promotion_failures == []
+
+
+def test_direct_cypher_with_orderby_list_desc_property_matches_expected() -> None:
+    scenario = next(scenario for scenario in SCENARIOS if scenario.key == "with-orderby1-32-1")
+
+    passed, detail = _run_direct_cypher_scenario(scenario)
+
+    assert passed, detail
 
 
 def test_build_report_includes_direct_cypher_metrics() -> None:

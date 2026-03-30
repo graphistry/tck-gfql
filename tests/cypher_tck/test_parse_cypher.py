@@ -56,3 +56,14 @@ def test_parse_create_relationship_properties():
     assert edge["type"] == "T"
     assert edge["name"] == "bar"
     assert edge["weight"] == 2
+
+
+def test_parse_create_list_properties():
+    script = """
+    CREATE (:A {list: [2, -2], list2: ['x', true, null, 1.5]})
+    """
+    fixture = graph_fixture_from_create(script)
+    assert len(fixture.nodes) == 1
+    node = fixture.nodes[0]
+    assert node["list"] == [2, -2]
+    assert node["list2"] == ["x", True, None, 1.5]
