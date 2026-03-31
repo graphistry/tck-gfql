@@ -29,7 +29,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
     "match5-25",
     "match5-26",
-    "match5-27",
     "match5-28",
     "match5-29",
     "expr-comparison1-6-5",
