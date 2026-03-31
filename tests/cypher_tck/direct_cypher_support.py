@@ -2612,7 +2612,6 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "with-where7-2",
     "with-where7-3",
     "with2-2",
-    "with4-1",
     "with5-1",
 }
 
