@@ -148,6 +148,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "with-orderby2-9-1",
     "with-orderby2-9-2",
     "with-orderby2-9-3",
+    "with-where1-2",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
