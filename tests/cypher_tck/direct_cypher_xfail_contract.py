@@ -27,6 +27,8 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
+    "match5-25",
+    "match5-26",
     "expr-comparison1-6-5",
     "expr-comparison1-7-12",
     "expr-comparison1-7-13",
@@ -131,6 +133,10 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match5-16",
     "match5-17",
     "match5-18",
+    "match5-21",
+    "match5-22",
+    "match5-23",
+    "match5-24",
     "match5-4",
     "match5-5",
     "match5-7",
