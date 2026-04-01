@@ -259,7 +259,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason="WITH pipelines, UNWIND, aggregation, and multi-step MATCH are not supported",
+        reason="The bounded WITH collect(...) -> UNWIND -> MATCH shape now gets past the old parser/lowering block, but this scenario still hits the older multi-alias row-scope limitation",
         tags=("unwind", "with", "aggregation", "match", "xfail"),
     ),
 
