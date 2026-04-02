@@ -115,9 +115,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics and null predicate handling are not supported",
-        tags=("match-where", "optional-match", "null", "xfail"),
+        status="pass",
+        reason="Supported via connected MATCH + OPTIONAL MATCH with per-clause WHERE (#1024)",
+        tags=("match-where", "optional-match", "null"),
     ),
 
     Scenario(
