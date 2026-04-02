@@ -141,6 +141,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match7-9",
     "match-where3-1",
     "match-where3-2",
+    "match-where4-1",
     "with-where1-2",
     "with-where7-1",
     "with-where7-3",
