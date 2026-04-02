@@ -41,9 +41,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics, label predicates in WHERE, and projection comparisons are not supported",
-        tags=("match-where", "optional-match", "label-predicate", "xfail"),
+        status="pass",
+        reason="Supported via connected MATCH + OPTIONAL MATCH with per-clause WHERE (#1024)",
+        tags=("match-where", "optional-match", "label-predicate"),
     ),
 
     Scenario(
