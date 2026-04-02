@@ -93,9 +93,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics and row projections are not supported",
-        tags=("match-where", "optional-match", "property", "xfail"),
+        status="pass",
+        reason="Already supported on current master — stale xfail",
+        tags=("match-where", "optional-match", "property"),
     ),
 
     Scenario(
