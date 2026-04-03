@@ -2017,6 +2017,7 @@ DIRECT_CYPHER_OVERLAP_KEYS = {
 }
 
 DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
+    "with4-2",
     "expr-aggregation8-3",
     "expr-aggregation8-4",
     "expr-boolean1-1",
