@@ -63,9 +63,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="WITH pipelines, expression aliasing, and row projections are not supported",
-        tags=("with", "alias", "projection", "xfail"),
+        status="pass",
+        reason="Supported via WITH scalar reentry (#1000)",
+        tags=("with", "alias", "projection"),
     ),
 
     Scenario(
