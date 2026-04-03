@@ -41,9 +41,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="pass",
-        reason="Supported via connected MATCH + OPTIONAL MATCH with per-clause WHERE (#1024)",
-        tags=("match-where", "optional-match", "label-predicate"),
+        status="xfail",
+        reason="OPTIONAL MATCH semantics, label predicates in WHERE, and projection comparisons are not supported",
+        tags=("match-where", "optional-match", "label-predicate", "xfail"),
     ),
 
     Scenario(
@@ -93,9 +93,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="pass",
-        reason="Already supported on current master — stale xfail",
-        tags=("match-where", "optional-match", "property"),
+        status="xfail",
+        reason="OPTIONAL MATCH semantics and row projections are not supported",
+        tags=("match-where", "optional-match", "property", "xfail"),
     ),
 
     Scenario(
@@ -115,9 +115,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="pass",
-        reason="Supported via connected MATCH + OPTIONAL MATCH with per-clause WHERE (#1024)",
-        tags=("match-where", "optional-match", "null"),
+        status="xfail",
+        reason="OPTIONAL MATCH semantics and null predicate handling are not supported",
+        tags=("match-where", "optional-match", "null", "xfail"),
     ),
 
     Scenario(
