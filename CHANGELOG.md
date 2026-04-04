@@ -11,7 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - **TCK contract**: Promoted `match5-21..24` to `success_matches_expected` — multi-hop connected patterns with row bindings now pass (pygraphistry #973).
 - **TCK contract**: Added `match5-25/26` as `success_wrong_rows` — multi-hop open-range connected patterns return rows but with wrong values (pygraphistry #973).
-- **TCK contract**: Added `match5-16/17/18`, `with-where1-2`, `with-where7-1/3` to `success_matches_expected` — these now pass against updated pygraphistry master.
+- **TCK contract**: Added `match5-16/17/18`, `with-where1-2`, `with-where7-1/3` to `success_matches_expected` — these now pass against updated pygraphistry main.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
