@@ -155,7 +155,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        tags=("match", "variable-length"),
+        tags=("match", "variable-length", "cypher-string"),
     ),
 
     Scenario(
