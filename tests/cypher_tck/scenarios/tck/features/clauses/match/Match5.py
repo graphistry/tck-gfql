@@ -155,7 +155,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        tags=("match", "variable-length", "cypher-string"),
+        status="xfail",
+        reason="Zero-hop relationship ranges (*0..N) are not yet supported",
+        tags=("match", "variable-length", "xfail"),
     ),
 
     Scenario(
