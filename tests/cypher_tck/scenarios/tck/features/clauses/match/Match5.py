@@ -155,9 +155,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="Variable-length relationship matching and row projections are not supported",
-        tags=("match", "variable-length", "xfail"),
+        tags=("match", "variable-length"),
     ),
 
     Scenario(
