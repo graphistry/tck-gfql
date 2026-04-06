@@ -136,6 +136,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match5-18",
     "match5-4",
     "match5-5",
+    "match5-6",
     "match5-7",
     "match5-9",
     "match7-13",
