@@ -7,6 +7,7 @@ from typing import Final, Literal
 DirectCypherXfailOutcome = Literal[
     "GFQLValidationError",
     "ValueError",
+    "TypeError",
     "success_matches_expected",
     "success_wrong_rows",
     "unexpected_success_expected_error",
@@ -20,9 +21,20 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
 # Audit snapshot is pinned to the current sibling CI target for this branch pair.
 DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-1",
-    "match-where5-1",
     "match-where5-2",
     "match-where5-3",
+)
+
+# Pygraphistry #1217 (Earley + comparison-string mixin) made GT/LT/GE/LE
+# accept string ``val``s.  ``match-where5-1`` (`WHERE i.var > 'te'`) now
+# parses through and reaches ``s > 'te'`` on a mixed-type Series at runtime,
+# where pandas raises ``TypeError`` instead of the predicate-construction
+# ``ValueError`` raised on the prior LALR + raw-string-rejection path.
+# Sibling scenarios -2 (`AND i:TextNode`) and -3 (`AND i.var IS NOT NULL`)
+# are not affected because the AND'd predicate filters the int-typed row
+# out before the GT comparison runs.
+DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = (
+    "match-where5-1",
 )
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
@@ -175,6 +187,7 @@ DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
     dict[str, DirectCypherXfailOutcome]
 ] = {
     **{key: "ValueError" for key in DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS},
+    **{key: "TypeError" for key in DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS},
     **{
         key: "success_matches_expected"
         for key in DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS
@@ -192,6 +205,7 @@ DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS: Final[dict[str, int]] = dict(
 
 assert len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY) == (
     len(DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS)
+    + len(DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS)
     + len(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS)
     + len(DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS)
     + len(DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS)
