@@ -162,8 +162,8 @@ SCENARIOS = [
         expected=Expected(node_ids=["a", "b"]),
         gfql=None,
         status="xfail",
-        reason="Disjunctive WHERE predicates are not supported in harness",
-        tags=("match-where", "or", "xfail"),
+        reason="Now parses + executes correctly under Earley (pygraphistry #1217); kept xfail until broader OR-disjunction conformance is validated.  Tracked as `success_matches_expected` in the xfail-contract.",
+        tags=("match-where", "or", "xfail", "earley-success"),
     ),
 
     Scenario(
