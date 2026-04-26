@@ -161,9 +161,7 @@ SCENARIOS = [
         ),
         expected=Expected(node_ids=["a", "b"]),
         gfql=None,
-        status="xfail",
-        reason="Disjunctive WHERE predicates are not supported in harness",
-        tags=("match-where", "or", "xfail"),
+        tags=("match-where", "or", "cypher-string"),
     ),
 
     Scenario(

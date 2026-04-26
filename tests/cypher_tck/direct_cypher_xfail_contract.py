@@ -19,10 +19,6 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
 
 # Audit snapshot is pinned to the current sibling CI target for this branch pair.
 DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
-    "expr-comparison2-1",
-    "match-where5-1",
-    "match-where5-2",
-    "match-where5-3",
 )
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
@@ -96,6 +92,7 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "match5-25",
     "match5-26",
     "match5-8",
+    "with2-1",
     "return2-10",
     "return2-9",
     "with-orderby1-31-1",
@@ -124,6 +121,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-4-3",
     "expr-aggregation2-7",
     "expr-aggregation2-8",
+    "expr-comparison2-1",
     "expr-comparison2-4-4",
     "expr-pattern1-7",
     "expr-pattern1-8",
@@ -144,6 +142,10 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match1-5",
     "match-where3-1",
     "match-where3-2",
+    "match-where5-4",
+    "match-where5-1",
+    "match-where5-2",
+    "match-where5-3",
     "match-where4-1",
     "return-orderby2-11",
     "with-where3-1",
