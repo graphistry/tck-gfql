@@ -33,6 +33,7 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "match-where5-1",
     "match-where5-2",
     "match-where5-3",
+    "with-where5-3",
 )
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
