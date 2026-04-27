@@ -21,22 +21,18 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
 # Audit snapshot is pinned to the current sibling CI target for this branch pair.
 DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-1",
-    "match-where5-3",
 )
 
 # Pygraphistry #1217 (Earley + comparison-string mixin) made GT/LT/GE/LE
-# accept string ``val``s.  ``match-where5-1`` (`WHERE i.var > 'te'`) and
-# ``match-where5-2`` (`WHERE i.var > 'te' AND i:TextNode`) now parse
-# through and reach ``s > 'te'`` on a mixed-type Series at runtime, where
-# pandas raises ``TypeError`` instead of the predicate-construction
-# ``ValueError`` raised on the prior LALR + raw-string-rejection path.
-# Sibling scenario ``match-where5-3`` (`WHERE i.var > 'te' AND i.var IS
-# NOT NULL`) still raises ``ValueError`` empirically — the IS NOT NULL
-# arm of the structured ``where_predicates`` route lands on a different
-# code path that retains the prior raw-string rejection.
+# accept string ``val``s.  All three ``match-where5-{1,2,3}`` scenarios
+# (`WHERE i.var > 'te'` with various AND'd siblings) now parse through
+# and reach ``s > 'te'`` on a mixed-type Series at runtime, where pandas
+# raises ``TypeError`` instead of the predicate-construction ``ValueError``
+# raised on the prior LALR + raw-string-rejection path.
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "match-where5-1",
     "match-where5-2",
+    "match-where5-3",
 )
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
