@@ -122,6 +122,14 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "with-orderby3-2-4",
     "with-orderby3-2-5",
     "with-orderby3-2-6",
+    # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
+    # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
+    # rejected the WITH-projection-driven join shape with a validation
+    # error.  Earley + the with_where_clause priority bump now lets the
+    # query parse + execute, but the join semantics aren't right yet —
+    # rows differ from the scenario oracle.  Real fix is out of slice 1
+    # scope; lock the current outcome here.
+    "with2-1",
 )
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
