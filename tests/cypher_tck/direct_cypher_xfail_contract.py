@@ -7,6 +7,7 @@ from typing import Final, Literal
 DirectCypherXfailOutcome = Literal[
     "GFQLValidationError",
     "ValueError",
+    "TypeError",
     "success_matches_expected",
     "success_wrong_rows",
     "unexpected_success_expected_error",
@@ -18,11 +19,21 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
 )
 
 # Audit snapshot is pinned to the current sibling CI target for this branch pair.
-DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = (
+DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
+
+# Pygraphistry #1217 (Earley + comparison-string mixin) made GT/LT/GE/LE
+# accept string ``val``s.  Scenarios that compare a property column to
+# a string literal (`WHERE x > 'lit'`, etc.) now parse through and reach
+# ``s > 'lit'`` on a mixed-type Series at runtime, where pandas raises
+# ``TypeError`` instead of the predicate-construction ``ValueError``
+# raised on the prior LALR + raw-string-rejection path.  All four
+# previously-VALUE_ERROR scenarios fall into this pattern.
+DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-1",
     "match-where5-1",
     "match-where5-2",
     "match-where5-3",
+    "with-where5-3",
 )
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
@@ -112,12 +123,29 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "with-orderby3-2-4",
     "with-orderby3-2-5",
     "with-orderby3-2-6",
+    # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
+    # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
+    # rejected the WITH-projection-driven join shape with a validation
+    # error.  Earley + the with_where_clause priority bump now lets the
+    # query parse + execute, but the join semantics aren't right yet —
+    # rows differ from the scenario oracle.  Real fix is out of slice 1
+    # scope; lock the current outcome here.
+    "with2-1",
 )
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "expr-list1-6-4",
     "expr-typeconversion4-10-1",
     "expr-typeconversion4-10-2",
+    # match-where1-10: disjunctive WHERE predicate (`p1 = 12 OR p2 = 13`).
+    # Now parses + executes under pygraphistry #1217's Earley swap; the
+    # scenario only carries `node_ids`, no row-level oracle, so the TCK
+    # runner returns ``unexpected_success_expected_error``.  Native
+    # row-level validation lives in pygraphistry's
+    # test_string_cypher_executes_disjunctive_property_predicate_returns_union
+    # (see #1217).  Static-validation gap on row-boolean shapes tracked
+    # in pygraphistry/#1219.
+    "match-where1-10",
 )
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
@@ -145,6 +173,12 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match-where3-1",
     "match-where3-2",
     "match-where4-1",
+    # match-where5-4: `WHERE i.var > 'te' OR i.var IS NOT NULL`.  Pre-#1217
+    # LALR rejected OR + cmp_where + IS NOT NULL; now Earley admits the
+    # boolean tree and SQL three-valued logic correctly returns both rows
+    # (IS NOT NULL is TRUE for both, so OR short-circuits regardless of
+    # the GT branch's TypeError potential).  Matches the scenario oracle.
+    "match-where5-4",
     "return-orderby2-11",
     "with-where3-1",
     "with-where3-2",
@@ -166,6 +200,7 @@ DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY: Final[
     dict[str, DirectCypherXfailOutcome]
 ] = {
     **{key: "ValueError" for key in DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS},
+    **{key: "TypeError" for key in DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS},
     **{
         key: "success_matches_expected"
         for key in DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS
@@ -183,6 +218,7 @@ DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS: Final[dict[str, int]] = dict(
 
 assert len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY) == (
     len(DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS)
+    + len(DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS)
     + len(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS)
     + len(DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS)
     + len(DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS)

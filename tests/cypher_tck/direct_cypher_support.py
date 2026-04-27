@@ -2601,7 +2601,10 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "with-orderby3-4-3",
     "with-orderby3-4-4",
     "with-where5-1",
-    "with-where5-3",
+    # with-where5-3: string GT on mixed-type Series — pygraphistry #1217's
+    # comparison-string mixin lets this parse through, but pandas raises
+    # TypeError at runtime.  Stays xfail until int/str comparisons are
+    # handled in the comparison op (likely a follow-up PR).
     "with-where5-4",
     "with-where7-2",
     "with2-2",
