@@ -164,6 +164,12 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match-where3-1",
     "match-where3-2",
     "match-where4-1",
+    # match-where5-4: `WHERE i.var > 'te' OR i.var IS NOT NULL`.  Pre-#1217
+    # LALR rejected OR + cmp_where + IS NOT NULL; now Earley admits the
+    # boolean tree and SQL three-valued logic correctly returns both rows
+    # (IS NOT NULL is TRUE for both, so OR short-circuits regardless of
+    # the GT branch's TypeError potential).  Matches the scenario oracle.
+    "match-where5-4",
     "return-orderby2-11",
     "with-where3-1",
     "with-where3-2",
