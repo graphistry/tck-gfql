@@ -166,18 +166,18 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match-where3-1",
     "match-where3-2",
     "match-where4-1",
-    # match-where5-{1,2,3,4} + expr-comparison2-1 + with-where5-3: all
-    # string-GT-on-mixed-Series scenarios.  Pygraphistry #1217 admitted
-    # them through Earley parsing (raised TypeError at runtime);
-    # pygraphistry #1224 routed non-filter-dict expressions through
-    # ``where_rows`` so they now execute correctly and match the scenario
-    # oracle rows.
+    # match-where5-{1,2,3,4} + expr-comparison2-1: string-GT-on-mixed-Series
+    # scenarios.  Pygraphistry #1217 admitted them through Earley parsing
+    # (raised TypeError at runtime); pygraphistry #1224 routed non-filter-dict
+    # expressions through ``where_rows`` so they now execute correctly.
+    # (with-where5-3 is the same pattern but lives in PROMOTION_ROW_KEYS
+    # in direct_cypher_support.py, so its status flips xfail→supported and
+    # it doesn't go through the xfail-contract bucket.)
     "match-where5-1",
     "match-where5-2",
     "match-where5-3",
     "match-where5-4",
     "expr-comparison2-1",
-    "with-where5-3",
     "return-orderby2-11",
     "with-where3-1",
     "with-where3-2",
