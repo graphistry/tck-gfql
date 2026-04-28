@@ -21,23 +21,20 @@ DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME: Final[DirectCypherXfailOutcome] = (
 # Audit snapshot is pinned to the current sibling CI target for this branch pair.
 DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
-# Pygraphistry #1217 (Earley + comparison-string mixin) made GT/LT/GE/LE
-# accept string ``val``s.  Scenarios that compare a property column to
-# a string literal (`WHERE x > 'lit'`, etc.) now parse through and reach
-# ``s > 'lit'`` on a mixed-type Series at runtime, where pandas raises
-# ``TypeError`` instead of the predicate-construction ``ValueError``
-# raised on the prior LALR + raw-string-rejection path.  All four
-# previously-VALUE_ERROR scenarios fall into this pattern.
-DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = (
-    "expr-comparison2-1",
-    "match-where5-1",
-    "match-where5-2",
-    "match-where5-3",
-    "with-where5-3",
-)
+# Pygraphistry #1224 (row-boolean WHERE in connected OPTIONAL MATCH +
+# routes non-filter-dict expressions through ``where_rows``) lifted the
+# string-GT-on-mixed-Series TypeError pattern: those scenarios now
+# execute and return correct rows.  Bucket emptied; left in place as
+# Final[tuple[str, ...]] so the ``DirectCypherXfailOutcome["TypeError"]``
+# Literal stays valid for any future xfail that legitimately needs it.
+DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
+    "expr-comparison3-1",
+    "expr-comparison3-2",
+    "expr-comparison3-3",
+    "expr-comparison3-4",
     "expr-comparison1-6-5",
     "expr-comparison1-7-12",
     "expr-comparison1-7-13",
@@ -150,6 +147,7 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-comparison2-4-3",
+    "expr-comparison2-2",
     "expr-aggregation2-7",
     "expr-aggregation2-8",
     "expr-comparison2-4-4",
@@ -173,12 +171,18 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match-where3-1",
     "match-where3-2",
     "match-where4-1",
-    # match-where5-4: `WHERE i.var > 'te' OR i.var IS NOT NULL`.  Pre-#1217
-    # LALR rejected OR + cmp_where + IS NOT NULL; now Earley admits the
-    # boolean tree and SQL three-valued logic correctly returns both rows
-    # (IS NOT NULL is TRUE for both, so OR short-circuits regardless of
-    # the GT branch's TypeError potential).  Matches the scenario oracle.
+    # match-where5-{1,2,3,4} + expr-comparison2-1: string-GT-on-mixed-Series
+    # scenarios.  Pygraphistry #1217 admitted them through Earley parsing
+    # (raised TypeError at runtime); pygraphistry #1224 routed non-filter-dict
+    # expressions through ``where_rows`` so they now execute correctly.
+    # (with-where5-3 is the same pattern but lives in PROMOTION_ROW_KEYS
+    # in direct_cypher_support.py, so its status flips xfail→supported and
+    # it doesn't go through the xfail-contract bucket.)
+    "match-where5-1",
+    "match-where5-2",
+    "match-where5-3",
     "match-where5-4",
+    "expr-comparison2-1",
     "return-orderby2-11",
     "with-where3-1",
     "with-where3-2",
