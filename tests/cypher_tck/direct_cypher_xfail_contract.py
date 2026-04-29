@@ -154,6 +154,14 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-7",
     "expr-pattern1-8",
     "expr-pattern1-9",
+    # expr-pattern1-20: AND-joined positive WHERE pattern predicates
+    # (`MATCH (n) WHERE (n)-[:REL1]-() AND (n)-[:REL3]-() RETURN n`).
+    # Pygraphistry #1031 slice 3 (#1229) lifts each positive pattern into a
+    # separate ``WherePatternPredicate`` and packs them as multi-pattern
+    # cartesian within a single appended ``MatchClause``, executing as the
+    # row-level intersection (rows where ALL patterns exist).  Strict
+    # improvement over LALR-era rejection.
+    "expr-pattern1-20",
     "match4-2",
     "match5-1",
     "match5-10",
