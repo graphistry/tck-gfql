@@ -154,6 +154,10 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-7",
     "expr-pattern1-8",
     "expr-pattern1-9",
+    # expr-pattern1-19: list-comprehension-backed pattern predicate.
+    # Pygraphistry #1226 literal-atom fidelity promotion now executes this
+    # scenario and returns the expected rows.
+    "expr-pattern1-19",
     # expr-pattern1-20: AND-joined positive WHERE pattern predicates
     # (`MATCH (n) WHERE (n)-[:REL1]-() AND (n)-[:REL3]-() RETURN n`).
     # Pygraphistry #1031 slice 3 (#1229) lifts each positive pattern into a
