@@ -168,6 +168,10 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # row-level intersection (rows where ALL patterns exist).  Strict
     # improvement over LALR-era rejection.
     "expr-pattern1-20",
+    # expr-pattern1-21: mixed positive + negated WHERE pattern predicate
+    # conjunction now executes and matches expected rows (see pygraphistry
+    # #1071 paired CI drift).
+    "expr-pattern1-21",
     "match4-2",
     "match5-1",
     "match5-10",
