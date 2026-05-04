@@ -213,6 +213,15 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "with-orderby2-9-1",
     "with-orderby2-9-2",
     "with-orderby2-9-3",
+    # expr-typeconversion{2,3,4}-{7,5,7}: simple free-form intermediate MATCH
+    # shape `MATCH (single-node) WITH * MATCH (n) RETURN <typecast>(n.<prop>)`.
+    # Pygraphistry #1263 admits the simple free-form case (single-row prefix,
+    # no carried-alias property reference in trailing scope) and the runtime
+    # broadcasts carried hidden columns so the trailing MATCH binds against
+    # the full base graph; rows match the oracle.
+    "expr-typeconversion2-7",
+    "expr-typeconversion3-5",
+    "expr-typeconversion4-7",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
