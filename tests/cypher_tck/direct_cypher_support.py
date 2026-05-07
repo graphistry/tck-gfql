@@ -2705,6 +2705,7 @@ DIRECT_CYPHER_PROMOTION_ERROR_KEYS = {
     "expr-map1-6-6",
     "expr-path3-2",
     "expr-path3-3",
+    "expr-pattern1-10",
     "expr-pattern1-10-1",
     "expr-pattern1-10-10",
     "expr-pattern1-10-11",
