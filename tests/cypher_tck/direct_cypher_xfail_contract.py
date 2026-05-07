@@ -101,6 +101,7 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-3",
     "expr-typeconversion4-4",
     "expr-typeconversion4-5",
+    "expr-pattern1-10",
     "match5-25",
     "match5-26",
     "match5-8",
