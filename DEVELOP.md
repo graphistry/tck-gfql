@@ -8,6 +8,7 @@ the local `plans/` clone of the TCK repo for reference (not vendored).
 ## Local Tests
 
 ```bash
+UV_EXCLUDE_NEWER="6 days" uv pip install --python "$(command -v python)" pytest pandas
 ./bin/ci.sh
 pytest tests/cypher_tck -xvs
 TEST_CUDF=1 pytest tests/cypher_tck -xvs
@@ -25,6 +26,11 @@ PYTHONPATH=/path/to/pygraphistry python -m tests.cypher_tck.porting_backlog
 - `PYGRAPHISTRY_INSTALL=1`: install pygraphistry (editable if `PYGRAPHISTRY_PATH` set).
 - `PYGRAPHISTRY_REPO`: git URL for pygraphistry (CI default is upstream).
 - `PYGRAPHISTRY_REF`: branch/tag/sha for pygraphistry (CI default is `master`).
+- `UV_EXCLUDE_NEWER`: set to `6 days` for non-graphistry dependency installs.
+
+Notes:
+- Use pinned `uv` in CI.
+- `graphistry`/`pygraphistry` installs are exempt from the 6-day cooldown (same-day allowed).
 
 ## CI
 
