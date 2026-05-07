@@ -11,17 +11,27 @@ fi
 export PYTHONPATH
 
 if [[ "${PYGRAPHISTRY_INSTALL:-0}" == "1" ]]; then
+  if ! command -v uv >/dev/null 2>&1; then
+    echo "uv not found; install it first: https://docs.astral.sh/uv/getting-started/installation/"
+    exit 1
+  fi
   if [[ -n "${PYGRAPHISTRY_PATH:-}" ]]; then
-    python -m pip install -e "${PYGRAPHISTRY_PATH}"
+    uv pip install --python "$(command -v python)" -e "${PYGRAPHISTRY_PATH}"
   else
     repo="${PYGRAPHISTRY_REPO:-https://github.com/graphistry/pygraphistry.git}"
     ref="${PYGRAPHISTRY_REF:-master}"
     if [[ "${repo}" == git+* ]]; then
-      repo_url="${repo}"
-    else
-      repo_url="git+${repo}"
+      repo="${repo#git+}"
     fi
-    python -m pip install "${repo_url}@${ref}"
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "${tmp_dir}"' EXIT
+    git clone --depth 1 "${repo}" "${tmp_dir}/pygraphistry"
+    (
+      cd "${tmp_dir}/pygraphistry"
+      git fetch --depth 1 origin "${ref}"
+      git checkout FETCH_HEAD
+    )
+    uv pip install --python "$(command -v python)" -e "${tmp_dir}/pygraphistry"
   fi
 fi
 

@@ -24,7 +24,7 @@ GFQL queries and validate results.
 ## Setup
 1. Install or editable-link `pygraphistry`:
    ```bash
-   pip install -e /path/to/pygraphistry
+   uv pip install --python "$(command -v python)" -e /path/to/pygraphistry
    ```
 2. Clone the openCypher TCK locally (gitignored):
    ```bash
@@ -48,6 +48,10 @@ Install a specific ref from GitHub:
 ```bash
 PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh
 ```
+
+Dependency freshness policy:
+- Non-graphistry dependencies should use a 6-day cooldown (`UV_EXCLUDE_NEWER="6 days"`).
+- `graphistry`/`pygraphistry` is first-party and may be installed same-day.
 
 ## License
 This repository is licensed under the Apache License 2.0. See [LICENSE](LICENSE)
