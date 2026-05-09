@@ -140,3 +140,26 @@ EXPRESSION_LONG_TAIL_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #51 tranche-3: expression long-tail (Temporal8 cluster).
+EXPRESSION_LONG_TAIL_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
+    "expr-temporal8-6-1",
+    "expr-temporal8-6-2",
+    "expr-temporal8-6-3",
+    "expr-temporal8-6-4",
+    "expr-temporal8-6-5",
+    "expr-temporal8-6-6",
+    "expr-temporal8-6-7",
+    "expr-temporal8-6-8",
+    "expr-temporal8-6-9",
+    "expr-temporal8-7-1",
+    "expr-temporal8-7-2",
+    "expr-temporal8-7-3",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE3_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
