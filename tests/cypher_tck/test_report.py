@@ -77,6 +77,8 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Representative tracked scenarios:" in report
     assert "Direct local Cypher xfail contract:" in report
     assert "validation-safe xfails:" in report
+    assert "Ownership split (heuristic):" in report
+    assert "tck-governance lanes with concrete issue trackers:" in report
     assert (
         f"tracked non-validation debt: {len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY)}"
         in report

@@ -27,6 +27,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Temporal7 scenario data**: Fixed outline expansion artifact where expected rows retained literal `<gt>` instead of substituted boolean values in 10 temporal comparison cases.
 - **Direct-Cypher promotion contract**: Removed stale `match-where1-10` row-promotion marker so promotion snapshot aligns with status-tagged support.
 - **Direct-Cypher parity guard**: Added test coverage that enforces promotion-snapshot/status-tag parity and report-tracker assertion alignment.
+- **Report ownership split**: Added an `Ownership split (heuristic)` section to `tests.cypher_tck.report` distinguishing issue-backed lane follow-up from TODO-tracked planning/backlog debt.
 
 ## [0.1.1 - 2026-01-03]
 
