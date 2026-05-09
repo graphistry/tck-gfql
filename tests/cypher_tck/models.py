@@ -19,6 +19,7 @@ class Expected:
     node_ids: Optional[Sequence[Any]] = None
     edge_ids: Optional[Sequence[Any]] = None
     rows: Optional[List[Dict[str, Any]]] = None
+    ordered: Optional[bool] = None
 
 
 @dataclass(frozen=True)

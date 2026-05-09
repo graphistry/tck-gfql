@@ -56,3 +56,18 @@ def test_parse_create_relationship_properties():
     assert edge["type"] == "T"
     assert edge["name"] == "bar"
     assert edge["weight"] == 2
+
+
+def test_parse_create_nested_list_and_map_literals() -> None:
+    script = """
+    CREATE (a:A {payload: [1, -2, true, null, 'z', {k: [3, 4]}], meta: {rank: 7, tags: ['x', 'y']}})
+    CREATE (a)-[:R {attrs: {score: 1.5, flags: [false, true]}}]->(:B)
+    """
+    fixture = graph_fixture_from_create(script)
+    assert len(fixture.nodes) == 2
+    source = next(node for node in fixture.nodes if node["id"] == "a")
+    assert source["payload"] == [1, -2, True, None, "z", {"k": [3, 4]}]
+    assert source["meta"] == {"rank": 7, "tags": ["x", "y"]}
+    assert len(fixture.edges) == 1
+    edge = fixture.edges[0]
+    assert edge["attrs"] == {"score": 1.5, "flags": [False, True]}
