@@ -84,8 +84,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-string9-4",
     "expr-string9-5",
     "expr-temporal2-6-5",
-    "expr-temporal6-6-2",
-    "expr-temporal6-6-8",
     "expr-temporal7-1-1",
     "expr-temporal7-1-2",
     "expr-temporal7-2-1",
@@ -96,7 +94,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-temporal7-4-2",
     "expr-temporal7-5-1",
     "expr-temporal7-5-2",
-    "expr-temporal7-6-8",
     "expr-typeconversion4-2",
     "expr-typeconversion4-3",
     "expr-typeconversion4-4",
@@ -133,6 +130,12 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 )
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # pygraphistry #1361 (#1353 item #2) — Duration toString + equality preserve openCypher
+    # CIP `Duration` components (months, days, seconds-and-nanoseconds) instead of
+    # collapsing days into total nanoseconds.
+    "expr-temporal6-6-2",
+    "expr-temporal6-6-8",
+    "expr-temporal7-6-8",
     "with-orderby1-31-1",
     "with-orderby1-31-2",
     "with-orderby1-31-3",
