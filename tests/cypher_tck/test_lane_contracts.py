@@ -23,6 +23,9 @@ from tests.cypher_tck.lane_contracts import (
     EXPRESSION_LONG_TAIL_TRANCHE5_EXPECTED_STATUS,
     EXPRESSION_LONG_TAIL_TRANCHE5_FORBIDDEN_TAGS,
     EXPRESSION_LONG_TAIL_TRANCHE5_KEYS,
+    EXPRESSION_LONG_TAIL_TRANCHE6_EXPECTED_STATUS,
+    EXPRESSION_LONG_TAIL_TRANCHE6_FORBIDDEN_TAGS,
+    EXPRESSION_LONG_TAIL_TRANCHE6_KEYS,
     GROUPED_MATCH_AGG_TRANCHE1_EXPECTED_STATUS,
     GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS,
     GROUPED_MATCH_AGG_TRANCHE1_KEYS,
@@ -450,6 +453,28 @@ def test_expression_long_tail_tranche5_family_classification_contract() -> None:
         assert classify_primary_xfail_family(scenario) == "expression-long-tail"
 
 
+def test_expression_long_tail_tranche6_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(EXPRESSION_LONG_TAIL_TRANCHE6_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_expression_long_tail_tranche6_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE6_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE6_EXPECTED_STATUS
+        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE6_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_expression_long_tail_tranche6_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE6_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+
+
 def test_row_pipeline_tranches_are_disjoint() -> None:
     t1 = set(ROW_PIPELINE_TRANCHE1_KEYS)
     t2 = set(ROW_PIPELINE_TRANCHE2_KEYS)
@@ -487,8 +512,9 @@ def test_expression_long_tail_tranches_are_disjoint() -> None:
     t3 = set(EXPRESSION_LONG_TAIL_TRANCHE3_KEYS)
     t4 = set(EXPRESSION_LONG_TAIL_TRANCHE4_KEYS)
     t5 = set(EXPRESSION_LONG_TAIL_TRANCHE5_KEYS)
-    for left in (t1, t2, t3, t4):
-        for right in (t2, t3, t4, t5):
+    t6 = set(EXPRESSION_LONG_TAIL_TRANCHE6_KEYS)
+    for left in (t1, t2, t3, t4, t5):
+        for right in (t2, t3, t4, t5, t6):
             if left is right:
                 continue
             assert left.isdisjoint(right)
