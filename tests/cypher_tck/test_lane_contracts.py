@@ -4,6 +4,9 @@ from tests.cypher_tck.gap_priority import (
     PRIMARY_FAMILY_DEFINITIONS,
     classify_primary_xfail_family,
 )
+from tests.cypher_tck.direct_cypher_xfail_contract import (
+    DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS,
+)
 from tests.cypher_tck.lane_contracts import (
     EXPRESSION_LONG_TAIL_TRANCHE1_EXPECTED_STATUS,
     EXPRESSION_LONG_TAIL_TRANCHE1_FORBIDDEN_TAGS,
@@ -135,18 +138,28 @@ def test_expression_long_tail_tranche1_keys_exist() -> None:
 
 def test_expression_long_tail_tranche1_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
+    promoted = set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS)
     for key in EXPRESSION_LONG_TAIL_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE1_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE1_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        if key in promoted:
+            assert scenario.status == "supported"
+            assert "cypher-string" in scenario.tags
+        else:
+            assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE1_EXPECTED_STATUS
+            for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE1_FORBIDDEN_TAGS:
+                assert forbidden_tag not in scenario.tags
 
 
 def test_expression_long_tail_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
+    promoted = set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS)
     for key in EXPRESSION_LONG_TAIL_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        if key in promoted:
+            assert scenario.status == "supported"
+            assert "cypher-string" in scenario.tags
+        else:
+            assert classify_primary_xfail_family(scenario) == "expression-long-tail"
 
 
 def test_expression_long_tail_lane_has_issue_tracker_wired() -> None:
