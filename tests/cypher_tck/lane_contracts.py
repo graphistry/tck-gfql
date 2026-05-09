@@ -409,6 +409,42 @@ EXPRESSION_LONG_TAIL_TRANCHE5_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #51 tranche-6: expression long-tail
+# (Literals5 + Null3 + Precedence3 + TypeConversion4 clusters).
+EXPRESSION_LONG_TAIL_TRANCHE6_KEYS: Final[tuple[str, ...]] = (
+    "expr-literals5-11",
+    "expr-literals5-12",
+    "expr-literals5-25",
+    "expr-literals5-26",
+    "expr-literals5-5",
+    "expr-literals5-6",
+    "expr-null3-4-1",
+    "expr-null3-4-2",
+    "expr-null3-4-3",
+    "expr-null3-4-5",
+    "expr-null3-4-6",
+    "expr-null3-4-7",
+    "expr-precedence3-6-1",
+    "expr-precedence3-6-2",
+    "expr-precedence3-6-3",
+    "expr-precedence3-6-4",
+    "expr-precedence3-6-5",
+    "expr-precedence3-6-6",
+    "expr-typeconversion4-10-1",
+    "expr-typeconversion4-10-2",
+    "expr-typeconversion4-2",
+    "expr-typeconversion4-3",
+    "expr-typeconversion4-4",
+    "expr-typeconversion4-5",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE6_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE6_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #52 tranche-1: residual read-only lane (variable-length + named-path anchors).
 OTHER_READ_GAPS_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "match4-1",
