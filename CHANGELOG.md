@@ -32,6 +32,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Priority lane tranche expansion (round 2)**: Added tranche-3 row-pipeline `#43`, tranche-3 optional/null `#44`, tranche-3 grouped-aggregate `#45`, and tranche-5 expression-long-tail `#51` contract guardrails.
 - **Contract process guards**: Added tranche disjointness tests per lane family to catch contract overlap/regression drift.
 - **Optional/null lane contracts**: Added tranche-4 guardrails for `#44`, completing TCK contract coverage for the optional/null lane key inventory.
+- **Direct-Cypher xfail contract**: Reclassified `match-where3-3` from validation-fail default to `success_matches_expected` to reflect current sibling-target execution behavior.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
