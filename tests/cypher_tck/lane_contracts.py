@@ -204,6 +204,45 @@ OPTIONAL_NULL_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #44 tranche-4: OPTIONAL MATCH / null-extension (remaining residual slice).
+OPTIONAL_NULL_TRANCHE4_KEYS: Final[tuple[str, ...]] = (
+    "expr-aggregation5-1",
+    "expr-aggregation5-2",
+    "expr-graph9-3",
+    "expr-list12-3",
+    "expr-null1-3",
+    "expr-null2-3",
+    "expr-path1-1",
+    "expr-path2-3",
+    "match-where6-2",
+    "match-where6-5",
+    "match-where6-6",
+    "match-where6-7",
+    "match-where6-8",
+    "match3-27",
+    "match3-28",
+    "match7-14",
+    "match7-15",
+    "match7-16",
+    "match7-17",
+    "match7-18",
+    "match7-19",
+    "match7-20",
+    "match9-8",
+    "match9-9",
+    "with-where1-3",
+    "with-where1-4",
+    "with1-5",
+    "with1-6",
+)
+
+OPTIONAL_NULL_TRANCHE4_EXPECTED_STATUS: Final[str] = "xfail"
+OPTIONAL_NULL_TRANCHE4_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #51 tranche-1: expression long-tail (List11 + Precedence2 clusters).
 EXPRESSION_LONG_TAIL_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "expr-list11-4-1",
