@@ -113,6 +113,16 @@ _CLAUSE_RE = re.compile(
     r"(?im)^\s*(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\b"
 )
 _ORDER_DIR_RE = re.compile(r"(?is)^(?P<expr>.+?)\s+(?P<dir>asc(?:ending)?|desc(?:ending)?)$")
+_WITH_ORDERBY_KEY_RE = re.compile(
+    r"^with-orderby(?P<feature>\d+)-(?P<scenario>\d+)(?:-\d+)?$"
+)
+
+_WITH_ORDERBY_ORDERED_SCENARIO_NUMBERS = {
+    "WithOrderBy1.feature": frozenset(range(1, 21)),
+    "WithOrderBy2.feature": frozenset(),
+    "WithOrderBy3.feature": frozenset(),
+    "WithOrderBy4.feature": frozenset({15}),
+}
 
 
 def _split_clauses(cypher: str) -> Tuple[Tuple[str, str], ...]:
@@ -756,6 +766,29 @@ def _apply_translation(scenario: Scenario) -> Scenario:
     return scenario
 
 
+def _with_orderby_expected_order(scenario: Scenario) -> Optional[bool]:
+    if not scenario.feature_path.startswith("tck/features/clauses/with-orderBy/"):
+        return None
+    feature_name = scenario.feature_path.rsplit("/", 1)[-1]
+    ordered_scenarios = _WITH_ORDERBY_ORDERED_SCENARIO_NUMBERS.get(feature_name)
+    if ordered_scenarios is None:
+        return None
+    match = _WITH_ORDERBY_KEY_RE.match(scenario.key)
+    if match is None:
+        return None
+    scenario_number = int(match.group("scenario"))
+    return scenario_number in ordered_scenarios
+
+
+def _apply_expected_row_order(scenario: Scenario) -> Scenario:
+    if scenario.expected.rows is None:
+        return scenario
+    ordered = _with_orderby_expected_order(scenario)
+    if ordered is None:
+        return scenario
+    return replace(scenario, expected=replace(scenario.expected, ordered=ordered))
+
+
 def _without_tag(tags: Tuple[str, ...], target: str) -> Tuple[str, ...]:
     return tuple(tag for tag in tags if tag != target)
 
@@ -851,4 +884,11 @@ for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
     spec.loader.exec_module(module)
     SCENARIOS.extend(getattr(module, "SCENARIOS", []))
 
-SCENARIOS = [_promote_cypher_string_support(_promote_executor_support(_apply_translation(_tag_scenario(scenario)))) for scenario in SCENARIOS]
+SCENARIOS = [
+    _promote_cypher_string_support(
+        _promote_executor_support(
+            _apply_translation(_apply_expected_row_order(_tag_scenario(scenario)))
+        )
+    )
+    for scenario in SCENARIOS
+]

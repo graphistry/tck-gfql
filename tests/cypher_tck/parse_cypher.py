@@ -72,6 +72,69 @@ def _extract_balanced(text: str, open_ch: str, close_ch: str) -> Tuple[str, str]
     raise ValueError(f"Unbalanced {open_ch}{close_ch} in: {text}")
 
 
+def _split_key_value(item: str) -> Tuple[str, str] | None:
+    depth_paren = 0
+    depth_brace = 0
+    depth_bracket = 0
+    in_quote = False
+    for idx, ch in enumerate(item):
+        if ch == "'":
+            in_quote = not in_quote
+            continue
+        if in_quote:
+            continue
+        if ch == "(":
+            depth_paren += 1
+            continue
+        if ch == ")":
+            depth_paren = max(depth_paren - 1, 0)
+            continue
+        if ch == "{":
+            depth_brace += 1
+            continue
+        if ch == "}":
+            depth_brace = max(depth_brace - 1, 0)
+            continue
+        if ch == "[":
+            depth_bracket += 1
+            continue
+        if ch == "]":
+            depth_bracket = max(depth_bracket - 1, 0)
+            continue
+        if (
+            ch == ":"
+            and depth_paren == 0
+            and depth_brace == 0
+            and depth_bracket == 0
+        ):
+            key = item[:idx].strip()
+            value = item[idx + 1 :].strip()
+            return key, value
+    return None
+
+
+def _parse_literal(raw: str) -> Any:
+    token = raw.strip()
+    if token.startswith("'") and token.endswith("'"):
+        return token[1:-1]
+    if re.fullmatch(r"-?\d+", token):
+        return int(token)
+    if re.fullmatch(r"-?\d+\.\d+", token):
+        return float(token)
+    if token.lower() == "null":
+        return None
+    if token.lower() in {"true", "false"}:
+        return token.lower() == "true"
+    if token.startswith("[") and token.endswith("]"):
+        inner = token[1:-1].strip()
+        if not inner:
+            return []
+        return [_parse_literal(part) for part in _split_top_level(inner)]
+    if token.startswith("{") and token.endswith("}"):
+        return _parse_properties(token)
+    return token
+
+
 def _parse_properties(prop_text: str) -> Dict[str, Any]:
     props: Dict[str, Any] = {}
     inner = prop_text.strip()[1:-1].strip()
@@ -79,24 +142,11 @@ def _parse_properties(prop_text: str) -> Dict[str, Any]:
         return props
     items = _split_top_level(inner)
     for item in items:
-        if ':' not in item:
+        pair = _split_key_value(item)
+        if pair is None:
             continue
-        key, raw = item.split(':', 1)
-        key = key.strip()
-        raw = raw.strip()
-        if raw.startswith("'") and raw.endswith("'"):
-            value: Any = raw[1:-1]
-        elif re.fullmatch(r"-?\d+", raw):
-            value = int(raw)
-        elif re.fullmatch(r"-?\d+\.\d+", raw):
-            value = float(raw)
-        elif raw.lower() == "null":
-            value = None
-        elif raw.lower() in {"true", "false"}:
-            value = raw.lower() == "true"
-        else:
-            value = raw
-        props[key] = value
+        key, raw = pair
+        props[key] = _parse_literal(raw)
     return props
 
 

@@ -107,20 +107,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "match5-8",
     "return2-10",
     "return2-9",
-    "with-orderby1-31-1",
-    "with-orderby1-31-2",
-    "with-orderby1-31-3",
-    "with-orderby1-32-1",
-    "with-orderby1-32-2",
-    "with-orderby2-7-1",
-    "with-orderby2-7-2",
-    "with-orderby2-7-3",
-    "with-orderby3-2-1",
-    "with-orderby3-2-2",
-    "with-orderby3-2-3",
-    "with-orderby3-2-4",
-    "with-orderby3-2-5",
-    "with-orderby3-2-6",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
     # rejected the WITH-projection-driven join shape with a validation
@@ -147,82 +133,20 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 )
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    "expr-comparison2-4-3",
-    "expr-comparison2-2",
-    "expr-aggregation2-7",
-    "expr-aggregation2-8",
-    "expr-comparison2-4-4",
-    "expr-pattern1-7",
-    "expr-pattern1-8",
-    "expr-pattern1-9",
-    # expr-pattern1-19: `WHERE NOT (n)-[:REL2]-()` — negated existential
-    # pattern predicate. Pygraphistry #1031 slice 2 phase 2b lowered this
-    # via `anti_semi_apply` row pre-filters; the scenario now executes and
-    # matches the expected rows. Surfaced by the conformance run on the
-    # pygraphistry/issue-1071-with-multi-alias-carry branch.
-    "expr-pattern1-19",
-    # expr-pattern1-20: AND-joined positive WHERE pattern predicates
-    # (`MATCH (n) WHERE (n)-[:REL1]-() AND (n)-[:REL3]-() RETURN n`).
-    # Pygraphistry #1031 slice 3 (#1229) lifts each positive pattern into a
-    # separate ``WherePatternPredicate`` and packs them as multi-pattern
-    # cartesian within a single appended ``MatchClause``, executing as the
-    # row-level intersection (rows where ALL patterns exist).  Strict
-    # improvement over LALR-era rejection.
-    "expr-pattern1-20",
-    # expr-pattern1-21: mixed positive + negated WHERE pattern predicate
-    # conjunction now executes and matches expected rows (see pygraphistry
-    # #1071 paired CI drift).
-    "expr-pattern1-21",
-    "match4-2",
-    "match5-1",
-    "match5-10",
-    "match5-16",
-    "match5-17",
-    "match5-18",
-    "match5-4",
-    "match5-5",
-    "match5-6",
-    "match5-7",
-    "match5-9",
-    "match7-13",
-    "match7-9",
-    "match1-5",
-    "match-where3-1",
-    "match-where3-2",
-    "match-where4-1",
-    # match-where5-{1,2,3,4} + expr-comparison2-1: string-GT-on-mixed-Series
-    # scenarios.  Pygraphistry #1217 admitted them through Earley parsing
-    # (raised TypeError at runtime); pygraphistry #1224 routed non-filter-dict
-    # expressions through ``where_rows`` so they now execute correctly.
-    # (with-where5-3 is the same pattern but lives in PROMOTION_ROW_KEYS
-    # in direct_cypher_support.py, so its status flips xfail→supported and
-    # it doesn't go through the xfail-contract bucket.)
-    "match-where5-1",
-    "match-where5-2",
-    "match-where5-3",
-    "match-where5-4",
-    "expr-comparison2-1",
-    "return-orderby2-11",
-    "with-where3-1",
-    "with-where3-2",
-    "with-where4-1",
-    "with-where1-2",
-    "with-where7-1",
-    "with-where7-3",
-    "with-orderby2-10-1",
-    "with-orderby2-10-2",
-    "with-orderby2-9-1",
-    "with-orderby2-9-2",
-    "with-orderby2-9-3",
-    # expr-typeconversion{2,3,4}-{7,5,7}: simple free-form intermediate MATCH
-    # shape `MATCH (single-node) WITH * MATCH (n) RETURN <typecast>(n.<prop>)`.
-    # Pygraphistry #1263 admits the simple free-form case (single-row prefix,
-    # no carried-alias property reference in trailing scope) and the runtime
-    # broadcasts carried hidden columns so the trailing MATCH binds against
-    # the full base graph; rows match the oracle.
-    "expr-typeconversion2-7",
-    "expr-typeconversion3-5",
-    "expr-typeconversion4-7",
+    "with-orderby1-31-1",
+    "with-orderby1-31-2",
+    "with-orderby1-31-3",
+    "with-orderby1-32-1",
+    "with-orderby1-32-2",
+    "with-orderby2-7-1",
+    "with-orderby2-7-2",
+    "with-orderby2-7-3",
+    "with-orderby3-2-1",
+    "with-orderby3-2-2",
+    "with-orderby3-2-3",
+    "with-orderby3-2-4",
+    "with-orderby3-2-5",
+    "with-orderby3-2-6",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

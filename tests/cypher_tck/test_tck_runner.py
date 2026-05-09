@@ -16,7 +16,7 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
     expected_direct_cypher_xfail_outcome,
 )
-from tests.cypher_tck.gfql_plan import PlanStep
+from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -123,8 +123,12 @@ def _normalize_rows(rows: Sequence[Dict[str, Any]], expected_keys: Sequence[str]
     return normalized
 
 
-def _rows_ordered(gfql: Sequence[Any]) -> bool:
-    for step in gfql:
+def _rows_ordered(scenario: Scenario) -> bool:
+    if scenario.expected.ordered is not None:
+        return scenario.expected.ordered
+    if scenario.gfql is None:
+        return False
+    for step in scenario.gfql:
         if isinstance(step, PlanStep) and step.op in {"order_by", "skip", "limit"}:
             return True
     return False
@@ -146,7 +150,7 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
     expected_norm = _normalize_rows(expected_rows, expected_keys)
     actual_norm = _normalize_rows(actual_rows, expected_keys)
 
-    if _rows_ordered(scenario.gfql or ()):
+    if _rows_ordered(scenario):
         assert actual_norm == expected_norm, (
             f"ordered row mismatch for scenario {scenario.key}; "
             f"expected={expected_norm}, actual={actual_norm}"
@@ -162,6 +166,56 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
         f"unordered row mismatch for scenario {scenario.key}; "
         f"expected={expected_sorted}, actual={actual_sorted}"
     )
+
+
+def test_rows_ordered_uses_explicit_expected_flag_when_present() -> None:
+    scenario = Scenario(
+        key="unit-ordered-flag",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN 1",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"x": 1}], ordered=False),
+        gfql=(order_by(((col("x"), "asc"),)),),
+        status="supported",
+    )
+    assert _rows_ordered(scenario) is False
+
+
+def test_rows_ordered_falls_back_to_plan_steps_without_expected_flag() -> None:
+    scenario = Scenario(
+        key="unit-fallback-orderby",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN 1",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"x": 1}]),
+        gfql=(order_by(((col("x"), "asc"),)),),
+        status="supported",
+    )
+    assert _rows_ordered(scenario) is True
+
+
+def test_with_orderby_issue36_keys_are_marked_unordered() -> None:
+    for key in (
+        "with-orderby1-31-1",
+        "with-orderby1-31-2",
+        "with-orderby1-31-3",
+        "with-orderby1-32-1",
+        "with-orderby1-32-2",
+        "with-orderby2-7-1",
+        "with-orderby2-7-2",
+        "with-orderby2-7-3",
+        "with-orderby3-2-1",
+        "with-orderby3-2-2",
+        "with-orderby3-2-3",
+        "with-orderby3-2-4",
+        "with-orderby3-2-5",
+        "with-orderby3-2-6",
+    ):
+        scenario = next(s for s in SCENARIOS if s.key == key)
+        assert scenario.expected.ordered is False
+        assert _rows_ordered(scenario) is False
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:
