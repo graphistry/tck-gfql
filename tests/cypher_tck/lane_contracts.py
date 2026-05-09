@@ -185,6 +185,24 @@ ROW_PIPELINE_TRANCHE7_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #43 tranche-8: row-pipeline expression forms (temporal5 residual cluster).
+ROW_PIPELINE_TRANCHE8_KEYS: Final[tuple[str, ...]] = (
+    "expr-temporal5-1",
+    "expr-temporal5-2",
+    "expr-temporal5-3",
+    "expr-temporal5-4",
+    "expr-temporal5-5",
+    "expr-temporal5-6",
+    "expr-temporal5-7",
+)
+
+ROW_PIPELINE_TRANCHE8_EXPECTED_STATUS: Final[str] = "xfail"
+ROW_PIPELINE_TRANCHE8_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #45 tranche-1: grouped aggregates over expanded MATCH.
 GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "return6-12",
