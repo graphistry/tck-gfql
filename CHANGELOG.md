@@ -22,6 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Lane tracker backlog coverage**: Added concrete tracker issues for remaining priority lanes and wired refs in `gap_priority.py`: expression long-tail `#51`, residual read-only gaps `#52`, procedures/CALL `#53`, and write clauses `#54`.
 - **Expression long-tail lane contracts**: Added tranche-1 TCK-only guardrails for issue `#51` (List11 + Precedence2 key inventory) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
 - **Expression long-tail lane contracts**: Added tranche-2 TCK-only guardrails for issue `#51` (Temporal4 + Aggregation6 key inventory) in lane contract tests covering key existence, status/tag contract, and family classification.
+- **Expression long-tail lane contracts**: Added tranche-3 TCK-only guardrails for issue `#51` (Temporal8 key inventory) in lane contract tests covering key existence, status/tag contract, and family classification.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
