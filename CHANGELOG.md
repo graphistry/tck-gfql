@@ -37,6 +37,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Coverage-floor guards**: Added non-decreasing contract coverage floor tests for open lanes `#43` (row-pipeline floor 59) and `#51` (expression long-tail floor 135).
 - **Row-pipeline lane contracts**: Added tranche-5 TCK-only guardrails for `#43` (Quantifier12 expression residual cluster) and raised row-pipeline coverage floor to `74`.
 - **Row-pipeline lane contracts**: Added tranche-6 TCK-only guardrails for `#43` (Quantifier9 expression residual cluster) and raised row-pipeline coverage floor to `89`.
+- **Row-pipeline lane contracts**: Added tranche-7 TCK-only guardrails for `#43` (Temporal8 expression residual cluster) and raised row-pipeline coverage floor to `104`.
 - **Direct-Cypher xfail contract**: Rebased current sibling-target outcomes for newly executing xfail scenarios: promoted `match-where3-3`, `match3-1`, `match3-5`, `match4-3`, and `expr-pattern1-{12,14,15,16,17}` to `success_matches_expected`; tracked `match3-7`, `with-where3-3`, and `expr-pattern1-{13,18}` as `success_wrong_rows`.
 
 ### Changed
