@@ -68,6 +68,9 @@ from tests.cypher_tck.lane_contracts import (
     ROW_PIPELINE_TRANCHE5_EXPECTED_STATUS,
     ROW_PIPELINE_TRANCHE5_FORBIDDEN_TAGS,
     ROW_PIPELINE_TRANCHE5_KEYS,
+    ROW_PIPELINE_TRANCHE6_EXPECTED_STATUS,
+    ROW_PIPELINE_TRANCHE6_FORBIDDEN_TAGS,
+    ROW_PIPELINE_TRANCHE6_KEYS,
     WRITE_CLAUSES_TRANCHE1_EXPECTED_STATUS,
     WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS,
     WRITE_CLAUSES_TRANCHE1_KEYS,
@@ -185,6 +188,28 @@ def test_row_pipeline_tranche5_status_and_tag_contract() -> None:
 def test_row_pipeline_tranche5_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE5_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+
+
+def test_row_pipeline_tranche6_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(ROW_PIPELINE_TRANCHE6_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_row_pipeline_tranche6_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in ROW_PIPELINE_TRANCHE6_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == ROW_PIPELINE_TRANCHE6_EXPECTED_STATUS
+        for forbidden_tag in ROW_PIPELINE_TRANCHE6_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_row_pipeline_tranche6_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in ROW_PIPELINE_TRANCHE6_KEYS:
         scenario = scenarios[key]
         assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
 
@@ -531,16 +556,22 @@ def test_row_pipeline_tranches_are_disjoint() -> None:
     t3 = set(ROW_PIPELINE_TRANCHE3_KEYS)
     t4 = set(ROW_PIPELINE_TRANCHE4_KEYS)
     t5 = set(ROW_PIPELINE_TRANCHE5_KEYS)
+    t6 = set(ROW_PIPELINE_TRANCHE6_KEYS)
     assert t1.isdisjoint(t2)
     assert t1.isdisjoint(t3)
     assert t1.isdisjoint(t4)
     assert t1.isdisjoint(t5)
+    assert t1.isdisjoint(t6)
     assert t2.isdisjoint(t3)
     assert t2.isdisjoint(t4)
     assert t2.isdisjoint(t5)
+    assert t2.isdisjoint(t6)
     assert t3.isdisjoint(t4)
     assert t3.isdisjoint(t5)
+    assert t3.isdisjoint(t6)
     assert t4.isdisjoint(t5)
+    assert t4.isdisjoint(t6)
+    assert t5.isdisjoint(t6)
 
 
 def test_optional_null_tranches_are_disjoint() -> None:
@@ -581,13 +612,14 @@ def test_expression_long_tail_tranches_are_disjoint() -> None:
 
 def test_row_pipeline_contract_coverage_floor() -> None:
     # Keep row-pipeline lane coverage non-decreasing across follow-on tranche work.
-    coverage_floor = 74  # 6 + 12 + 21 + 20 + 15
+    coverage_floor = 89  # 6 + 12 + 21 + 20 + 15 + 15
     covered = (
         set(ROW_PIPELINE_TRANCHE1_KEYS)
         | set(ROW_PIPELINE_TRANCHE2_KEYS)
         | set(ROW_PIPELINE_TRANCHE3_KEYS)
         | set(ROW_PIPELINE_TRANCHE4_KEYS)
         | set(ROW_PIPELINE_TRANCHE5_KEYS)
+        | set(ROW_PIPELINE_TRANCHE6_KEYS)
     )
     assert len(covered) >= coverage_floor
 
