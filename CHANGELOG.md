@@ -34,6 +34,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Optional/null lane contracts**: Added tranche-4 guardrails for `#44`, completing TCK contract coverage for the optional/null lane key inventory.
 - **Expression long-tail lane contracts**: Added tranche-6 TCK-only guardrails for `#51` (Literals5 + Null3 + Precedence3 + TypeConversion4 inventory) in lane contract tests covering key existence, status/tag contract, family classification, and tranche disjointness.
 - **Row-pipeline lane contracts**: Added tranche-4 TCK-only guardrails for `#43` (Quantifier11 expression residual cluster) in lane contract tests covering key existence, status/tag contract, family classification, and tranche disjointness.
+- **Coverage-floor guards**: Added non-decreasing contract coverage floor tests for open lanes `#43` (row-pipeline floor 59) and `#51` (expression long-tail floor 135).
 - **Direct-Cypher xfail contract**: Rebased current sibling-target outcomes for newly executing xfail scenarios: promoted `match-where3-3`, `match3-1`, `match3-5`, `match4-3`, and `expr-pattern1-{12,14,15,16,17}` to `success_matches_expected`; tracked `match3-7`, `with-where3-3`, and `expr-pattern1-{13,18}` as `success_wrong_rows`.
 
 ### Changed

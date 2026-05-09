@@ -549,6 +549,32 @@ def test_expression_long_tail_tranches_are_disjoint() -> None:
             assert left.isdisjoint(right)
 
 
+def test_row_pipeline_contract_coverage_floor() -> None:
+    # Keep row-pipeline lane coverage non-decreasing across follow-on tranche work.
+    coverage_floor = 59  # 6 + 12 + 21 + 20
+    covered = (
+        set(ROW_PIPELINE_TRANCHE1_KEYS)
+        | set(ROW_PIPELINE_TRANCHE2_KEYS)
+        | set(ROW_PIPELINE_TRANCHE3_KEYS)
+        | set(ROW_PIPELINE_TRANCHE4_KEYS)
+    )
+    assert len(covered) >= coverage_floor
+
+
+def test_expression_long_tail_contract_coverage_floor() -> None:
+    # Keep expression long-tail lane coverage non-decreasing across tranche expansion.
+    coverage_floor = 135  # 42 + 27 + 12 + 15 + 15 + 24
+    covered = (
+        set(EXPRESSION_LONG_TAIL_TRANCHE1_KEYS)
+        | set(EXPRESSION_LONG_TAIL_TRANCHE2_KEYS)
+        | set(EXPRESSION_LONG_TAIL_TRANCHE3_KEYS)
+        | set(EXPRESSION_LONG_TAIL_TRANCHE4_KEYS)
+        | set(EXPRESSION_LONG_TAIL_TRANCHE5_KEYS)
+        | set(EXPRESSION_LONG_TAIL_TRANCHE6_KEYS)
+    )
+    assert len(covered) >= coverage_floor
+
+
 def test_other_read_gaps_tranche1_keys_exist() -> None:
     scenarios = _scenario_map()
     missing = sorted(set(OTHER_READ_GAPS_TRANCHE1_KEYS) - set(scenarios))
