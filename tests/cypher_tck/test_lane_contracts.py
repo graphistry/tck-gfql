@@ -116,3 +116,14 @@ def test_optional_null_lane_has_issue_tracker_wired() -> None:
     )
     assert optional_null.tracker_ref == "#44"
     assert optional_null.tracker_url == "https://github.com/graphistry/tck-gfql/issues/44"
+
+
+def test_all_primary_lanes_have_concrete_issue_tracker_refs() -> None:
+    for definition in PRIMARY_FAMILY_DEFINITIONS:
+        assert definition.tracker_ref.startswith("#"), definition.lane_id
+
+
+def test_all_primary_lanes_have_issue_tracker_urls() -> None:
+    for definition in PRIMARY_FAMILY_DEFINITIONS:
+        assert definition.tracker_url is not None, definition.lane_id
+        assert definition.tracker_url.startswith("https://github.com/graphistry/tck-gfql/issues/")

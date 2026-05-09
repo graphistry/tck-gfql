@@ -79,6 +79,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "validation-safe xfails:" in report
     assert "Ownership split (heuristic):" in report
     assert "tck-governance lanes with concrete issue trackers:" in report
+    assert "tck-governance lanes still TODO-tracked: 0" in report
     assert (
         f"tracked non-validation debt: {len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY)}"
         in report
