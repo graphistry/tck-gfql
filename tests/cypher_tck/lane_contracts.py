@@ -44,6 +44,38 @@ ROW_PIPELINE_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #43 tranche-3: row-pipeline read forms (remaining non-expression anchors).
+ROW_PIPELINE_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
+    "match6-18",
+    "match8-1",
+    "match9-6",
+    "match9-7",
+    "return-orderby1-11",
+    "return-orderby1-12",
+    "return-orderby2-12",
+    "return-orderby6-1",
+    "return-orderby6-3",
+    "return4-11",
+    "return6-13",
+    "unwind1-5",
+    "with-orderby1-21",
+    "with-orderby1-22",
+    "with-where2-1",
+    "with-where2-2",
+    "with-where3-3",
+    "with-where4-2",
+    "with6-5",
+    "with6-6",
+    "with6-7",
+)
+
+ROW_PIPELINE_TRANCHE3_EXPECTED_STATUS: Final[str] = "xfail"
+ROW_PIPELINE_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #45 tranche-1: grouped aggregates over expanded MATCH.
 GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "return6-12",
@@ -78,6 +110,26 @@ GROUPED_MATCH_AGG_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
 
 GROUPED_MATCH_AGG_TRANCHE2_EXPECTED_STATUS: Final[str] = "xfail"
 GROUPED_MATCH_AGG_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
+# Issue #45 tranche-3: grouped aggregates over expanded MATCH (remaining expression anchors).
+GROUPED_MATCH_AGG_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
+    "expr-comparison1-5",
+    "expr-existentialsubquery2-2",
+    "expr-pattern2-6",
+    "expr-pattern2-8",
+    "expr-pattern2-9",
+    "expr-quantifier1-9",
+    "expr-quantifier2-9",
+    "expr-quantifier3-9",
+    "expr-quantifier4-9",
+)
+
+GROUPED_MATCH_AGG_TRANCHE3_EXPECTED_STATUS: Final[str] = "xfail"
+GROUPED_MATCH_AGG_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
@@ -118,6 +170,35 @@ OPTIONAL_NULL_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
 
 OPTIONAL_NULL_TRANCHE2_EXPECTED_STATUS: Final[str] = "xfail"
 OPTIONAL_NULL_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
+# Issue #44 tranche-3: OPTIONAL MATCH / null-extension (triadic selection usecase cluster).
+OPTIONAL_NULL_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
+    "usecase-triadicselection1-2",
+    "usecase-triadicselection1-3",
+    "usecase-triadicselection1-4",
+    "usecase-triadicselection1-5",
+    "usecase-triadicselection1-6",
+    "usecase-triadicselection1-7",
+    "usecase-triadicselection1-8",
+    "usecase-triadicselection1-9",
+    "usecase-triadicselection1-10",
+    "usecase-triadicselection1-11",
+    "usecase-triadicselection1-12",
+    "usecase-triadicselection1-13",
+    "usecase-triadicselection1-14",
+    "usecase-triadicselection1-15",
+    "usecase-triadicselection1-16",
+    "usecase-triadicselection1-17",
+    "usecase-triadicselection1-18",
+    "usecase-triadicselection1-19",
+)
+
+OPTIONAL_NULL_TRANCHE3_EXPECTED_STATUS: Final[str] = "xfail"
+OPTIONAL_NULL_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
@@ -258,6 +339,32 @@ EXPRESSION_LONG_TAIL_TRANCHE4_KEYS: Final[tuple[str, ...]] = (
 
 EXPRESSION_LONG_TAIL_TRANCHE4_EXPECTED_STATUS: Final[str] = "xfail"
 EXPRESSION_LONG_TAIL_TRANCHE4_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
+# Issue #51 tranche-5: expression long-tail (Comparison1 + Comparison2 clusters).
+EXPRESSION_LONG_TAIL_TRANCHE5_KEYS: Final[tuple[str, ...]] = (
+    "expr-comparison2-5-1",
+    "expr-comparison2-5-2",
+    "expr-comparison2-5-3",
+    "expr-comparison2-5-4",
+    "expr-comparison2-6-1",
+    "expr-comparison2-6-2",
+    "expr-comparison2-6-3",
+    "expr-comparison2-6-4",
+    "expr-comparison1-14",
+    "expr-comparison1-6-5",
+    "expr-comparison1-7-12",
+    "expr-comparison1-7-13",
+    "expr-comparison1-7-14",
+    "expr-comparison1-7-15",
+    "expr-comparison1-7-16",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE5_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE5_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
