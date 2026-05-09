@@ -77,7 +77,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "return2-10",
     "return2-9",
     "match3-7",
-    "with-where3-3",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
     # rejected the WITH-projection-driven join shape with a validation
@@ -159,6 +158,8 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
     "match-where3-3",
+    # with-where3-3: sibling-target drift shows row-level parity restored.
+    "with-where3-3",
     "expr-pattern1-12",
     "expr-pattern1-14",
     "expr-pattern1-15",

@@ -220,6 +220,22 @@ ROW_PIPELINE_TRANCHE9_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #43 tranche-10: row-pipeline expression forms (quantifier10 residual cluster).
+ROW_PIPELINE_TRANCHE10_KEYS: Final[tuple[str, ...]] = (
+    "expr-quantifier10-4-1",
+    "expr-quantifier10-4-2",
+    "expr-quantifier10-4-3",
+    "expr-quantifier10-4-4",
+    "expr-quantifier10-4-5",
+)
+
+ROW_PIPELINE_TRANCHE10_EXPECTED_STATUS: Final[str] = "xfail"
+ROW_PIPELINE_TRANCHE10_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #45 tranche-1: grouped aggregates over expanded MATCH.
 GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "return6-12",
