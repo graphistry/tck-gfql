@@ -68,6 +68,14 @@ def test_strict_pure_allows_empty_with_projection_plan() -> None:
     _assert_strict_pure_key("return6-18")
 
 
+def test_strict_pure_map_projection_literal_plan() -> None:
+    _assert_strict_pure_key("return6-6")
+
+
+def test_strict_pure_static_map_projection_plan() -> None:
+    _assert_strict_pure_key("return6-19")
+
+
 def test_strict_pure_dynamic_subscript_unwind_plan() -> None:
     _assert_strict_pure_key("return-orderby4-1")
 

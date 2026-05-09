@@ -54,8 +54,8 @@ PRIMARY_FAMILY_DEFINITIONS: Tuple[PriorityLaneDefinition, ...] = (
         user_value="high",
         implementation_cost="medium",
         architecture_risk="medium-high",
-        tracker_ref="TODO(meta-issue): multiplicity carrier PR2-PR4",
-        tracker_url=None,
+        tracker_ref="#45",
+        tracker_url="https://github.com/graphistry/tck-gfql/issues/45",
         rationale="Grouped counts and rollups over matched neighbors are common read-only analytics.",
         curated_sample_keys=(
             "return6-12",
@@ -72,8 +72,8 @@ PRIMARY_FAMILY_DEFINITIONS: Tuple[PriorityLaneDefinition, ...] = (
         user_value="high",
         implementation_cost="medium",
         architecture_risk="medium",
-        tracker_ref="TODO(candidate): row-pipeline read-form follow-up",
-        tracker_url=None,
+        tracker_ref="#43",
+        tracker_url="https://github.com/graphistry/tck-gfql/issues/43",
         rationale="WITH / ORDER BY / LIMIT / SKIP / UNWIND drive day-to-day query ergonomics.",
         curated_sample_keys=(
             "unwind1-12",
@@ -91,8 +91,8 @@ PRIMARY_FAMILY_DEFINITIONS: Tuple[PriorityLaneDefinition, ...] = (
         user_value="medium-high",
         implementation_cost="high",
         architecture_risk="high",
-        tracker_ref="TODO(candidate): optional/null-extension follow-up",
-        tracker_url=None,
+        tracker_ref="#44",
+        tracker_url="https://github.com/graphistry/tck-gfql/issues/44",
         rationale="OPTIONAL MATCH and null extension are common, but the carrier/null semantics are broader.",
         curated_sample_keys=(
             "match7-29",

@@ -16,6 +16,7 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
     expected_direct_cypher_xfail_outcome,
 )
+from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_KEYS
 from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.plan_executor import execute_plan
@@ -416,6 +417,26 @@ def test_direct_cypher_matches_expected_contract_keys_are_stable() -> None:
     assert set(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS) == set(
         DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS
     )
+
+
+def test_direct_cypher_promotion_snapshot_matches_status_tags() -> None:
+    represented_keys = {scenario.key for scenario in SCENARIOS}
+    translated_supported_keys = {
+        scenario.key
+        for scenario in SCENARIOS
+        if scenario.status == "supported"
+        and scenario.gfql is not None
+        and "cypher-string" not in scenario.tags
+    }
+    promotion_snapshot_keys = (
+        DIRECT_CYPHER_PROMOTION_KEYS & represented_keys
+    ) - translated_supported_keys
+    status_promoted_keys = {
+        scenario.key
+        for scenario in SCENARIOS
+        if scenario.status == "supported" and "cypher-string" in scenario.tags
+    }
+    assert promotion_snapshot_keys == status_promoted_keys
 
 
 @pytest.mark.parametrize(
