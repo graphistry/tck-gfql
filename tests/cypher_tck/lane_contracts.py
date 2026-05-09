@@ -163,3 +163,24 @@ EXPRESSION_LONG_TAIL_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #52 tranche-1: residual read-only lane (variable-length + named-path anchors).
+OTHER_READ_GAPS_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
+    "match4-1",
+    "match4-3",
+    "match4-4",
+    "match4-5",
+    "match5-2",
+    "match5-11",
+    "match6-1",
+    "match6-2",
+    "match6-3",
+    "return2-9",
+)
+
+OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS: Final[str] = "xfail"
+OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
