@@ -8,6 +8,9 @@ from tests.cypher_tck.lane_contracts import (
     EXPRESSION_LONG_TAIL_TRANCHE1_EXPECTED_STATUS,
     EXPRESSION_LONG_TAIL_TRANCHE1_FORBIDDEN_TAGS,
     EXPRESSION_LONG_TAIL_TRANCHE1_KEYS,
+    EXPRESSION_LONG_TAIL_TRANCHE2_EXPECTED_STATUS,
+    EXPRESSION_LONG_TAIL_TRANCHE2_FORBIDDEN_TAGS,
+    EXPRESSION_LONG_TAIL_TRANCHE2_KEYS,
     GROUPED_MATCH_AGG_TRANCHE1_EXPECTED_STATUS,
     GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS,
     GROUPED_MATCH_AGG_TRANCHE1_KEYS,
@@ -151,6 +154,28 @@ def test_expression_long_tail_lane_has_issue_tracker_wired() -> None:
     )
     assert expression_long_tail.tracker_ref == "#51"
     assert expression_long_tail.tracker_url == "https://github.com/graphistry/tck-gfql/issues/51"
+
+
+def test_expression_long_tail_tranche2_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(EXPRESSION_LONG_TAIL_TRANCHE2_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_expression_long_tail_tranche2_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE2_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE2_EXPECTED_STATUS
+        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE2_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_expression_long_tail_tranche2_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE2_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
 
 
 def test_all_primary_lanes_have_concrete_issue_tracker_refs() -> None:

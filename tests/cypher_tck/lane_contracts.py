@@ -102,3 +102,41 @@ EXPRESSION_LONG_TAIL_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #51 tranche-2: expression long-tail (Temporal4 + Aggregation6 clusters).
+EXPRESSION_LONG_TAIL_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
+    "expr-aggregation6-1-1",
+    "expr-aggregation6-1-2",
+    "expr-aggregation6-1-3",
+    "expr-aggregation6-2-1",
+    "expr-aggregation6-2-2",
+    "expr-aggregation6-2-3",
+    "expr-aggregation6-3-1",
+    "expr-aggregation6-3-2",
+    "expr-aggregation6-3-3",
+    "expr-aggregation6-4-1",
+    "expr-aggregation6-4-2",
+    "expr-aggregation6-4-3",
+    "expr-temporal4-13-2",
+    "expr-temporal4-13-3",
+    "expr-temporal4-13-4",
+    "expr-temporal4-13-6",
+    "expr-temporal4-13-7",
+    "expr-temporal4-13-8",
+    "expr-temporal4-13-10",
+    "expr-temporal4-13-11",
+    "expr-temporal4-13-12",
+    "expr-temporal4-13-14",
+    "expr-temporal4-13-15",
+    "expr-temporal4-13-16",
+    "expr-temporal4-13-18",
+    "expr-temporal4-13-19",
+    "expr-temporal4-13-20",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE2_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
