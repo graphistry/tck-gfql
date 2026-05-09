@@ -31,18 +31,8 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
-    "expr-comparison1-6-5",
-    "expr-comparison1-7-12",
-    "expr-comparison1-7-13",
-    "expr-comparison1-7-14",
-    "expr-comparison1-7-15",
-    "expr-comparison1-7-16",
     "expr-list12-3",
     "expr-list3-7",
-    "expr-list5-21",
-    "expr-list5-29",
-    "expr-list5-31",
-    "expr-list5-34",
     "expr-literals5-11",
     "expr-literals5-12",
     "expr-literals5-25",
@@ -55,8 +45,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-literals7-7",
     "expr-literals8-11",
     "expr-literals8-18",
-    "expr-null1-3",
-    "expr-null2-3",
     "expr-string10-4",
     "expr-string10-5",
     "expr-string8-4",
@@ -155,6 +143,20 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-orderby3-2-6",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # pygraphistry #1407: tri-valued list/map/null semantics tranche promoted
+    # comparison/list/null xfail scenarios from wrong rows to expected rows.
+    "expr-comparison1-6-5",
+    "expr-comparison1-7-12",
+    "expr-comparison1-7-13",
+    "expr-comparison1-7-14",
+    "expr-comparison1-7-15",
+    "expr-comparison1-7-16",
+    "expr-list5-21",
+    "expr-list5-29",
+    "expr-list5-31",
+    "expr-list5-34",
+    "expr-null1-3",
+    "expr-null2-3",
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
     "match-where3-3",
