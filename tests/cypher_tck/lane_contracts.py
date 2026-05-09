@@ -19,3 +19,18 @@ ROW_PIPELINE_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #45 tranche-1: grouped aggregates over expanded MATCH.
+GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
+    "return6-12",
+    "with-skip-limit1-2",
+    "with-skip-limit2-4",
+    "with7-2",
+)
+
+GROUPED_MATCH_AGG_TRANCHE1_EXPECTED_STATUS: Final[str] = "xfail"
+GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
