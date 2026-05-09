@@ -11,6 +11,7 @@ from graphistry.tests.test_compute import CGFull
 
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+    DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS,
     DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
     DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS,
     DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
@@ -416,6 +417,20 @@ def test_direct_cypher_xfail_contract_map_only_targets_current_xfails() -> None:
 def test_direct_cypher_matches_expected_contract_keys_are_stable() -> None:
     assert set(DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS) == set(
         DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS
+    )
+
+
+def test_direct_cypher_promoted_from_xfail_matches_expected_keys_are_supported() -> None:
+    scenarios_by_key = {scenario.key: scenario for scenario in SCENARIOS}
+    for key in DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS:
+        scenario = scenarios_by_key[key]
+        assert scenario.status == "supported"
+        assert "cypher-string" in scenario.tags
+
+
+def test_direct_cypher_promoted_from_xfail_matches_expected_keys_not_tracked_as_nonvalidation_debt() -> None:
+    assert set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS).isdisjoint(
+        DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY
     )
 
 

@@ -99,10 +99,18 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "match-where1-10",
 )
 
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # pygraphistry #1366 (#1353 comparator + precedence tranche) — runtime row-expression
-    # integer-division semantics now align with openCypher truncation for integer-like
-    # arithmetic precedence scenarios.
+DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
+    # These keys historically lived in the xfail non-validation "success_matches_expected"
+    # bucket. They now promote via direct-Cypher row support snapshot and are no longer
+    # tracked as xfail non-validation debt.
+    "expr-comparison3-1",
+    "expr-comparison3-2",
+    "expr-comparison3-3",
+    "expr-comparison3-4",
+    "expr-comparison3-5",
+    "expr-comparison3-6",
+    "expr-comparison3-7",
+    "expr-comparison3-8",
     "expr-mathematical8-1",
     "expr-mathematical8-2",
     "expr-precedence2-1-10",
@@ -115,17 +123,6 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-precedence2-1-7",
     "expr-precedence2-1-8",
     "expr-precedence2-1-9",
-    "expr-comparison3-1",
-    "expr-comparison3-2",
-    "expr-comparison3-3",
-    "expr-comparison3-4",
-    "expr-comparison3-5",
-    "expr-comparison3-6",
-    "expr-comparison3-7",
-    "expr-comparison3-8",
-    # pygraphistry #1361 (#1353 item #2) — Duration toString + equality preserve openCypher
-    # CIP `Duration` components (months, days, seconds-and-nanoseconds) instead of
-    # collapsing days into total nanoseconds.
     "expr-temporal6-6-2",
     "expr-temporal6-6-8",
     "expr-temporal7-1-1",
@@ -154,6 +151,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "with-orderby3-2-5",
     "with-orderby3-2-6",
 )
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
 )
