@@ -26,6 +26,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher contract cleanup**: Promoted 47 prior `success_matches_expected` xfail keys into direct-Cypher row support snapshot and removed them from non-validation xfail debt tracking.
 - **Residual read-only lane contracts**: Added tranche-1 TCK-only guardrails for issue `#52` (variable-length + named-path anchor inventory) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
 - **Write-clauses lane contracts**: Added tranche-1 TCK-only guardrails for issue `#54` (cross-clause anchor inventory spanning CREATE/MERGE/SET/DELETE/REMOVE) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
+- **Procedures/CALL lane contracts**: Added tranche-1 TCK-only guardrails for issue `#53` (registry/invocation/YIELD anchors) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.

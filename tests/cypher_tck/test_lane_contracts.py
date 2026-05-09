@@ -26,6 +26,9 @@ from tests.cypher_tck.lane_contracts import (
     OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS,
     OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS,
     OTHER_READ_GAPS_TRANCHE1_KEYS,
+    PROCEDURES_CALL_TRANCHE1_EXPECTED_STATUS,
+    PROCEDURES_CALL_TRANCHE1_FORBIDDEN_TAGS,
+    PROCEDURES_CALL_TRANCHE1_KEYS,
     ROW_PIPELINE_TRANCHE1_EXPECTED_STATUS,
     ROW_PIPELINE_TRANCHE1_FORBIDDEN_TAGS,
     ROW_PIPELINE_TRANCHE1_KEYS,
@@ -284,6 +287,38 @@ def test_write_clauses_lane_has_issue_tracker_wired() -> None:
     )
     assert write_clauses.tracker_ref == "#54"
     assert write_clauses.tracker_url == "https://github.com/graphistry/tck-gfql/issues/54"
+
+
+def test_procedures_call_tranche1_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(PROCEDURES_CALL_TRANCHE1_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_procedures_call_tranche1_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in PROCEDURES_CALL_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == PROCEDURES_CALL_TRANCHE1_EXPECTED_STATUS
+        for forbidden_tag in PROCEDURES_CALL_TRANCHE1_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_procedures_call_tranche1_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in PROCEDURES_CALL_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "procedures-and-call"
+
+
+def test_procedures_call_lane_has_issue_tracker_wired() -> None:
+    procedures_call = next(
+        definition
+        for definition in PRIMARY_FAMILY_DEFINITIONS
+        if definition.lane_id == "procedures-and-call"
+    )
+    assert procedures_call.tracker_ref == "#53"
+    assert procedures_call.tracker_url == "https://github.com/graphistry/tck-gfql/issues/53"
 
 
 def test_all_primary_lanes_have_concrete_issue_tracker_refs() -> None:

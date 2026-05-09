@@ -206,3 +206,24 @@ WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #53 tranche-1: procedures/CALL lane (registry + invocation + YIELD anchors).
+PROCEDURES_CALL_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
+    "call1-1",
+    "call1-13",
+    "call2-1",
+    "call2-3",
+    "call3-2",
+    "call5-3-1",
+    "call5-4-1",
+    "call5-8",
+    "call6-1",
+    "call6-2",
+)
+
+PROCEDURES_CALL_TRANCHE1_EXPECTED_STATUS: Final[str] = "xfail"
+PROCEDURES_CALL_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
