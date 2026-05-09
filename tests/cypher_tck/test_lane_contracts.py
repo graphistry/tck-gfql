@@ -23,6 +23,9 @@ from tests.cypher_tck.lane_contracts import (
     OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS,
     OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS,
     OPTIONAL_NULL_TRANCHE1_KEYS,
+    OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS,
+    OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS,
+    OTHER_READ_GAPS_TRANCHE1_KEYS,
     ROW_PIPELINE_TRANCHE1_EXPECTED_STATUS,
     ROW_PIPELINE_TRANCHE1_FORBIDDEN_TAGS,
     ROW_PIPELINE_TRANCHE1_KEYS,
@@ -214,6 +217,38 @@ def test_expression_long_tail_tranche3_family_classification_contract() -> None:
     for key in EXPRESSION_LONG_TAIL_TRANCHE3_KEYS:
         scenario = scenarios[key]
         assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+
+
+def test_other_read_gaps_tranche1_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(OTHER_READ_GAPS_TRANCHE1_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_other_read_gaps_tranche1_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OTHER_READ_GAPS_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS
+        for forbidden_tag in OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_other_read_gaps_tranche1_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OTHER_READ_GAPS_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "other-read-gaps"
+
+
+def test_other_read_gaps_lane_has_issue_tracker_wired() -> None:
+    other_read_gaps = next(
+        definition
+        for definition in PRIMARY_FAMILY_DEFINITIONS
+        if definition.lane_id == "other-read-gaps"
+    )
+    assert other_read_gaps.tracker_ref == "#52"
+    assert other_read_gaps.tracker_url == "https://github.com/graphistry/tck-gfql/issues/52"
 
 
 def test_all_primary_lanes_have_concrete_issue_tracker_refs() -> None:

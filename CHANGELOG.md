@@ -24,6 +24,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Expression long-tail lane contracts**: Added tranche-2 TCK-only guardrails for issue `#51` (Temporal4 + Aggregation6 key inventory) in lane contract tests covering key existence, status/tag contract, and family classification.
 - **Expression long-tail lane contracts**: Added tranche-3 TCK-only guardrails for issue `#51` (Temporal8 key inventory) in lane contract tests covering key existence, status/tag contract, and family classification.
 - **Direct-Cypher contract cleanup**: Promoted 47 prior `success_matches_expected` xfail keys into direct-Cypher row support snapshot and removed them from non-validation xfail debt tracking.
+- **Residual read-only lane contracts**: Added tranche-1 TCK-only guardrails for issue `#52` (variable-length + named-path anchor inventory) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
