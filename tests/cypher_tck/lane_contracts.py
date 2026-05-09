@@ -281,6 +281,23 @@ ROW_PIPELINE_TRANCHE13_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #43 tranche-14: row-pipeline expression forms (string8 + string9 bundle).
+ROW_PIPELINE_TRANCHE14_KEYS: Final[tuple[str, ...]] = (
+    "expr-string8-4",
+    "expr-string8-5",
+    "expr-string8-8",
+    "expr-string9-4",
+    "expr-string9-5",
+    "expr-string9-8",
+)
+
+ROW_PIPELINE_TRANCHE14_EXPECTED_STATUS: Final[str] = "xfail"
+ROW_PIPELINE_TRANCHE14_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #45 tranche-1: grouped aggregates over expanded MATCH.
 GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "return6-12",
