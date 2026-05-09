@@ -50,7 +50,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-string8-5",
     "expr-string9-4",
     "expr-string9-5",
-    "expr-temporal2-6-5",
     "expr-typeconversion4-2",
     "expr-typeconversion4-3",
     "expr-typeconversion4-4",
@@ -156,6 +155,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-list5-34",
     "expr-null1-3",
     "expr-null2-3",
+    "expr-temporal2-6-5",
     "expr-list3-7",
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
