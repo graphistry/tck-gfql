@@ -184,3 +184,25 @@ OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #54 tranche-1: write-clause lane (cross-clause anchor keys).
+WRITE_CLAUSES_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
+    "create1-1",
+    "create2-1",
+    "create6-1",
+    "merge1-1",
+    "merge2-1",
+    "set1-1",
+    "set3-1",
+    "delete1-1",
+    "delete5-1",
+    "remove1-1",
+    "remove3-1",
+)
+
+WRITE_CLAUSES_TRANCHE1_EXPECTED_STATUS: Final[str] = "xfail"
+WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
