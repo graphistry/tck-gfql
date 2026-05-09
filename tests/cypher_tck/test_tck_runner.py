@@ -381,10 +381,11 @@ def test_counting_subgraph_match_count_star_cases_are_not_direct_promoted(key: s
     assert "cypher-string" not in scenario.tags
 
 
-def test_match7_9_is_not_direct_promoted() -> None:
+def test_match7_9_is_direct_only_promoted_not_phase_promoted() -> None:
     scenario = next(s for s in SCENARIOS if s.key == "match7-9")
-    assert scenario.status == "xfail"
-    assert "cypher-string" not in scenario.tags
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
 
 
 def _direct_cypher_xfail_outcome(scenario: Scenario) -> str:
