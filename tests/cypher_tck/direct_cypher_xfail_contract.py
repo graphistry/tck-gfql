@@ -31,20 +31,12 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
-    "expr-comparison3-1",
-    "expr-comparison3-2",
-    "expr-comparison3-3",
-    "expr-comparison3-4",
     "expr-comparison1-6-5",
     "expr-comparison1-7-12",
     "expr-comparison1-7-13",
     "expr-comparison1-7-14",
     "expr-comparison1-7-15",
     "expr-comparison1-7-16",
-    "expr-comparison3-5",
-    "expr-comparison3-6",
-    "expr-comparison3-7",
-    "expr-comparison3-8",
     "expr-list12-3",
     "expr-list3-7",
     "expr-list5-21",
@@ -63,20 +55,8 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-literals7-7",
     "expr-literals8-11",
     "expr-literals8-18",
-    "expr-mathematical8-1",
-    "expr-mathematical8-2",
     "expr-null1-3",
     "expr-null2-3",
-    "expr-precedence2-1-10",
-    "expr-precedence2-1-11",
-    "expr-precedence2-1-12",
-    "expr-precedence2-1-14",
-    "expr-precedence2-1-17",
-    "expr-precedence2-1-2",
-    "expr-precedence2-1-5",
-    "expr-precedence2-1-7",
-    "expr-precedence2-1-8",
-    "expr-precedence2-1-9",
     "expr-string10-4",
     "expr-string10-5",
     "expr-string8-4",
@@ -130,6 +110,29 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
 )
 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # pygraphistry #1366 (#1353 comparator + precedence tranche) — runtime row-expression
+    # integer-division semantics now align with openCypher truncation for integer-like
+    # arithmetic precedence scenarios.
+    "expr-mathematical8-1",
+    "expr-mathematical8-2",
+    "expr-precedence2-1-10",
+    "expr-precedence2-1-11",
+    "expr-precedence2-1-12",
+    "expr-precedence2-1-14",
+    "expr-precedence2-1-17",
+    "expr-precedence2-1-2",
+    "expr-precedence2-1-5",
+    "expr-precedence2-1-7",
+    "expr-precedence2-1-8",
+    "expr-precedence2-1-9",
+    "expr-comparison3-1",
+    "expr-comparison3-2",
+    "expr-comparison3-3",
+    "expr-comparison3-4",
+    "expr-comparison3-5",
+    "expr-comparison3-6",
+    "expr-comparison3-7",
+    "expr-comparison3-8",
     # pygraphistry #1361 (#1353 item #2) — Duration toString + equality preserve openCypher
     # CIP `Duration` components (months, days, seconds-and-nanoseconds) instead of
     # collapsing days into total nanoseconds.
