@@ -16,6 +16,7 @@ from tests.cypher_tck.direct_cypher_support import (
     DIRECT_CYPHER_PROMOTION_ROW_KEYS,
 )
 from tests.cypher_tck.gap_priority import (
+    PRIMARY_FAMILY_DEFINITIONS,
     build_primary_family_summaries,
     build_priority_lane_summaries,
 )
@@ -289,6 +290,35 @@ def build_report() -> str:
 
     priority_lanes = build_priority_lane_summaries(SCENARIOS)
     primary_families = build_primary_family_summaries(SCENARIOS)
+    issue_backed_lane_count = sum(
+        1 for definition in PRIMARY_FAMILY_DEFINITIONS if definition.tracker_ref.startswith("#")
+    )
+    todo_lane_count = sum(
+        1
+        for definition in PRIMARY_FAMILY_DEFINITIONS
+        if definition.tracker_ref.startswith("TODO(")
+    )
+    issue_backed_family_xfails = sum(
+        family.xfail_count
+        for family in primary_families
+        if family.definition.tracker_ref.startswith("#")
+    )
+    todo_family_xfails = sum(
+        family.xfail_count
+        for family in primary_families
+        if family.definition.tracker_ref.startswith("TODO(")
+    )
+
+    lines.extend(
+        [
+            "",
+            "Ownership split (heuristic):",
+            f"- tck-governance lanes with concrete issue trackers: {issue_backed_lane_count}",
+            f"- tck-governance lanes still TODO-tracked: {todo_lane_count}",
+            f"- xfails in issue-backed lanes (implementation follow-up): {issue_backed_family_xfails}",
+            f"- xfails in TODO-tracked lanes (planning/backlog follow-up): {todo_family_xfails}",
+        ]
+    )
 
     lines.extend(
         [
