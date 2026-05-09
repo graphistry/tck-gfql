@@ -31,12 +31,6 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
-    "expr-comparison1-6-5",
-    "expr-comparison1-7-12",
-    "expr-comparison1-7-13",
-    "expr-comparison1-7-14",
-    "expr-comparison1-7-15",
-    "expr-comparison1-7-16",
     "expr-list12-3",
     "expr-list3-7",
     "expr-list5-21",
@@ -155,6 +149,13 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-orderby3-2-6",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # #1405: structural list/map null-equality semantics now align with expected rows.
+    "expr-comparison1-6-5",
+    "expr-comparison1-7-12",
+    "expr-comparison1-7-13",
+    "expr-comparison1-7-14",
+    "expr-comparison1-7-15",
+    "expr-comparison1-7-16",
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
     "match-where3-3",
