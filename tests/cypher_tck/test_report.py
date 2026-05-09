@@ -53,6 +53,16 @@ def test_primary_family_counts_cover_all_xfails() -> None:
     assert sum(summary.xfail_count for summary in summaries) == xfail_count
 
 
+def test_primary_family_counts_stable_for_priority_lanes() -> None:
+    summaries = build_primary_family_summaries(SCENARIOS)
+    by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
+
+    assert by_lane["row-pipeline-read-forms"] == 158
+    assert by_lane["optional-match-null-extension"] == 64
+    assert by_lane["grouped-match-aggregates"] == 26
+    assert by_lane["expression-long-tail"] == 166
+
+
 def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
     summaries = build_priority_lane_summaries(SCENARIOS)
     grouped = next(

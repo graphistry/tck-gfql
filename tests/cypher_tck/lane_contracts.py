@@ -21,6 +21,29 @@ ROW_PIPELINE_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #43 tranche-2: row-pipeline read forms (WITH/ORDER BY/SKIP/LIMIT anchors).
+ROW_PIPELINE_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
+    "with1-1",
+    "with1-2",
+    "with1-3",
+    "with1-4",
+    "with2-1",
+    "with3-1",
+    "with4-1",
+    "with5-2",
+    "with-skip-limit1-1",
+    "with-skip-limit2-2",
+    "with-skip-limit2-3",
+    "with7-1",
+)
+
+ROW_PIPELINE_TRANCHE2_EXPECTED_STATUS: Final[str] = "xfail"
+ROW_PIPELINE_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #45 tranche-1: grouped aggregates over expanded MATCH.
 GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "return6-12",
@@ -36,6 +59,30 @@ GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #45 tranche-2: grouped aggregates over expanded MATCH (non-expression anchors).
+GROUPED_MATCH_AGG_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
+    "match8-3",
+    "match9-5",
+    "return4-6",
+    "return6-8",
+    "return6-16",
+    "usecase-countingsubgraphmatches1-4",
+    "usecase-countingsubgraphmatches1-5",
+    "usecase-countingsubgraphmatches1-8",
+    "usecase-countingsubgraphmatches1-10",
+    "with-where6-1",
+    "with6-2",
+    "with6-3",
+    "with6-4",
+)
+
+GROUPED_MATCH_AGG_TRANCHE2_EXPECTED_STATUS: Final[str] = "xfail"
+GROUPED_MATCH_AGG_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #44 tranche-1: OPTIONAL MATCH / null-extension lane.
 OPTIONAL_NULL_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "match7-27",
@@ -46,6 +93,31 @@ OPTIONAL_NULL_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
 
 OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS: Final[str] = "xfail"
 OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
+# Issue #44 tranche-2: OPTIONAL MATCH / null-extension (core match7 cluster).
+OPTIONAL_NULL_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
+    "match7-2",
+    "match7-3",
+    "match7-4",
+    "match7-5",
+    "match7-6",
+    "match7-8",
+    "match7-10",
+    "match7-11",
+    "match7-12",
+    "match7-21",
+    "match7-22",
+    "match7-23",
+    "match7-25",
+    "match7-26",
+)
+
+OPTIONAL_NULL_TRANCHE2_EXPECTED_STATUS: Final[str] = "xfail"
+OPTIONAL_NULL_TRANCHE2_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
@@ -160,6 +232,32 @@ EXPRESSION_LONG_TAIL_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
 
 EXPRESSION_LONG_TAIL_TRANCHE3_EXPECTED_STATUS: Final[str] = "xfail"
 EXPRESSION_LONG_TAIL_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
+# Issue #51 tranche-4: expression long-tail (Pattern1 + Pattern2 clusters).
+EXPRESSION_LONG_TAIL_TRANCHE4_KEYS: Final[tuple[str, ...]] = (
+    "expr-pattern1-10",
+    "expr-pattern1-12",
+    "expr-pattern1-13",
+    "expr-pattern1-14",
+    "expr-pattern1-15",
+    "expr-pattern1-16",
+    "expr-pattern1-17",
+    "expr-pattern1-18",
+    "expr-pattern2-1",
+    "expr-pattern2-2",
+    "expr-pattern2-3",
+    "expr-pattern2-4",
+    "expr-pattern2-5",
+    "expr-pattern2-7",
+    "expr-pattern2-10",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE4_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE4_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )

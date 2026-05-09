@@ -17,12 +17,21 @@ from tests.cypher_tck.lane_contracts import (
     EXPRESSION_LONG_TAIL_TRANCHE3_EXPECTED_STATUS,
     EXPRESSION_LONG_TAIL_TRANCHE3_FORBIDDEN_TAGS,
     EXPRESSION_LONG_TAIL_TRANCHE3_KEYS,
+    EXPRESSION_LONG_TAIL_TRANCHE4_EXPECTED_STATUS,
+    EXPRESSION_LONG_TAIL_TRANCHE4_FORBIDDEN_TAGS,
+    EXPRESSION_LONG_TAIL_TRANCHE4_KEYS,
     GROUPED_MATCH_AGG_TRANCHE1_EXPECTED_STATUS,
     GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS,
     GROUPED_MATCH_AGG_TRANCHE1_KEYS,
+    GROUPED_MATCH_AGG_TRANCHE2_EXPECTED_STATUS,
+    GROUPED_MATCH_AGG_TRANCHE2_FORBIDDEN_TAGS,
+    GROUPED_MATCH_AGG_TRANCHE2_KEYS,
     OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS,
     OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS,
     OPTIONAL_NULL_TRANCHE1_KEYS,
+    OPTIONAL_NULL_TRANCHE2_EXPECTED_STATUS,
+    OPTIONAL_NULL_TRANCHE2_FORBIDDEN_TAGS,
+    OPTIONAL_NULL_TRANCHE2_KEYS,
     OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS,
     OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS,
     OTHER_READ_GAPS_TRANCHE1_KEYS,
@@ -32,6 +41,9 @@ from tests.cypher_tck.lane_contracts import (
     ROW_PIPELINE_TRANCHE1_EXPECTED_STATUS,
     ROW_PIPELINE_TRANCHE1_FORBIDDEN_TAGS,
     ROW_PIPELINE_TRANCHE1_KEYS,
+    ROW_PIPELINE_TRANCHE2_EXPECTED_STATUS,
+    ROW_PIPELINE_TRANCHE2_FORBIDDEN_TAGS,
+    ROW_PIPELINE_TRANCHE2_KEYS,
     WRITE_CLAUSES_TRANCHE1_EXPECTED_STATUS,
     WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS,
     WRITE_CLAUSES_TRANCHE1_KEYS,
@@ -61,6 +73,28 @@ def test_row_pipeline_tranche1_status_and_tag_contract() -> None:
 def test_row_pipeline_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+
+
+def test_row_pipeline_tranche2_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(ROW_PIPELINE_TRANCHE2_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_row_pipeline_tranche2_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in ROW_PIPELINE_TRANCHE2_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == ROW_PIPELINE_TRANCHE2_EXPECTED_STATUS
+        for forbidden_tag in ROW_PIPELINE_TRANCHE2_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_row_pipeline_tranche2_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in ROW_PIPELINE_TRANCHE2_KEYS:
         scenario = scenarios[key]
         assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
 
@@ -97,6 +131,28 @@ def test_grouped_match_aggregate_tranche1_family_classification_contract() -> No
         assert classify_primary_xfail_family(scenario) == "grouped-match-aggregates"
 
 
+def test_grouped_match_aggregate_tranche2_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(GROUPED_MATCH_AGG_TRANCHE2_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_grouped_match_aggregate_tranche2_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in GROUPED_MATCH_AGG_TRANCHE2_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == GROUPED_MATCH_AGG_TRANCHE2_EXPECTED_STATUS
+        for forbidden_tag in GROUPED_MATCH_AGG_TRANCHE2_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_grouped_match_aggregate_tranche2_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in GROUPED_MATCH_AGG_TRANCHE2_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "grouped-match-aggregates"
+
+
 def test_grouped_match_aggregate_lane_has_issue_tracker_wired() -> None:
     grouped_match_agg = next(
         definition
@@ -125,6 +181,28 @@ def test_optional_null_tranche1_status_and_tag_contract() -> None:
 def test_optional_null_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in OPTIONAL_NULL_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
+
+
+def test_optional_null_tranche2_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(OPTIONAL_NULL_TRANCHE2_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_optional_null_tranche2_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OPTIONAL_NULL_TRANCHE2_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == OPTIONAL_NULL_TRANCHE2_EXPECTED_STATUS
+        for forbidden_tag in OPTIONAL_NULL_TRANCHE2_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_optional_null_tranche2_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OPTIONAL_NULL_TRANCHE2_KEYS:
         scenario = scenarios[key]
         assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
 
@@ -221,6 +299,28 @@ def test_expression_long_tail_tranche3_status_and_tag_contract() -> None:
 def test_expression_long_tail_tranche3_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE3_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+
+
+def test_expression_long_tail_tranche4_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(EXPRESSION_LONG_TAIL_TRANCHE4_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_expression_long_tail_tranche4_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE4_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE4_EXPECTED_STATUS
+        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE4_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_expression_long_tail_tranche4_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE4_KEYS:
         scenario = scenarios[key]
         assert classify_primary_xfail_family(scenario) == "expression-long-tail"
 

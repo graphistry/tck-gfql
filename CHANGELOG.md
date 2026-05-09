@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Residual read-only lane contracts**: Added tranche-1 TCK-only guardrails for issue `#52` (variable-length + named-path anchor inventory) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
 - **Write-clauses lane contracts**: Added tranche-1 TCK-only guardrails for issue `#54` (cross-clause anchor inventory spanning CREATE/MERGE/SET/DELETE/REMOVE) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
 - **Procedures/CALL lane contracts**: Added tranche-1 TCK-only guardrails for issue `#53` (registry/invocation/YIELD anchors) in lane contract tests covering key existence, status/tag contract, family classification, and tracker wiring.
+- **Priority lane tranche expansion**: Added tranche-2 contract guardrails for row-pipeline `#43`, optional/null-extension `#44`, and grouped-aggregate `#45`, plus tranche-4 expression-long-tail guardrails for `#51`.
+- **Report drift guardrails**: Added explicit lane-count stability assertions in `test_report.py` for row-pipeline, optional/null-extension, grouped-aggregate, and expression-long-tail families.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
