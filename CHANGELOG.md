@@ -13,11 +13,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **TCK contract**: Added `match5-25/26` as `success_wrong_rows` — multi-hop open-range connected patterns return rows but with wrong values (pygraphistry #973).
 - **TCK contract**: Added `match5-16/17/18`, `with-where1-2`, `with-where7-1/3` to `success_matches_expected` — these now pass against updated pygraphistry main.
 - **TCK contract**: Promoted `with-orderby1-31-{1..3}`, `with-orderby1-32-{1..2}`, `with-orderby2-7-{1..3}`, and `with-orderby3-2-{1..6}` from `success_wrong_rows` to `success_matches_expected` (issue #36).
+- **TCK contract**: Promoted `expr-temporal7-{1..5}-{1,2}` from `success_wrong_rows` to `success_matches_expected` after expected-row placeholder correction (issue #38).
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
 - **Scenario parsing**: `parse_cypher` now preserves nested list/map literals in fixture properties instead of stringifying them.
 - **Row assertion semantics**: with-orderBy scenarios now honor explicit openCypher `in order` vs `in any order` expectation metadata (fallback heuristic retained for non-annotated scenarios).
+- **Temporal7 scenario data**: Fixed outline expansion artifact where expected rows retained literal `<gt>` instead of substituted boolean values in 10 temporal comparison cases.
 
 ## [0.1.1 - 2026-01-03]
 

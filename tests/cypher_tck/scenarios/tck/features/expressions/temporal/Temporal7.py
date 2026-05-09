@@ -30,7 +30,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
+            {'x > d': 'false', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
             ],
         ),
         gfql=None,
@@ -47,7 +47,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
+            {'x > d': 'false', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
             ],
         ),
         gfql=None,
@@ -64,7 +64,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
+            {'x > d': 'false', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
             ],
         ),
         gfql=None,
@@ -81,7 +81,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
+            {'x > d': 'false', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
             ],
         ),
         gfql=None,
@@ -98,7 +98,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
+            {'x > d': 'false', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
             ],
         ),
         gfql=None,
@@ -115,7 +115,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
+            {'x > d': 'false', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
             ],
         ),
         gfql=None,
@@ -132,7 +132,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
+            {'x > d': 'false', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
             ],
         ),
         gfql=None,
@@ -149,7 +149,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
+            {'x > d': 'false', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
             ],
         ),
         gfql=None,
@@ -166,7 +166,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
+            {'x > d': 'false', 'x < d': 'true', 'x >= d': 'false', 'x <= d': 'true', 'x = d': 'false'}
             ],
         ),
         gfql=None,
@@ -183,7 +183,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'x > d': '<gt>', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
+            {'x > d': 'false', 'x < d': 'false', 'x >= d': 'true', 'x <= d': 'true', 'x = d': 'true'}
             ],
         ),
         gfql=None,
