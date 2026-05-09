@@ -61,7 +61,8 @@ def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
         if summary.definition.lane_id == "grouped-match-aggregates"
     )
 
-    assert grouped.definition.tracker_ref == "TODO(meta-issue): multiplicity carrier PR2-PR4"
+    assert grouped.definition.tracker_ref == "#45"
+    assert grouped.definition.tracker_url == "https://github.com/graphistry/tck-gfql/issues/45"
     assert "return6-12" in grouped.sample_keys
     assert grouped.signal.startswith("read-only relationship aggregate xfails:")
 
@@ -72,7 +73,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Primary xfail families (disjoint heuristic):" in report
     assert "Priority candidate lanes:" in report
     assert "Supported-subset correctness / failfast audit" in report
-    assert "TODO(meta-issue): multiplicity carrier PR2-PR4" in report
+    assert "#45" in report
     assert "Representative tracked scenarios:" in report
     assert "Direct local Cypher xfail contract:" in report
     assert "validation-safe xfails:" in report
