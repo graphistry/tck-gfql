@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **TCK contract**: Promoted `expr-temporal7-{1..5}-{1,2}` from `success_wrong_rows` to `success_matches_expected` after expected-row placeholder correction (issue #38).
 - **Strict-pure regressions**: Added standing-gate tests for `return6-6` and `return6-19` in `test_plan_executor_strict_pure_regressions.py`.
 - **Lane trackers**: Added concrete tracker issues for top read-lane families and wired priority metadata to issues `#43`, `#44`, and `#45`.
+- **Row-pipeline lane contracts**: Added tranche-1 TCK-only guardrails (`tests/cypher_tck/lane_contracts.py`, `tests/cypher_tck/test_lane_contracts.py`) covering key existence, status/tag contract, family classification, and tracker wiring for issue `#43`.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
