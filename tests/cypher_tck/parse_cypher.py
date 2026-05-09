@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Tuple
 
 from tests.cypher_tck.models import GraphFixture
 
@@ -14,6 +14,10 @@ class ParseContext:
 
 
 _CREATE_SPLIT_RE = re.compile(r"\bCREATE\b", flags=re.IGNORECASE)
+_UNWIND_PREFIX_RE = re.compile(
+    r"^\s*UNWIND\s+(?P<expr>\[[\s\S]*?\])\s+AS\s+(?P<var>[A-Za-z_][A-Za-z0-9_]*)\s+(?P<body>[\s\S]+)$",
+    flags=re.IGNORECASE,
+)
 
 
 def _split_top_level(text: str) -> List[str]:
@@ -113,8 +117,10 @@ def _split_key_value(item: str) -> Tuple[str, str] | None:
     return None
 
 
-def _parse_literal(raw: str) -> Any:
+def _parse_literal(raw: str, bindings: Mapping[str, Any]) -> Any:
     token = raw.strip()
+    if token in bindings:
+        return bindings[token]
     if token.startswith("'") and token.endswith("'"):
         return token[1:-1]
     if re.fullmatch(r"-?\d+", token):
@@ -129,13 +135,13 @@ def _parse_literal(raw: str) -> Any:
         inner = token[1:-1].strip()
         if not inner:
             return []
-        return [_parse_literal(part) for part in _split_top_level(inner)]
+        return [_parse_literal(part, bindings) for part in _split_top_level(inner)]
     if token.startswith("{") and token.endswith("}"):
-        return _parse_properties(token)
+        return _parse_properties(token, bindings)
     return token
 
 
-def _parse_properties(prop_text: str) -> Dict[str, Any]:
+def _parse_properties(prop_text: str, bindings: Mapping[str, Any]) -> Dict[str, Any]:
     props: Dict[str, Any] = {}
     inner = prop_text.strip()[1:-1].strip()
     if not inner:
@@ -146,17 +152,17 @@ def _parse_properties(prop_text: str) -> Dict[str, Any]:
         if pair is None:
             continue
         key, raw = pair
-        props[key] = _parse_literal(raw)
+        props[key] = _parse_literal(raw, bindings)
     return props
 
 
-def _parse_node(node_text: str, ctx: ParseContext) -> str:
+def _parse_node(node_text: str, ctx: ParseContext, bindings: Mapping[str, Any]) -> str:
     inner = node_text.strip()[1:-1].strip()
     props: Dict[str, Any] = {}
     if '{' in inner:
         before, prop_part = inner.split('{', 1)
         inner = before.strip()
-        props = _parse_properties('{' + prop_part)
+        props = _parse_properties('{' + prop_part, bindings)
     var: str | None = None
     labels: List[str] = []
     if inner:
@@ -194,14 +200,16 @@ def _parse_node(node_text: str, ctx: ParseContext) -> str:
 
 
 def _parse_rel_segment(
-    rel_segment: str, ctx: ParseContext
+    rel_segment: str,
+    ctx: ParseContext,
+    bindings: Mapping[str, Any],
 ) -> Tuple[str, str | None, Dict[str, Any]]:
     rel_inner = rel_segment.strip()[1:-1].strip()
     rel_props: Dict[str, Any] = {}
     if '{' in rel_inner:
         before, prop_part = rel_inner.split('{', 1)
         rel_inner = before.strip()
-        rel_props = _parse_properties('{' + prop_part)
+        rel_props = _parse_properties('{' + prop_part, bindings)
     rel_var = None
     rel_type = None
     if rel_inner:
@@ -213,6 +221,7 @@ def _parse_rel_segment(
     ctx.rel_counter += 1
     return edge_id, rel_type, rel_props
 
+
 def _edge_from_segment(
     left_id: str,
     right_id: str,
@@ -220,8 +229,9 @@ def _edge_from_segment(
     left_dir: str | None,
     right_dir: str | None,
     ctx: ParseContext,
+    bindings: Mapping[str, Any],
 ) -> Dict[str, Any]:
-    edge_id, rel_type, rel_props = _parse_rel_segment(rel_segment, ctx)
+    edge_id, rel_type, rel_props = _parse_rel_segment(rel_segment, ctx, bindings)
     if left_dir == '<-' and right_dir == '-':
         src, dst = right_id, left_id
     elif left_dir == '-' and right_dir == '->':
@@ -245,10 +255,10 @@ def _edge_from_segment(
     return edge
 
 
-def _parse_chain(pattern: str, ctx: ParseContext) -> List[Dict[str, Any]]:
+def _parse_chain(pattern: str, ctx: ParseContext, bindings: Mapping[str, Any]) -> List[Dict[str, Any]]:
     edges: List[Dict[str, Any]] = []
     node_text, rest = _extract_balanced(pattern.strip(), '(', ')')
-    left_id = _parse_node(node_text, ctx)
+    left_id = _parse_node(node_text, ctx, bindings)
     text = rest.strip()
     while text:
         left_dir = None
@@ -273,17 +283,16 @@ def _parse_chain(pattern: str, ctx: ParseContext) -> List[Dict[str, Any]]:
             text = text[1:]
 
         node_text, rest = _extract_balanced(text.strip(), '(', ')')
-        right_id = _parse_node(node_text, ctx)
+        right_id = _parse_node(node_text, ctx, bindings)
         text = rest.strip()
 
-        edges.append(_edge_from_segment(left_id, right_id, rel_segment, left_dir, right_dir, ctx))
+        edges.append(_edge_from_segment(left_id, right_id, rel_segment, left_dir, right_dir, ctx, bindings))
         left_id = right_id
     return edges
 
 
 def _extract_create_clauses(script: str) -> List[str]:
-    normalized = " ".join(line.strip() for line in script.strip().splitlines())
-    parts = _CREATE_SPLIT_RE.split(normalized)
+    parts = _CREATE_SPLIT_RE.split(script)
     clauses: List[str] = []
     for part in parts[1:]:
         clause = part.strip()
@@ -292,15 +301,42 @@ def _extract_create_clauses(script: str) -> List[str]:
     return clauses
 
 
+def _normalize_script(script: str) -> str:
+    return " ".join(line.strip() for line in script.strip().splitlines())
+
+
+def _extract_unwind_bindings(script: str) -> Tuple[List[Dict[str, Any]], str]:
+    normalized = _normalize_script(script)
+    match = _UNWIND_PREFIX_RE.match(normalized)
+    if match is None:
+        return [{}], normalized
+
+    unwind_values = _parse_literal(match.group("expr"), {})
+    if not isinstance(unwind_values, list):
+        return [{}], normalized
+
+    var_name = match.group("var")
+    body = match.group("body").strip()
+    bindings = [{var_name: value} for value in unwind_values]
+    if not bindings:
+        return [], body
+    return bindings, body
+
+
 def graph_fixture_from_create(script: str) -> GraphFixture:
+    bindings_list, create_script = _extract_unwind_bindings(script)
+    if not bindings_list:
+        return GraphFixture(nodes=[], edges=[], edge_columns=("src", "dst", "edge_id", "type", "undirected"))
+
     ctx = ParseContext(nodes_by_id={}, var_to_id={}, node_counter=1, rel_counter=1)
     edges: List[Dict[str, Any]] = []
-    for clause in _extract_create_clauses(script):
-        for pattern in _split_top_level(clause):
-            if '[' in pattern and ']' in pattern:
-                edges.extend(_parse_chain(pattern, ctx))
-            else:
-                _parse_node(pattern, ctx)
+    for bindings in bindings_list:
+        for clause in _extract_create_clauses(create_script):
+            for pattern in _split_top_level(clause):
+                if '[' in pattern and ']' in pattern:
+                    edges.extend(_parse_chain(pattern, ctx, bindings))
+                else:
+                    _parse_node(pattern, ctx, bindings)
     return GraphFixture(
         nodes=list(ctx.nodes_by_id.values()),
         edges=edges,

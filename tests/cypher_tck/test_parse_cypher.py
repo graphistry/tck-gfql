@@ -71,3 +71,23 @@ def test_parse_create_nested_list_and_map_literals() -> None:
     assert len(fixture.edges) == 1
     edge = fixture.edges[0]
     assert edge["attrs"] == {"score": 1.5, "flags": [False, True]}
+
+
+def test_parse_unwind_create_scalar_expansion() -> None:
+    script = """
+    UNWIND [1, 2, 3] AS i
+    CREATE ({num: i})
+    """
+    fixture = graph_fixture_from_create(script)
+    nums = sorted(node.get("num") for node in fixture.nodes)
+    assert nums == [1, 2, 3]
+
+
+def test_parse_unwind_create_string_expansion() -> None:
+    script = """
+    UNWIND ['a', 'b', 'c'] AS c
+    CREATE ({name: c})
+    """
+    fixture = graph_fixture_from_create(script)
+    names = sorted(node.get("name") for node in fixture.nodes)
+    assert names == ["a", "b", "c"]
