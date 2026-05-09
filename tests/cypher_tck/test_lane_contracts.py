@@ -62,6 +62,9 @@ from tests.cypher_tck.lane_contracts import (
     ROW_PIPELINE_TRANCHE3_EXPECTED_STATUS,
     ROW_PIPELINE_TRANCHE3_FORBIDDEN_TAGS,
     ROW_PIPELINE_TRANCHE3_KEYS,
+    ROW_PIPELINE_TRANCHE4_EXPECTED_STATUS,
+    ROW_PIPELINE_TRANCHE4_FORBIDDEN_TAGS,
+    ROW_PIPELINE_TRANCHE4_KEYS,
     WRITE_CLAUSES_TRANCHE1_EXPECTED_STATUS,
     WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS,
     WRITE_CLAUSES_TRANCHE1_KEYS,
@@ -135,6 +138,28 @@ def test_row_pipeline_tranche3_status_and_tag_contract() -> None:
 def test_row_pipeline_tranche3_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE3_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+
+
+def test_row_pipeline_tranche4_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(ROW_PIPELINE_TRANCHE4_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_row_pipeline_tranche4_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in ROW_PIPELINE_TRANCHE4_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == ROW_PIPELINE_TRANCHE4_EXPECTED_STATUS
+        for forbidden_tag in ROW_PIPELINE_TRANCHE4_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_row_pipeline_tranche4_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in ROW_PIPELINE_TRANCHE4_KEYS:
         scenario = scenarios[key]
         assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
 
@@ -479,9 +504,13 @@ def test_row_pipeline_tranches_are_disjoint() -> None:
     t1 = set(ROW_PIPELINE_TRANCHE1_KEYS)
     t2 = set(ROW_PIPELINE_TRANCHE2_KEYS)
     t3 = set(ROW_PIPELINE_TRANCHE3_KEYS)
+    t4 = set(ROW_PIPELINE_TRANCHE4_KEYS)
     assert t1.isdisjoint(t2)
     assert t1.isdisjoint(t3)
+    assert t1.isdisjoint(t4)
     assert t2.isdisjoint(t3)
+    assert t2.isdisjoint(t4)
+    assert t3.isdisjoint(t4)
 
 
 def test_optional_null_tranches_are_disjoint() -> None:
