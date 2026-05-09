@@ -44,6 +44,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Row-pipeline lane contracts**: Added tranche-11 TCK-only guardrails for `#43` (Comparison1 expression residual cluster) and raised row-pipeline coverage floor to `126`.
 - **Row-pipeline lane contracts**: Added tranche-12 TCK-only guardrails for `#43` (Comparison2 expression residual cluster) and raised row-pipeline coverage floor to `130`.
 - **Row-pipeline lane contracts**: Added tranche-13 TCK-only guardrails for `#43` (List1 expression residual cluster) and raised row-pipeline coverage floor to `134`.
+- **Row-pipeline lane contracts**: Added tranche-14 TCK-only guardrails for `#43` (final residual sweep, 24 keys) and raised row-pipeline coverage floor to `158` (full row-pipeline lane contract coverage).
 - **Direct-Cypher xfail contract**: Rebased current sibling-target outcomes for newly executing xfail scenarios: promoted `match-where3-3`, `match3-1`, `match3-5`, `match4-3`, and `expr-pattern1-{12,14,15,16,17}` to `success_matches_expected`; tracked `match3-7`, `with-where3-3`, and `expr-pattern1-{13,18}` as `success_wrong_rows`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `with-where3-3` from `success_wrong_rows` to `success_matches_expected`.
 
