@@ -69,6 +69,11 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion4-4",
     "expr-typeconversion4-5",
     "expr-pattern1-10",
+    # pygraphistry/#1393 unlocks execution for additional pattern/relationship
+    # xfails, but row oracles still differ.
+    "expr-pattern1-13",
+    "expr-pattern1-18",
+    "match3-7",
     "match5-25",
     "match5-26",
     "match5-8",
@@ -82,6 +87,7 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     # rows differ from the scenario oracle.  Real fix is out of slice 1
     # scope; lock the current outcome here.
     "with2-1",
+    "with-where3-3",
 )
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
@@ -156,6 +162,13 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match-where3-3",
     # pygraphistry/#1393: joined row projection also unlocks relationship return.
     "match3-1",
+    "match3-5",
+    "match4-3",
+    "expr-pattern1-12",
+    "expr-pattern1-14",
+    "expr-pattern1-15",
+    "expr-pattern1-16",
+    "expr-pattern1-17",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
