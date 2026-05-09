@@ -101,7 +101,6 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison3-6",
     "expr-comparison3-7",
     "expr-comparison3-8",
-    "expr-list3-7",
     "expr-mathematical8-1",
     "expr-mathematical8-2",
     "expr-precedence2-1-10",
@@ -157,6 +156,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-list5-34",
     "expr-null1-3",
     "expr-null2-3",
+    "expr-list3-7",
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
     "match-where3-3",
