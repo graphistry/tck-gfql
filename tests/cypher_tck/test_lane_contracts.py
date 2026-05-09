@@ -41,6 +41,9 @@ from tests.cypher_tck.lane_contracts import (
     OPTIONAL_NULL_TRANCHE3_EXPECTED_STATUS,
     OPTIONAL_NULL_TRANCHE3_FORBIDDEN_TAGS,
     OPTIONAL_NULL_TRANCHE3_KEYS,
+    OPTIONAL_NULL_TRANCHE4_EXPECTED_STATUS,
+    OPTIONAL_NULL_TRANCHE4_FORBIDDEN_TAGS,
+    OPTIONAL_NULL_TRANCHE4_KEYS,
     OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS,
     OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS,
     OTHER_READ_GAPS_TRANCHE1_KEYS,
@@ -285,6 +288,28 @@ def test_optional_null_tranche3_family_classification_contract() -> None:
         assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
 
 
+def test_optional_null_tranche4_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(OPTIONAL_NULL_TRANCHE4_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_optional_null_tranche4_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OPTIONAL_NULL_TRANCHE4_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == OPTIONAL_NULL_TRANCHE4_EXPECTED_STATUS
+        for forbidden_tag in OPTIONAL_NULL_TRANCHE4_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_optional_null_tranche4_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OPTIONAL_NULL_TRANCHE4_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
+
+
 def test_optional_null_lane_has_issue_tracker_wired() -> None:
     optional_null = next(
         definition
@@ -438,9 +463,13 @@ def test_optional_null_tranches_are_disjoint() -> None:
     t1 = set(OPTIONAL_NULL_TRANCHE1_KEYS)
     t2 = set(OPTIONAL_NULL_TRANCHE2_KEYS)
     t3 = set(OPTIONAL_NULL_TRANCHE3_KEYS)
+    t4 = set(OPTIONAL_NULL_TRANCHE4_KEYS)
     assert t1.isdisjoint(t2)
     assert t1.isdisjoint(t3)
+    assert t1.isdisjoint(t4)
     assert t2.isdisjoint(t3)
+    assert t2.isdisjoint(t4)
+    assert t3.isdisjoint(t4)
 
 
 def test_grouped_match_aggregate_tranches_are_disjoint() -> None:
