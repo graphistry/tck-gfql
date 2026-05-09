@@ -34,3 +34,18 @@ GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",
     "phase1-executor",
 )
+
+
+# Issue #44 tranche-1: OPTIONAL MATCH / null-extension lane.
+OPTIONAL_NULL_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
+    "match7-27",
+    "match7-29",
+    "match7-30",
+    "match7-31",
+)
+
+OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS: Final[str] = "xfail"
+OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)

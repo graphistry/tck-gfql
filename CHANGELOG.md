@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Lane trackers**: Added concrete tracker issues for top read-lane families and wired priority metadata to issues `#43`, `#44`, and `#45`.
 - **Row-pipeline lane contracts**: Added tranche-1 TCK-only guardrails (`tests/cypher_tck/lane_contracts.py`, `tests/cypher_tck/test_lane_contracts.py`) covering key existence, status/tag contract, family classification, and tracker wiring for issue `#43`.
 - **Grouped-aggregate lane contracts**: Added tranche-1 TCK-only guardrails for issue `#45` in lane contract tests (key existence, status/tag contract, family classification, and tracker wiring).
+- **Optional/null lane contracts**: Added tranche-1 TCK-only guardrails for issue `#44` in lane contract tests (key existence, status/tag contract, family classification, and tracker wiring).
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.

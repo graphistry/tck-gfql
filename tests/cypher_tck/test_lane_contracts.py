@@ -8,6 +8,9 @@ from tests.cypher_tck.lane_contracts import (
     GROUPED_MATCH_AGG_TRANCHE1_EXPECTED_STATUS,
     GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS,
     GROUPED_MATCH_AGG_TRANCHE1_KEYS,
+    OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS,
+    OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS,
+    OPTIONAL_NULL_TRANCHE1_KEYS,
     ROW_PIPELINE_TRANCHE1_EXPECTED_STATUS,
     ROW_PIPELINE_TRANCHE1_FORBIDDEN_TAGS,
     ROW_PIPELINE_TRANCHE1_KEYS,
@@ -81,3 +84,35 @@ def test_grouped_match_aggregate_lane_has_issue_tracker_wired() -> None:
     )
     assert grouped_match_agg.tracker_ref == "#45"
     assert grouped_match_agg.tracker_url == "https://github.com/graphistry/tck-gfql/issues/45"
+
+
+def test_optional_null_tranche1_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(OPTIONAL_NULL_TRANCHE1_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_optional_null_tranche1_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OPTIONAL_NULL_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS
+        for forbidden_tag in OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_optional_null_tranche1_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in OPTIONAL_NULL_TRANCHE1_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
+
+
+def test_optional_null_lane_has_issue_tracker_wired() -> None:
+    optional_null = next(
+        definition
+        for definition in PRIMARY_FAMILY_DEFINITIONS
+        if definition.lane_id == "optional-match-null-extension"
+    )
+    assert optional_null.tracker_ref == "#44"
+    assert optional_null.tracker_url == "https://github.com/graphistry/tck-gfql/issues/44"
