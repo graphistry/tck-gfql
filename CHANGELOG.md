@@ -14,12 +14,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **TCK contract**: Added `match5-16/17/18`, `with-where1-2`, `with-where7-1/3` to `success_matches_expected` — these now pass against updated pygraphistry main.
 - **TCK contract**: Promoted `with-orderby1-31-{1..3}`, `with-orderby1-32-{1..2}`, `with-orderby2-7-{1..3}`, and `with-orderby3-2-{1..6}` from `success_wrong_rows` to `success_matches_expected` (issue #36).
 - **TCK contract**: Promoted `expr-temporal7-{1..5}-{1,2}` from `success_wrong_rows` to `success_matches_expected` after expected-row placeholder correction (issue #38).
+- **Strict-pure regressions**: Added standing-gate tests for `return6-6` and `return6-19` in `test_plan_executor_strict_pure_regressions.py`.
+- **Lane trackers**: Added concrete tracker issues for top read-lane families and wired priority metadata to issues `#43`, `#44`, and `#45`.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
 - **Scenario parsing**: `parse_cypher` now preserves nested list/map literals in fixture properties instead of stringifying them.
 - **Row assertion semantics**: with-orderBy scenarios now honor explicit openCypher `in order` vs `in any order` expectation metadata (fallback heuristic retained for non-annotated scenarios).
 - **Temporal7 scenario data**: Fixed outline expansion artifact where expected rows retained literal `<gt>` instead of substituted boolean values in 10 temporal comparison cases.
+- **Direct-Cypher promotion contract**: Removed stale `match-where1-10` row-promotion marker so promotion snapshot aligns with status-tagged support.
+- **Direct-Cypher parity guard**: Added test coverage that enforces promotion-snapshot/status-tag parity and report-tracker assertion alignment.
 
 ## [0.1.1 - 2026-01-03]
 
