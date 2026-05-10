@@ -56,7 +56,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-string8-5",
     "expr-string9-4",
     "expr-string9-5",
-    "expr-temporal2-6-5",
     "expr-typeconversion4-2",
     "expr-typeconversion4-3",
     "expr-typeconversion4-4",
@@ -171,6 +170,8 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "match3-1",
     "match3-5",
     "match4-3",
+    # #1406: temporal historical named-zone canonicalization now matches expected rows.
+    "expr-temporal2-6-5",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
