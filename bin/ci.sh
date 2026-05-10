@@ -173,5 +173,9 @@ print(
 )
 PY
 
+# Fast-fail preflight: catch direct-Cypher contract drift (common sibling-target
+# bump) before running the full TCK suite.
+"${PYTHON_BIN}" -m pytest tests/cypher_tck/test_direct_cypher_contract_fastfail.py -xvs
+
 "${PYTHON_BIN}" -m pytest tests/cypher_tck -xvs
 "${PYTHON_BIN}" -m tests.cypher_tck.report

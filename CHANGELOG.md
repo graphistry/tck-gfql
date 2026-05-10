@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Direct-Cypher CI preflight**: Added `test_direct_cypher_contract_fastfail.py` and wired `./bin/ci.sh` to run it before the full suite so sibling-target non-validation outcome drift fails early with key-level diagnostics.
 - **CI guardrails**: Added `test_workflow_action_versions.py` to enforce minimum GitHub Action major versions in `ci.yml` and `nightly.yml` (`checkout>=v6`, `setup-python>=v6`, `setup-uv>=v7`).
 - **CI observability**: Added a non-blocking `CI observability summary` step to `ci.yml` and `nightly.yml` that runs `python -m tests.cypher_tck.report` on every run (`if: always()`) and appends conformance/lane metrics to GitHub step summaries.
 - **TCK contract**: Promoted `match5-21..24` to `success_matches_expected` — multi-hop connected patterns with row bindings now pass (pygraphistry #973).
