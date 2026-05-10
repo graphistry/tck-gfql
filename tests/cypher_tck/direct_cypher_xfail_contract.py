@@ -44,8 +44,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-literals7-7",
     "expr-literals8-11",
     "expr-literals8-18",
-    "expr-null1-3",
-    "expr-null2-3",
     "expr-string10-4",
     "expr-string10-5",
     "expr-string8-4",
@@ -162,6 +160,9 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-list5-29",
     "expr-list5-31",
     "expr-list5-34",
+    # expr-null{1,2}-3: sibling-target drift shows row-level parity restored.
+    "expr-null1-3",
+    "expr-null2-3",
     # expr-comparison1-6-5: sibling-target drift shows row-level parity restored.
     "expr-comparison1-6-5",
     # expr-comparison1-7-12: sibling-target drift shows row-level parity restored.
