@@ -29,6 +29,9 @@ from tests.cypher_tck.lane_contracts import (
     EXPRESSION_LONG_TAIL_TRANCHE7_EXPECTED_STATUS,
     EXPRESSION_LONG_TAIL_TRANCHE7_FORBIDDEN_TAGS,
     EXPRESSION_LONG_TAIL_TRANCHE7_KEYS,
+    EXPRESSION_LONG_TAIL_TRANCHE8_EXPECTED_STATUS,
+    EXPRESSION_LONG_TAIL_TRANCHE8_FORBIDDEN_TAGS,
+    EXPRESSION_LONG_TAIL_TRANCHE8_KEYS,
     GROUPED_MATCH_AGG_TRANCHE1_EXPECTED_STATUS,
     GROUPED_MATCH_AGG_TRANCHE1_FORBIDDEN_TAGS,
     GROUPED_MATCH_AGG_TRANCHE1_KEYS,
@@ -775,6 +778,28 @@ def test_expression_long_tail_tranche7_family_classification_contract() -> None:
         assert classify_primary_xfail_family(scenario) == "expression-long-tail"
 
 
+def test_expression_long_tail_tranche8_keys_exist() -> None:
+    scenarios = _scenario_map()
+    missing = sorted(set(EXPRESSION_LONG_TAIL_TRANCHE8_KEYS) - set(scenarios))
+    assert missing == []
+
+
+def test_expression_long_tail_tranche8_status_and_tag_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE8_KEYS:
+        scenario = scenarios[key]
+        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE8_EXPECTED_STATUS
+        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE8_FORBIDDEN_TAGS:
+            assert forbidden_tag not in scenario.tags
+
+
+def test_expression_long_tail_tranche8_family_classification_contract() -> None:
+    scenarios = _scenario_map()
+    for key in EXPRESSION_LONG_TAIL_TRANCHE8_KEYS:
+        scenario = scenarios[key]
+        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+
+
 def test_row_pipeline_tranches_are_disjoint() -> None:
     tranches = (
         set(ROW_PIPELINE_TRANCHE1_KEYS),
@@ -828,6 +853,7 @@ def test_expression_long_tail_tranches_are_disjoint() -> None:
         set(EXPRESSION_LONG_TAIL_TRANCHE5_KEYS),
         set(EXPRESSION_LONG_TAIL_TRANCHE6_KEYS),
         set(EXPRESSION_LONG_TAIL_TRANCHE7_KEYS),
+        set(EXPRESSION_LONG_TAIL_TRANCHE8_KEYS),
     )
     for idx, left in enumerate(tranches):
         for right in tranches[idx + 1 :]:
@@ -858,7 +884,7 @@ def test_row_pipeline_contract_coverage_floor() -> None:
 
 def test_expression_long_tail_contract_coverage_floor() -> None:
     # Keep expression long-tail lane coverage non-decreasing across tranche expansion.
-    coverage_floor = 155  # 42 + 27 + 12 + 15 + 15 + 24 + 20
+    coverage_floor = 167  # 42 + 27 + 12 + 15 + 15 + 24 + 20 + 12
     covered = (
         set(EXPRESSION_LONG_TAIL_TRANCHE1_KEYS)
         | set(EXPRESSION_LONG_TAIL_TRANCHE2_KEYS)
@@ -867,6 +893,7 @@ def test_expression_long_tail_contract_coverage_floor() -> None:
         | set(EXPRESSION_LONG_TAIL_TRANCHE5_KEYS)
         | set(EXPRESSION_LONG_TAIL_TRANCHE6_KEYS)
         | set(EXPRESSION_LONG_TAIL_TRANCHE7_KEYS)
+        | set(EXPRESSION_LONG_TAIL_TRANCHE8_KEYS)
     )
     assert len(covered) >= coverage_floor
 
