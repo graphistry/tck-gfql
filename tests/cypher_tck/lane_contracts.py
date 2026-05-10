@@ -685,6 +685,38 @@ EXPRESSION_LONG_TAIL_TRANCHE6_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #51 tranche-7: expression long-tail
+# (Quantifier7 + ExistentialSubquery1/3 + List5/List6 residual bundle).
+EXPRESSION_LONG_TAIL_TRANCHE7_KEYS: Final[tuple[str, ...]] = (
+    "expr-quantifier7-3-1",
+    "expr-quantifier7-3-2",
+    "expr-quantifier7-3-3",
+    "expr-quantifier7-3-4",
+    "expr-quantifier7-3-5",
+    "expr-existentialsubquery1-1",
+    "expr-existentialsubquery1-2",
+    "expr-existentialsubquery1-3",
+    "expr-existentialsubquery1-4",
+    "expr-existentialsubquery3-1",
+    "expr-existentialsubquery3-2",
+    "expr-existentialsubquery3-3",
+    "expr-list5-21",
+    "expr-list5-29",
+    "expr-list5-31",
+    "expr-list5-34",
+    "expr-list6-7",
+    "expr-list6-8",
+    "expr-list6-9",
+    "expr-list6-10",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE7_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE7_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #52 tranche-1: residual read-only lane (variable-length + named-path anchors).
 OTHER_READ_GAPS_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "match4-1",
