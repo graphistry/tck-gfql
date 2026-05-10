@@ -86,3 +86,9 @@ jobs:
         run: |
           echo "Using pygraphistry ref: ${{ steps.pygraphistry.outputs.ref }}"
           ./bin/ci.sh
+
+      - name: CI observability summary
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          python -m tests.cypher_tck.report
