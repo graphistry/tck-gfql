@@ -29,27 +29,34 @@ jobs:
   nightly:
     runs-on: ubuntu-latest
     env:
+      # Keep runtime pins centralized so CI/nightly stay in lockstep.
+      PYTHON_VERSION: "3.12"
+      UV_VERSION: "0.11.3"
+      UV_EXCLUDE_NEWER: "6 days"
       PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
       PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
       PYGRAPHISTRY_INSTALL: "1"
     steps:
       - name: Checkout
+        # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
         uses: actions/checkout@v6
 
       - name: Set up Python
+        # Keep aligned with ci.yml via job env pin.
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Setup uv (pinned)
+        # Keep aligned with ci.yml via job env pin.
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.11.3"
-          python-version: "3.12"
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: |
-          UV_EXCLUDE_NEWER="6 days" uv pip install --python "$(command -v python)" pytest pandas
+          UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas
 
       - name: Run tests
         run: |
