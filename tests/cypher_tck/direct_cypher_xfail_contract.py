@@ -31,14 +31,7 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-aggregation3-1",
-    "expr-comparison1-6-5",
-    "expr-comparison1-7-12",
-    "expr-comparison1-7-13",
-    "expr-comparison1-7-14",
-    "expr-comparison1-7-15",
-    "expr-comparison1-7-16",
     "expr-list12-3",
-    "expr-list3-7",
     "expr-list5-21",
     "expr-list5-29",
     "expr-list5-31",
@@ -164,6 +157,20 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-15",
     "expr-pattern1-16",
     "expr-pattern1-17",
+    # expr-precedence3-6-{1,2}: sibling-target drift shows row-level parity restored.
+    "expr-precedence3-6-1",
+    "expr-precedence3-6-2",
+    # expr-comparison1-6-5: sibling-target drift shows row-level parity restored.
+    "expr-comparison1-6-5",
+    # expr-comparison1-7-12: sibling-target drift shows row-level parity restored.
+    "expr-comparison1-7-12",
+    # expr-comparison1-7-{13,14,15,16}: sibling-target drift shows row-level parity restored.
+    "expr-comparison1-7-13",
+    "expr-comparison1-7-14",
+    "expr-comparison1-7-15",
+    "expr-comparison1-7-16",
+    # expr-list3-7: sibling-target drift shows row-level parity restored.
+    "expr-list3-7",
     # expr-temporal2-6-5: sibling-target drift shows row-level parity restored.
     "expr-temporal2-6-5",
     "match3-1",

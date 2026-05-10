@@ -51,8 +51,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher xfail contract**: Rebased current sibling-target outcomes for newly executing xfail scenarios: promoted `match-where3-3`, `match3-1`, `match3-5`, `match4-3`, and `expr-pattern1-{12,14,15,16,17}` to `success_matches_expected`; tracked `match3-7`, `with-where3-3`, and `expr-pattern1-{13,18}` as `success_wrong_rows`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `with-where3-3` from `success_wrong_rows` to `success_matches_expected`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-temporal2-6-5` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-comparison1-6-5` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-comparison1-7-12` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-comparison1-7-{13,14,15,16}` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-list3-7` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-precedence3-6-{1,2}` from `GFQLValidationError` to `success_matches_expected`.
 
 ### Changed
+- **CI workflows**: Upgraded GitHub Actions versions to Node24-era majors in `ci.yml` and `nightly.yml` (`actions/checkout@v6`, `actions/setup-python@v6`, `astral-sh/setup-uv@v7`) to avoid pending Node20 deprecation breakage.
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
 - **Scenario parsing**: `parse_cypher` now preserves nested list/map literals in fixture properties instead of stringifying them.
 - **Row assertion semantics**: with-orderBy scenarios now honor explicit openCypher `in order` vs `in any order` expectation metadata (fallback heuristic retained for non-annotated scenarios).
