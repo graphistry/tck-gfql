@@ -57,6 +57,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-comparison1-7-{13,14,15,16}` from `success_wrong_rows` to `success_matches_expected`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-list3-7` from `success_wrong_rows` to `success_matches_expected`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-precedence3-6-{1,2}` from `GFQLValidationError` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-list5-21` from `success_wrong_rows` to `success_matches_expected`.
 
 ### Changed
 - **CI workflows**: Centralized shared runtime pins (`PYTHON_VERSION`, `UV_VERSION`, `UV_EXCLUDE_NEWER`) and added inline compatibility notes in `ci.yml` and `nightly.yml` to keep workflow behavior aligned.
