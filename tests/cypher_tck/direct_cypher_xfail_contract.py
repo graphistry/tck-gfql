@@ -157,6 +157,9 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-null2-3",
     "expr-temporal2-6-5",
     "expr-list3-7",
+    # expr-precedence3-6-1: sibling-target drift now executes and returns
+    # expected rows rather than validation-failing under current pygraphistry.
+    "expr-precedence3-6-1",
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
     "match-where3-3",
@@ -167,8 +170,6 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-15",
     "expr-pattern1-16",
     "expr-pattern1-17",
-    # expr-temporal2-6-5: sibling-target drift shows row-level parity restored.
-    "expr-temporal2-6-5",
     "match3-1",
     "match3-5",
     "match4-3",
