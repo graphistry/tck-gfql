@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **CI guardrails**: Added `test_workflow_action_versions.py` to enforce minimum GitHub Action major versions in `ci.yml` and `nightly.yml` (`checkout>=v6`, `setup-python>=v6`, `setup-uv>=v7`).
 - **TCK contract**: Promoted `match5-21..24` to `success_matches_expected` — multi-hop connected patterns with row bindings now pass (pygraphistry #973).
 - **TCK contract**: Added `match5-25/26` as `success_wrong_rows` — multi-hop open-range connected patterns return rows but with wrong values (pygraphistry #973).
 - **TCK contract**: Added `match5-16/17/18`, `with-where1-2`, `with-where7-1/3` to `success_matches_expected` — these now pass against updated pygraphistry main.
