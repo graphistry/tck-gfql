@@ -161,10 +161,6 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # expected rows rather than validation-failing under current pygraphistry.
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
-    "expr-precedence3-6-3",
-    "expr-precedence3-6-4",
-    "expr-precedence3-6-5",
-    "expr-precedence3-6-6",
     # match-where3-3: variable-comparison join now executes and returns expected rows
     # against current pygraphistry/master sibling target.
     "match-where3-3",
