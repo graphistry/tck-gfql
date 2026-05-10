@@ -157,13 +157,9 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-15",
     "expr-pattern1-16",
     "expr-pattern1-17",
-    # expr-precedence3-6-{1..6}: sibling-target drift shows row-level parity restored.
+    # expr-precedence3-6-{1,2}: sibling-target drift shows row-level parity restored.
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
-    "expr-precedence3-6-3",
-    "expr-precedence3-6-4",
-    "expr-precedence3-6-5",
-    "expr-precedence3-6-6",
     # expr-comparison1-6-5: sibling-target drift shows row-level parity restored.
     "expr-comparison1-6-5",
     # expr-comparison1-7-12: sibling-target drift shows row-level parity restored.
