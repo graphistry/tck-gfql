@@ -52,6 +52,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `with-where3-3` from `success_wrong_rows` to `success_matches_expected`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-temporal2-6-5` from `success_wrong_rows` to `success_matches_expected`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-comparison1-6-5` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-comparison1-7-12` from `success_wrong_rows` to `success_matches_expected`.
 
 ### Changed
 - **CI workflows**: Upgraded GitHub Actions versions to Node24-era majors in `ci.yml` and `nightly.yml` (`actions/checkout@v6`, `actions/setup-python@v6`, `astral-sh/setup-uv@v7`) to avoid pending Node20 deprecation breakage.
