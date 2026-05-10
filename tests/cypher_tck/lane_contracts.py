@@ -717,6 +717,30 @@ EXPRESSION_LONG_TAIL_TRANCHE7_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 )
 
 
+# Issue #51 tranche-8: expression long-tail
+# (List12 + Literals6/7/8 + Path2 + String10 residual bundle).
+EXPRESSION_LONG_TAIL_TRANCHE8_KEYS: Final[tuple[str, ...]] = (
+    "expr-list12-4",
+    "expr-list12-6",
+    "expr-literals6-4",
+    "expr-literals6-5",
+    "expr-literals7-7",
+    "expr-literals7-18",
+    "expr-literals8-11",
+    "expr-literals8-18",
+    "expr-path2-1",
+    "expr-path2-2",
+    "expr-string10-4",
+    "expr-string10-5",
+)
+
+EXPRESSION_LONG_TAIL_TRANCHE8_EXPECTED_STATUS: Final[str] = "xfail"
+EXPRESSION_LONG_TAIL_TRANCHE8_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
+    "cypher-string",
+    "phase1-executor",
+)
+
+
 # Issue #52 tranche-1: residual read-only lane (variable-length + named-path anchors).
 OTHER_READ_GAPS_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
     "match4-1",
