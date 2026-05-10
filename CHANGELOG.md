@@ -48,6 +48,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Expression long-tail lane contracts**: Added tranche-7 TCK-only guardrails for `#51` (Quantifier7 + ExistentialSubquery1/3 + List5/List6 residual bundle, 20 keys) and raised expression coverage floor to `155`.
 - **Direct-Cypher xfail contract**: Rebased current sibling-target outcomes for newly executing xfail scenarios: promoted `match-where3-3`, `match3-1`, `match3-5`, `match4-3`, and `expr-pattern1-{12,14,15,16,17}` to `success_matches_expected`; tracked `match3-7`, `with-where3-3`, and `expr-pattern1-{13,18}` as `success_wrong_rows`.
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `with-where3-3` from `success_wrong_rows` to `success_matches_expected`.
+- **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-temporal2-6-5` from `success_wrong_rows` to `success_matches_expected`.
 
 ### Changed
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
