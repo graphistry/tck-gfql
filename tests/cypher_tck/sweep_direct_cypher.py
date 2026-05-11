@@ -2,11 +2,17 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
 from graphistry.gfql.ref.enumerator import OracleCaps, enumerate_chain
 
+from tests.cypher_tck.direct_cypher_xfail_contract import (
+    DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
+    DirectCypherXfailOutcome,
+)
 from tests.cypher_tck.models import Scenario
 from tests.cypher_tck.scenarios import SCENARIOS
 from tests.cypher_tck.sweep_promotions import _expects_error_scenario
@@ -175,6 +181,53 @@ def _compute_direct_cypher_sets(
     )
 
 
+def _compute_direct_cypher_nonvalidation_details(
+    scenarios: Sequence[Scenario] = SCENARIOS,
+) -> List[Tuple[str, DirectCypherXfailOutcome, bool, str]]:
+    scenarios_by_key = {scenario.key: scenario for scenario in scenarios}
+    details: List[Tuple[str, DirectCypherXfailOutcome, bool, str]] = []
+
+    for key, expected_outcome in sorted(
+        DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY.items()
+    ):
+        scenario = scenarios_by_key.get(key)
+        if scenario is None:
+            details.append((key, expected_outcome, False, "missing scenario"))
+            continue
+        if scenario.status != "xfail":
+            details.append(
+                (
+                    key,
+                    expected_outcome,
+                    False,
+                    f"scenario status is {scenario.status!r}, expected 'xfail'",
+                )
+            )
+            continue
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            passed, detail = _run_direct_cypher_scenario(scenario)
+        details.append((key, expected_outcome, passed, detail))
+
+    return details
+
+
+def _render_direct_cypher_nonvalidation_details(
+    details: Sequence[Tuple[str, DirectCypherXfailOutcome, bool, str]],
+    *,
+    limit: int = 0,
+) -> List[str]:
+    visible_details = list(details if limit <= 0 else details[:limit])
+    lines = [
+        "Direct-Cypher non-validation debt details:",
+        f"- shown: {len(visible_details)} / {len(details)}",
+    ]
+    for key, expected_outcome, passed, detail in visible_details:
+        current = "passes expected oracle" if passed else detail
+        lines.append(f"- {key}: expected={expected_outcome}; current={current}")
+    return lines
+
+
 def _render_direct_cypher_support(
     overlap_keys: Sequence[str],
     promotion_row_keys: Sequence[str],
@@ -208,7 +261,30 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sweep direct local Cypher support and refresh direct support snapshots.")
     parser.add_argument("--write", action="store_true", help="Write refreshed direct support keys")
     parser.add_argument("--show-failures", type=int, default=0, help="Show first N overlap/additional failures")
+    parser.add_argument(
+        "--show-nonvalidation-debt",
+        action="store_true",
+        help="Show current details for tracked non-validation xfail debt",
+    )
+    parser.add_argument(
+        "--nonvalidation-limit",
+        type=int,
+        default=0,
+        help="Limit non-validation debt details; 0 means all",
+    )
     args = parser.parse_args()
+
+    if args.show_nonvalidation_debt and not args.write and args.show_failures == 0:
+        details = _compute_direct_cypher_nonvalidation_details()
+        print(
+            "\n".join(
+                _render_direct_cypher_nonvalidation_details(
+                    details,
+                    limit=args.nonvalidation_limit,
+                )
+            )
+        )
+        return
 
     (
         overlap_keys,
@@ -238,6 +314,17 @@ def main() -> None:
         print("promotion failures:")
         for key, reason in promotion_failures[: args.show_failures]:
             print(f"- {key}: {reason}")
+
+    if args.show_nonvalidation_debt:
+        details = _compute_direct_cypher_nonvalidation_details()
+        print(
+            "\n".join(
+                _render_direct_cypher_nonvalidation_details(
+                    details,
+                    limit=args.nonvalidation_limit,
+                )
+            )
+        )
 
     if args.write:
         _SUPPORT_FILE.write_text(
