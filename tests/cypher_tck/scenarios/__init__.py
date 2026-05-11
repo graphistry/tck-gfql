@@ -849,15 +849,19 @@ def _promote_cypher_string_support(scenario: Scenario) -> Scenario:
     if scenario.status != "xfail":
         return scenario
 
-    supports_rows = (
+    supports_success = (
         scenario.key in DIRECT_CYPHER_PROMOTION_ROW_KEYS
-        and scenario.expected.rows is not None
+        and (
+            scenario.expected.rows is not None
+            or scenario.expected.node_ids is not None
+            or scenario.expected.edge_ids is not None
+        )
     )
     supports_error = (
         scenario.key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
         and scenario.expected.rows is None
     )
-    if not supports_rows and not supports_error:
+    if not supports_success and not supports_error:
         return scenario
 
     tags = list(_without_tag(scenario.tags, "xfail"))
