@@ -7,10 +7,10 @@ Source: `python3 -m tests.cypher_tck.report`
 ## Current checkpoint
 - Scenarios represented: `3627`
 - GFQL translated: `2938` (`81.0%`)
-- Status counts: `2852 supported`, `775 xfail`, `0 skip`
-- Purity split: `supported_semantic=2852`, `supported_pure=2852`, `supported_impure=0`
-- Direct Cypher total snapshot: `2835 / 3627` (`78.2%`)
-- Direct Cypher non-validation debt: `23`
+- Status counts: `2854 supported`, `773 xfail`, `0 skip`
+- Purity split: `supported_semantic=2854`, `supported_pure=2854`, `supported_impure=0`
+- Direct Cypher total snapshot: `2837 / 3627` (`78.2%`)
+- Direct Cypher non-validation debt: `21`
 
 ## Remaining supported-but-impure keys
 - None in the live report.
@@ -25,7 +25,7 @@ because local pygraphistry compatibility can still expose fallback paths.
 |---|---:|---|---|---|
 | Write clauses | 277 | P3 | big-swath | #54 |
 | Row-pipeline read forms | 157 | P1 | common-read-form | #43 |
-| Expression long tail | 134 | P3 | big-swath | #51 |
+| Expression long tail | 132 | P3 | big-swath | #51 |
 | Other read-only gaps | 82 | P3 | big-swath | #52 |
 | OPTIONAL MATCH / collect / null extension | 62 | P2 | common-read-form | #44 |
 | Procedures / CALL | 37 | P4 | niche-tck | #53 |
@@ -48,13 +48,13 @@ because local pygraphistry compatibility can still expose fallback paths.
 Source command:
 `python -m tests.cypher_tck.sweep_direct_cypher --show-nonvalidation-debt`
 
-Current split is `20 success_wrong_rows` and
+Current split is `18 success_wrong_rows` and
 `3 unexpected_success_expected_error`. The focused details suggest the debt is
 not one uniform class:
 
 | likely class | keys | note |
 |---|---:|---|
-| Numeric/string/display normalization | 4 | String escaping, map key order, and remaining display-style mismatches. Examples: `expr-literals6-5`, `expr-literals7-18`, `expr-literals8-18`. Seven integer/float and exponent-formatting cases were promoted by the Step 17 numeric-equivalence slice; four `toString(boolean)` string-keyword rendering cases, two nested numeric literal display cases, and one label-order display case were promoted by later normalization slices. |
+| Numeric/string/display normalization | 2 | Remaining string escaping display mismatches: `expr-literals6-4`, `expr-literals6-5`. Seven integer/float and exponent-formatting cases were promoted by the Step 17 numeric-equivalence slice; four `toString(boolean)` string-keyword rendering cases, two nested numeric literal display cases, one label-order display case, and two nested map key-order cases were promoted by later normalization slices. |
 | Row-shape or post-aggregation expression mismatch | 3 | `expr-list12-3`, `return2-10`, `return2-9`. Direct inspection showed these are not safe alias-only harness fixes: the runtime returns an unevaluated post-aggregation value/list or a different row cardinality. |
 | Pattern/string/match semantic mismatch | 13 | Duplicate or missing rows for pattern predicates, string trim/newline cases, relationship expansion, and WITH join. Examples: `expr-pattern1-13`, `expr-string10-5`, `match5-25`, `with2-1`. Treat as likely pygraphistry-side until proven otherwise. |
 | Expected-error contract drift | 3 | `expr-list1-6-4`, `expr-typeconversion4-10-1`, `expr-typeconversion4-10-2`. `match-where1-10` now promotes via the direct-Cypher graph-id oracle after the runner learned to validate node/edge IDs for string-query promotions. |
@@ -63,8 +63,9 @@ High-return repo-only follow-up:
 - The remaining `unexpected_success_expected_error` cases are runtime-error
   semantic gaps where direct Cypher executes despite an expected runtime error;
   keep them as debt until pygraphistry/runtime-error semantics change.
-- Next inspect the remaining normalization bucket and update row normalization
-  only if the TCK oracle contract supports canonical equivalence.
+- Next inspect the remaining string escaping display bucket and update row
+  normalization only if the TCK oracle contract supports canonical
+  equivalence.
 - Do not promote pattern/string/match mismatch cases based only on display
   similarity; they include missing/duplicate rows and should stay semantic
   until a targeted proof says otherwise.
@@ -72,8 +73,8 @@ High-return repo-only follow-up:
 ## Next useful work
 - Keep dependency/preflight failures explicit so contributors do not debug stale
   pygraphistry installs as TCK failures.
-- Next low-risk slice is the remaining display-only cases such as string/label
-  canonicalization, or the post-aggregation alias/row-shape audit.
+- Next low-risk slice is the remaining string escaping display audit, or the
+  post-aggregation alias/row-shape audit.
 - Prefer small P1 slices in row-pipeline read forms or grouped aggregates after
   the editable pygraphistry environment is available.
 - Treat write clauses, CALL/procedures, and broad expression-tail work as lower
