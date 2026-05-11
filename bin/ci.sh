@@ -49,6 +49,7 @@ fi
 
 "${PYTHON_BIN}" - <<'PY'
 import sys
+import importlib
 import importlib.util
 
 required = (
@@ -100,7 +101,38 @@ if missing:
     print(f"Imported graphistry {version} from {path}", file=sys.stderr)
     print(
         "Use a newer pygraphistry checkout, for example: "
-        "PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh",
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh",
+        file=sys.stderr,
+    )
+    print(
+        "Or install a specific ref with: "
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
+required_modules = (
+    "graphistry.gfql.ref.enumerator",
+    "graphistry.tests.test_compute",
+)
+missing_modules = []
+for module_name in required_modules:
+    try:
+        importlib.import_module(module_name)
+    except Exception as exc:  # noqa: BLE001 - report exact blocker class/message
+        missing_modules.append(f"{module_name} ({type(exc).__name__}: {exc})")
+if missing_modules:
+    version = getattr(graphistry, "__version__", "unknown")
+    path = getattr(graphistry, "__file__", "unknown")
+    print(
+        "graphistry is missing full TCK harness modules: "
+        + ", ".join(missing_modules),
+        file=sys.stderr,
+    )
+    print(f"Imported graphistry {version} from {path}", file=sys.stderr)
+    print(
+        "Use a newer pygraphistry checkout, for example: "
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh",
         file=sys.stderr,
     )
     print(

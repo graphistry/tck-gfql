@@ -9,6 +9,7 @@ WORKFLOW_FILES = (
     Path(".github/workflows/nightly.yml"),
 )
 LOCAL_GUIDANCE_FILES = (
+    Path("bin/ci.sh"),
     Path("README.md"),
     Path("DEVELOP.md"),
     Path("tests/cypher_tck/analysis/phase-7.8-next-wave-plan.md"),
@@ -57,6 +58,9 @@ def test_ci_preflight_checks_graphistry_row_expression_parser_backend() -> None:
     ci_script = Path("bin/ci.sh").read_text(encoding="utf-8")
 
     assert "graphistry.compute.gfql.expr_parser" in ci_script
+    assert "graphistry.gfql.ref.enumerator" in ci_script
+    assert "graphistry.tests.test_compute" in ci_script
+    assert "full TCK harness modules" in ci_script
     assert 'parse_expr("1 = 1")' in ci_script
     assert "lark parser package" in ci_script
     assert "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh" in ci_script
