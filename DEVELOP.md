@@ -17,7 +17,7 @@ TEST_CUDF=1 python3 -m pytest tests/cypher_tck -xvs
 When running from a sibling `pygraphistry` checkout, set:
 
 ```bash
-PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh
+PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh
 PYTHONPATH=/path/to/pygraphistry python3 -m tests.cypher_tck.porting_backlog
 ```
 
@@ -45,6 +45,10 @@ GitHub Actions runs the suite on PRs. See `.github/workflows`.
 - If `./bin/ci.sh` reports missing `graphistry.compute` row-pipeline symbols,
   point `PYGRAPHISTRY_PATH` at a newer pygraphistry checkout or run with
   `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=<ref>`.
+- If `./bin/ci.sh` reports the GFQL row expression parser backend is unavailable,
+  rerun with `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry` so
+  pygraphistry's parser dependency is installed instead of only prepending the
+  source checkout to `PYTHONPATH`.
 
 ## Publish: Merge, Tag, & Release
 

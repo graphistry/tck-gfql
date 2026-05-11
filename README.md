@@ -40,13 +40,18 @@ TEST_CUDF=1 python3 -m pytest tests/cypher_tck -xvs
 ```
 
 `./bin/ci.sh` checks that the imported `graphistry.compute` package exposes the
-GFQL row-pipeline API required by this harness before pytest collection starts.
+GFQL row-pipeline API and row expression parser backend required by this harness
+before pytest collection starts.
 
 ## Local pygraphistry override
-Use a sibling checkout without installing by setting `PYGRAPHISTRY_PATH`:
+Use a sibling checkout and install its dependencies in editable mode:
 ```bash
-PYGRAPHISTRY_PATH=../pygraphistry ./bin/ci.sh
+PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=../pygraphistry ./bin/ci.sh
 ```
+
+`PYGRAPHISTRY_PATH` without `PYGRAPHISTRY_INSTALL=1` only prepends source to
+`PYTHONPATH`; that is useful for quick import checks, but strict GFQL row
+expression tests also need pygraphistry's parser dependency installed.
 
 Install a specific ref from GitHub:
 ```bash

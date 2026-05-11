@@ -49,6 +49,7 @@ fi
 
 "${PYTHON_BIN}" - <<'PY'
 import sys
+import importlib.util
 
 required = (
     "contains",
@@ -108,6 +109,30 @@ if missing:
         file=sys.stderr,
     )
     raise SystemExit(1)
+
+try:
+    from graphistry.compute.gfql.expr_parser import parse_expr
+
+    parse_expr("1 = 1")
+except Exception as exc:
+    version = getattr(graphistry, "__version__", "unknown")
+    path = getattr(graphistry, "__file__", "unknown")
+    lark_status = (
+        "installed" if importlib.util.find_spec("lark") is not None else "not installed"
+    )
+    print(
+        "graphistry GFQL row expression parser backend is unavailable: "
+        f"{exc}",
+        file=sys.stderr,
+    )
+    print(f"Imported graphistry {version} from {path}", file=sys.stderr)
+    print(f"lark parser package: {lark_status}", file=sys.stderr)
+    print(
+        "If using a local checkout, install pygraphistry dependencies with: "
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh",
+        file=sys.stderr,
+    )
+    raise SystemExit(1) from exc
 
 print(
     "Using graphistry "
