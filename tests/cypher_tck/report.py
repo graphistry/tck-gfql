@@ -134,6 +134,34 @@ def _live_direct_cypher_snapshot_sets(
     return overlap_keys, promotion_row_keys, promotion_error_keys
 
 
+def _direct_cypher_nonvalidation_samples(
+    scenarios: List[object],
+    *,
+    per_outcome: int = 8,
+) -> Dict[str, List[str]]:
+    scenarios_by_key = {getattr(scenario, "key", ""): scenario for scenario in scenarios}
+    samples: Dict[str, List[str]] = {}
+    for outcome in sorted(DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS):
+        keys = sorted(
+            key
+            for key, key_outcome in DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY.items()
+            if key_outcome == outcome
+        )
+        rendered: List[str] = []
+        for key in keys[:per_outcome]:
+            scenario = scenarios_by_key.get(key)
+            if scenario is None:
+                rendered.append(f"{key} (missing scenario)")
+                continue
+            _, area = _feature_parts(getattr(scenario, "feature_path", ""))
+            rendered.append(f"{key} ({area})")
+        remaining = len(keys) - len(rendered)
+        if remaining > 0:
+            rendered.append(f"... {remaining} more")
+        samples[outcome] = rendered
+    return samples
+
+
 def build_report() -> str:
     total = len(SCENARIOS)
     status_counts = Counter(scenario.status for scenario in SCENARIOS)
@@ -287,6 +315,13 @@ def build_report() -> str:
     )
     for outcome, count in DIRECT_CYPHER_NONVALIDATION_XFAIL_COUNTS.items():
         lines.append(f"- {outcome}: {count}")
+
+    lines.append("")
+    lines.append("Direct local Cypher non-validation triage samples:")
+    for outcome, samples in _direct_cypher_nonvalidation_samples(SCENARIOS).items():
+        lines.append(f"- {outcome}:")
+        for sample in samples:
+            lines.append(f"  - {sample}")
 
     priority_lanes = build_priority_lane_summaries(SCENARIOS)
     primary_families = build_primary_family_summaries(SCENARIOS)
