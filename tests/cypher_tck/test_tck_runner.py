@@ -1,4 +1,6 @@
 import os
+import re
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, Iterable, List, Sequence
 
 import pandas as pd
@@ -27,6 +29,17 @@ from tests.cypher_tck.scenarios import SCENARIOS
 _HAS_CUDF, _ = check_cudf()
 _TEST_CUDF = os.environ.get("TEST_CUDF", "0") == "1"
 _STRICT_PURE = os.environ.get("TCK_STRICT_PURE", "0") == "1"
+_NUMERIC_ROW_EQUIVALENCE_KEYS = {
+    "expr-aggregation3-1",
+    "expr-literals5-5",
+    "expr-literals5-6",
+    "expr-literals5-11",
+    "expr-literals5-12",
+    "expr-literals5-25",
+    "expr-literals5-26",
+}
+_NUMERIC_STRING_RE = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
+_NUMERIC_ROW_VALUE_PREFIX = "__tck_numeric__:"
 
 
 def _df_from_records(records: Sequence[dict], required_cols: Iterable[str]) -> pd.DataFrame:
@@ -116,12 +129,38 @@ def _normalize_row_value(value: Any) -> Any:
     return value
 
 
-def _normalize_rows(rows: Sequence[Dict[str, Any]], expected_keys: Sequence[str]) -> List[Dict[str, Any]]:
+def _normalize_numeric_row_value(value: Any) -> Any:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return f"{_NUMERIC_ROW_VALUE_PREFIX}{Decimal(value).normalize()}"
+    if isinstance(value, float):
+        return f"{_NUMERIC_ROW_VALUE_PREFIX}{Decimal(str(value)).normalize()}"
+    if isinstance(value, str) and _NUMERIC_STRING_RE.fullmatch(value):
+        try:
+            return f"{_NUMERIC_ROW_VALUE_PREFIX}{Decimal(value).normalize()}"
+        except InvalidOperation:
+            return value
+    return value
+
+
+def _normalize_rows(
+    rows: Sequence[Dict[str, Any]],
+    expected_keys: Sequence[str],
+    *,
+    numeric_equivalence: bool = False,
+) -> List[Dict[str, Any]]:
     normalized = []
     for row in rows:
         missing = [k for k in expected_keys if k not in row]
         assert not missing, f"missing expected row columns: {missing}; row={row}"
-        normalized.append({key: _normalize_row_value(row[key]) for key in expected_keys})
+        normalized_row = {}
+        for key in expected_keys:
+            value = row[key]
+            if numeric_equivalence:
+                value = _normalize_numeric_row_value(value)
+            normalized_row[key] = _normalize_row_value(value)
+        normalized.append(normalized_row)
     return normalized
 
 
@@ -149,8 +188,17 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
         return
 
     expected_keys = sorted({key for row in expected_rows for key in row.keys()})
-    expected_norm = _normalize_rows(expected_rows, expected_keys)
-    actual_norm = _normalize_rows(actual_rows, expected_keys)
+    numeric_equivalence = scenario.key in _NUMERIC_ROW_EQUIVALENCE_KEYS
+    expected_norm = _normalize_rows(
+        expected_rows,
+        expected_keys,
+        numeric_equivalence=numeric_equivalence,
+    )
+    actual_norm = _normalize_rows(
+        actual_rows,
+        expected_keys,
+        numeric_equivalence=numeric_equivalence,
+    )
 
     if _rows_ordered(scenario):
         assert actual_norm == expected_norm, (
@@ -218,6 +266,52 @@ def test_with_orderby_issue36_keys_are_marked_unordered() -> None:
         scenario = next(s for s in SCENARIOS if s.key == key)
         assert scenario.expected.ordered is False
         assert _rows_ordered(scenario) is False
+
+
+def test_numeric_row_equivalence_is_allowlisted_for_float_formatting() -> None:
+    scenario = Scenario(
+        key="expr-aggregation3-1",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN 75",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"sum(n.num)": 75}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"sum(n.num)": 75.0}])
+
+
+def test_numeric_string_equivalence_is_allowlisted_for_exponent_formatting() -> None:
+    scenario = Scenario(
+        key="expr-literals5-5",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN 1e305",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"literal": "1.2635418652381264e305"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"literal": 1.2635418652381264e305}])
+
+
+def test_numeric_string_equivalence_is_not_global() -> None:
+    scenario = Scenario(
+        key="unit-string-number",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN '1'",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"value": "1"}]),
+        gfql=None,
+        status="supported",
+    )
+
+    with pytest.raises(AssertionError, match="unordered row mismatch"):
+        _assert_expected_rows(scenario, [{"value": 1}])
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:

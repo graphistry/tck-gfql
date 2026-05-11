@@ -30,14 +30,7 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    "expr-aggregation3-1",
     "expr-list12-3",
-    "expr-literals5-11",
-    "expr-literals5-12",
-    "expr-literals5-25",
-    "expr-literals5-26",
-    "expr-literals5-5",
-    "expr-literals5-6",
     "expr-literals6-4",
     "expr-literals6-5",
     "expr-literals7-18",
@@ -92,6 +85,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     # These keys historically lived in the xfail non-validation "success_matches_expected"
     # bucket. They now promote via direct-Cypher row support snapshot and are no longer
     # tracked as xfail non-validation debt.
+    "expr-aggregation3-1",
     "expr-comparison1-6-5",
     "expr-comparison1-7-12",
     "expr-comparison1-7-13",
@@ -111,6 +105,12 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-list5-29",
     "expr-list5-31",
     "expr-list5-34",
+    "expr-literals5-11",
+    "expr-literals5-12",
+    "expr-literals5-25",
+    "expr-literals5-26",
+    "expr-literals5-5",
+    "expr-literals5-6",
     "expr-mathematical8-1",
     "expr-mathematical8-2",
     "expr-null1-3",
