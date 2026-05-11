@@ -2,6 +2,18 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ -z "${PYTHON_BIN:-}" ]]; then
+  if command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python)"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python3)"
+  else
+    echo "python not found; install Python 3.12 or set PYTHON_BIN=/path/to/python" >&2
+    exit 1
+  fi
+fi
+
 PYTHONPATH="${repo_root}${PYTHONPATH:+:${PYTHONPATH}}"
 
 if [[ -n "${PYGRAPHISTRY_PATH:-}" ]]; then
@@ -16,7 +28,7 @@ if [[ "${PYGRAPHISTRY_INSTALL:-0}" == "1" ]]; then
     exit 1
   fi
   if [[ -n "${PYGRAPHISTRY_PATH:-}" ]]; then
-    uv pip install --python "$(command -v python)" -e "${PYGRAPHISTRY_PATH}"
+    uv pip install --python "${PYTHON_BIN}" -e "${PYGRAPHISTRY_PATH}"
   else
     repo="${PYGRAPHISTRY_REPO:-https://github.com/graphistry/pygraphistry.git}"
     ref="${PYGRAPHISTRY_REF:-master}"
@@ -31,9 +43,78 @@ if [[ "${PYGRAPHISTRY_INSTALL:-0}" == "1" ]]; then
       git fetch --depth 1 origin "${ref}"
       git checkout FETCH_HEAD
     )
-    uv pip install --python "$(command -v python)" -e "${tmp_dir}/pygraphistry"
+    uv pip install --python "${PYTHON_BIN}" -e "${tmp_dir}/pygraphistry"
   fi
 fi
 
-pytest tests/cypher_tck -xvs
-python -m tests.cypher_tck.report
+"${PYTHON_BIN}" - <<'PY'
+import sys
+
+required = (
+    "contains",
+    "distinct",
+    "endswith",
+    "eq",
+    "e_forward",
+    "e_reverse",
+    "e_undirected",
+    "ge",
+    "group_by",
+    "gt",
+    "is_in",
+    "isna",
+    "le",
+    "limit",
+    "lt",
+    "n",
+    "ne",
+    "notna",
+    "order_by",
+    "rows",
+    "select",
+    "skip",
+    "startswith",
+    "unwind",
+    "where_rows",
+    "with_",
+)
+
+try:
+    import graphistry
+    import graphistry.compute as compute
+except Exception as exc:
+    print(f"graphistry import failed: {exc}", file=sys.stderr)
+    print("Set PYGRAPHISTRY_PATH=/path/to/pygraphistry or run PYGRAPHISTRY_INSTALL=1 ./bin/ci.sh", file=sys.stderr)
+    raise SystemExit(1) from exc
+
+missing = [name for name in required if not hasattr(compute, name)]
+if missing:
+    version = getattr(graphistry, "__version__", "unknown")
+    path = getattr(graphistry, "__file__", "unknown")
+    print(
+        "graphistry.compute is missing required GFQL row-pipeline symbols: "
+        + ", ".join(missing),
+        file=sys.stderr,
+    )
+    print(f"Imported graphistry {version} from {path}", file=sys.stderr)
+    print(
+        "Use a newer pygraphistry checkout, for example: "
+        "PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh",
+        file=sys.stderr,
+    )
+    print(
+        "Or install a specific ref with: "
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
+print(
+    "Using graphistry "
+    f"{getattr(graphistry, '__version__', 'unknown')} from "
+    f"{getattr(graphistry, '__file__', 'unknown')}"
+)
+PY
+
+"${PYTHON_BIN}" -m pytest tests/cypher_tck -xvs
+"${PYTHON_BIN}" -m tests.cypher_tck.report

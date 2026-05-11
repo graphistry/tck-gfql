@@ -92,6 +92,12 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     # These keys historically lived in the xfail non-validation "success_matches_expected"
     # bucket. They now promote via direct-Cypher row support snapshot and are no longer
     # tracked as xfail non-validation debt.
+    "expr-comparison1-6-5",
+    "expr-comparison1-7-12",
+    "expr-comparison1-7-13",
+    "expr-comparison1-7-14",
+    "expr-comparison1-7-15",
+    "expr-comparison1-7-16",
     "expr-comparison3-1",
     "expr-comparison3-2",
     "expr-comparison3-3",
@@ -100,8 +106,20 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison3-6",
     "expr-comparison3-7",
     "expr-comparison3-8",
+    "expr-list3-7",
+    "expr-list5-21",
+    "expr-list5-29",
+    "expr-list5-31",
+    "expr-list5-34",
     "expr-mathematical8-1",
     "expr-mathematical8-2",
+    "expr-null1-3",
+    "expr-null2-3",
+    "expr-pattern1-12",
+    "expr-pattern1-14",
+    "expr-pattern1-15",
+    "expr-pattern1-16",
+    "expr-pattern1-17",
     "expr-precedence2-1-10",
     "expr-precedence2-1-11",
     "expr-precedence2-1-12",
@@ -112,6 +130,9 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-precedence2-1-7",
     "expr-precedence2-1-8",
     "expr-precedence2-1-9",
+    "expr-precedence3-6-1",
+    "expr-precedence3-6-2",
+    "expr-temporal2-6-5",
     "expr-temporal6-6-2",
     "expr-temporal6-6-8",
     "expr-temporal7-1-1",
@@ -139,46 +160,15 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-orderby3-2-4",
     "with-orderby3-2-5",
     "with-orderby3-2-6",
-)
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # match-where3-3: variable-comparison join now executes and returns expected rows
-    # against current pygraphistry/master sibling target.
     "match-where3-3",
-    # with-where3-3: sibling-target drift shows row-level parity restored.
-    "with-where3-3",
-    "expr-pattern1-12",
-    "expr-pattern1-14",
-    "expr-pattern1-15",
-    "expr-pattern1-16",
-    "expr-pattern1-17",
-    # expr-precedence3-6-{1,2}: sibling-target drift shows row-level parity restored.
-    "expr-precedence3-6-1",
-    "expr-precedence3-6-2",
-    # expr-list5-21: sibling-target drift shows row-level parity restored.
-    "expr-list5-21",
-    # expr-list5-{29,31,34}: sibling-target drift shows row-level parity restored.
-    "expr-list5-29",
-    "expr-list5-31",
-    "expr-list5-34",
-    # expr-null{1,2}-3: sibling-target drift shows row-level parity restored.
-    "expr-null1-3",
-    "expr-null2-3",
-    # expr-comparison1-6-5: sibling-target drift shows row-level parity restored.
-    "expr-comparison1-6-5",
-    # expr-comparison1-7-12: sibling-target drift shows row-level parity restored.
-    "expr-comparison1-7-12",
-    # expr-comparison1-7-{13,14,15,16}: sibling-target drift shows row-level parity restored.
-    "expr-comparison1-7-13",
-    "expr-comparison1-7-14",
-    "expr-comparison1-7-15",
-    "expr-comparison1-7-16",
-    # expr-list3-7: sibling-target drift shows row-level parity restored.
-    "expr-list3-7",
-    # expr-temporal2-6-5: sibling-target drift shows row-level parity restored.
-    "expr-temporal2-6-5",
     "match3-1",
     "match3-5",
     "match4-3",
+    "with-where3-3",
+)
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # Keep this bucket for future sibling-target drift that returns expected rows
+    # but has not yet been promoted through direct_cypher_support.py.
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

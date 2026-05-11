@@ -1,41 +1,49 @@
 # Phase 7.8 Post-Wave Gap Inventory
 
-Date: 2026-03-03
-Branch: `feat/return-pipeline-exec`
+Date: 2026-05-10
+Branch: `main`
+Source: `python3 -m tests.cypher_tck.report`
 
 ## Current checkpoint
-- `supported_semantic`: `1343`
-- `supported_pure`: `1333`
-- `supported_impure`: `10`
-- `pytest -q tests/cypher_tck/test_tck_runner.py`: `1343 passed, 2284 xfailed`
+- Scenarios represented: `3627`
+- GFQL translated: `2938` (`81.0%`)
+- Status counts: `2811 supported`, `816 xfail`, `0 skip`
+- Purity split: `supported_semantic=2811`, `supported_pure=2811`, `supported_impure=0`
+- Direct Cypher total snapshot: `2794 / 3627` (`77.0%`)
+- Direct Cypher non-validation debt: `64`
 
-## Remaining supported-but-impure keys (10)
-- `expr-aggregation8-2` (`match,select`)
-- `return-orderby4-1` (`with,unwind,unwind,with,select,order_by`)
-- `return-orderby6-1` (`match,rows,select,order_by`)
-- `return-orderby6-2` (`match,rows,select,order_by`)
-- `return-orderby6-3` (`match,rows,select,order_by`)
-- `return-skip-limit2-5` (`match,rows,select,order_by,limit`)
-- `return4-7` (`match,select`)
-- `return6-18` (`match,with,select`)
-- `return6-19` (`match,select`)
-- `return6-6` (`match,select`)
+## Remaining supported-but-impure keys
+- None in the live report.
 
-## Strict-pure failure reason histogram (top)
-- `select_local_projection`: `574`
-- `with_local_projection`: `175`
-- `order_by_local_eval`: `45`
-- `comma-separated MATCH patterns are only supported for a single linear connected path`: `19`
-- `unsupported plan step: create`: `19`
-- `unwind_local_row_loop`: `6`
-- `unbounded variable-length relationship patterns are not supported`: `4`
+The old Phase 7.8 checkpoint tracked `10` supported-but-impure keys. Those are
+now counted as pure by the report, so the next work should not target a generic
+impure burn-down. Keep using focused strict-pure regression tests as a guardrail,
+because local pygraphistry compatibility can still expose fallback paths.
 
-## Delta from start of Phase 7 wave
-- Start (locked in plan): `1334 / 1302 / 32`
-- Current: `1343 / 1333 / 10`
-- Net: `+9 semantic`, `+31 pure`, `-22 impure`
+## Current xfail families
+| family | xfail | priority | class | tracker |
+|---|---:|---|---|---|
+| Write clauses | 277 | P3 | big-swath | #54 |
+| Expression long tail | 166 | P3 | big-swath | #51 |
+| Row-pipeline read forms | 158 | P1 | common-read-form | #43 |
+| Other read-only gaps | 88 | P3 | big-swath | #52 |
+| OPTIONAL MATCH / collect / null extension | 64 | P2 | common-read-form | #44 |
+| Procedures / CALL | 37 | P4 | niche-tck | #53 |
+| Grouped aggregates over expanded MATCH | 26 | P1 | common-read-form | #45 |
 
-## Notes on what moved in this wave
-- Computed ORDER BY normalization (`ASCENDING`/`DESCENDING` suffix handling) unlocked additional `with-orderby*` scenarios.
-- String constant-folding in strict-pure projection was adjusted to preserve literal semantics without regressing temporal function cases.
-- Bounded variable-length MATCH compilation was added, but current conformance uplift from it is still limited by downstream projection/path semantics.
+## Local pygraphistry compatibility note
+- Default local import on this machine was `graphistry v0.45.4` from
+  `/usr/local/lib/python3.12/dist-packages`, which is too old for this harness.
+- `./bin/ci.sh` now preflights the required `graphistry.compute` row-pipeline
+  symbols before pytest collection.
+- A sibling checkout at `/home/lmeyerov/Work/pygraphistry` exposes the required
+  API surface, but focused strict-pure tests still showed local fallback
+  failures for `order_by_local_eval`, `unwind_local_row_loop`, and
+  `where_local_eval`.
+
+## Next useful work
+- Keep dependency/preflight failures explicit so contributors do not debug stale
+  pygraphistry installs as TCK failures.
+- Prefer small P1 slices in row-pipeline read forms or grouped aggregates.
+- Treat write clauses, CALL/procedures, and broad expression-tail work as lower
+  ROI unless product needs change.

@@ -10,14 +10,15 @@ the local `plans/` clone of the TCK repo for reference (not vendored).
 ```bash
 UV_EXCLUDE_NEWER="6 days" uv pip install --python "$(command -v python)" pytest pandas
 ./bin/ci.sh
-pytest tests/cypher_tck -xvs
-TEST_CUDF=1 pytest tests/cypher_tck -xvs
+python3 -m pytest tests/cypher_tck -xvs
+TEST_CUDF=1 python3 -m pytest tests/cypher_tck -xvs
 ```
 
 When running from a sibling `pygraphistry` checkout, set:
 
 ```bash
-PYTHONPATH=/path/to/pygraphistry python -m tests.cypher_tck.porting_backlog
+PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh
+PYTHONPATH=/path/to/pygraphistry python3 -m tests.cypher_tck.porting_backlog
 ```
 
 ## Environment Variables
@@ -39,8 +40,11 @@ GitHub Actions runs the suite on PRs. See `.github/workflows`.
 
 ## Debugging Tips
 
-- Use `python -m tests.cypher_tck.report` to print the conformance summary.
-- Use `python -m tests.cypher_tck.porting_backlog` for xfail coverage stats.
+- Use `python3 -m tests.cypher_tck.report` to print the conformance summary.
+- Use `python3 -m tests.cypher_tck.porting_backlog` for xfail coverage stats.
+- If `./bin/ci.sh` reports missing `graphistry.compute` row-pipeline symbols,
+  point `PYGRAPHISTRY_PATH` at a newer pygraphistry checkout or run with
+  `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=<ref>`.
 
 ## Publish: Merge, Tag, & Release
 
