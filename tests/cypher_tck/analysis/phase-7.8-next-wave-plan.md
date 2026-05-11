@@ -4,7 +4,7 @@ Date: 2026-05-10
 Branch: `main`
 
 ## Objective
-Move from the current `2811 supported / 816 xfail / 0 supported_impure`
+Move from the current `2837 supported / 790 xfail / 0 supported_impure`
 checkpoint toward higher conformance without widening the blast radius. The
 old `10 -> 0` supported-impure burn-down is complete in the live report; the
 next useful slices are dependency hygiene, small P1 xfail promotions, and
@@ -16,24 +16,25 @@ direct-Cypher contract debt reduction.
 - Target: stale local installs that fail before pytest collection.
 - Scope: keep `./bin/ci.sh` using `python3` when `python` is absent, run pytest
   through `python -m pytest`, and fail fast when `graphistry.compute` lacks the
-  row-pipeline API required by `plan_executor.py`.
+  row-pipeline API or GFQL row expression parser backend required by
+  `plan_executor.py`.
 - Guardrails: do not mutate global Python or sibling pygraphistry checkouts from
-  this repo; prefer `PYGRAPHISTRY_PATH` or explicit install commands.
+  this repo; prefer explicit install commands such as
+  `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh`.
 
-2. Direct-Cypher non-validation debt
-- Target: `64` tracked non-validation xfails in the live report.
-- Current split: `26 success_matches_expected`, `34 success_wrong_rows`,
-  `4 unexpected_success_expected_error`.
-- Scope: start with `success_matches_expected` because those are the safest
-  candidates for metadata/status cleanup; do not promote wrong-row cases without
-  row-diff analysis.
+2. Direct-Cypher non-validation debt triage
+- Target: `38` tracked non-validation xfails in the live report.
+- Current split: `34 success_wrong_rows`, `4 unexpected_success_expected_error`.
+- Scope: add a row-diff/summary helper or report mode before promoting anything;
+  the previous `success_matches_expected` bucket was already promoted.
 
 3. Row-pipeline read forms
-- Target: `158` primary-family xfails, issue `#43`.
+- Target: `157` primary-family xfails, issue `#43`.
 - Scope: tiny tranches only, especially shapes already represented by existing
   row-pipeline helpers (`WITH`, `ORDER BY`, `LIMIT`, `SKIP`, `UNWIND`).
-- Guardrails: focused plan-executor tests must pass against a compatible
-  pygraphistry checkout before broad promotion sweeps.
+- Guardrails: focused plan-executor tests must pass against an editable
+  pygraphistry checkout with parser dependencies installed before broad
+  promotion sweeps.
 
 4. Grouped aggregates over expanded MATCH
 - Target: `26` read-only relationship aggregate xfails, issue `#45`.
@@ -51,8 +52,9 @@ direct-Cypher contract debt reduction.
 - `python3 -m py_compile ...` on touched Python files.
 - `bash -n bin/ci.sh` when shell scripts change.
 - `python3 -m pytest -q ...` focused tests first.
-- `PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh` for full harness runs
-  when a compatible local pygraphistry checkout is available.
+- `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh`
+  for full harness runs when a compatible local pygraphistry checkout is
+  available.
 - `python3 -m tests.cypher_tck.report` after each slice.
 - Conformance and purity counts must be non-regressive unless the plan records
   an intentional contract correction.
