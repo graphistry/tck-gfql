@@ -94,6 +94,26 @@ def test_build_report_includes_gap_priority_sections() -> None:
         f"tracked non-validation debt: {len(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY)}"
         in report
     )
+    assert "Direct local Cypher non-validation triage samples:" in report
+    assert "- success_wrong_rows:" in report
+    assert "expr-aggregation3-1 (expressions/aggregation)" in report
+    assert "- unexpected_success_expected_error:" in report
+    assert "match-where1-10 (clauses/match-where)" in report
+
+
+def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
+    samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
+
+    assert samples["success_wrong_rows"] == [
+        "expr-aggregation3-1 (expressions/aggregation)",
+        "expr-list12-3 (expressions/list)",
+        "... 32 more",
+    ]
+    assert samples["unexpected_success_expected_error"] == [
+        "expr-list1-6-4 (expressions/list)",
+        "expr-typeconversion4-10-1 (expressions/typeConversion)",
+        "... 2 more",
+    ]
 
 
 def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None:
