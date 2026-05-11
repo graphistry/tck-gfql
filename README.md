@@ -34,14 +34,18 @@ GFQL queries and validate results.
 
 ## Run
 ```bash
-pytest tests/cypher_tck -xvs
-TEST_CUDF=1 pytest tests/cypher_tck -xvs
+./bin/ci.sh
+python3 -m pytest tests/cypher_tck -xvs
+TEST_CUDF=1 python3 -m pytest tests/cypher_tck -xvs
 ```
+
+`./bin/ci.sh` checks that the imported `graphistry.compute` package exposes the
+GFQL row-pipeline API required by this harness before pytest collection starts.
 
 ## Local pygraphistry override
 Use a sibling checkout without installing by setting `PYGRAPHISTRY_PATH`:
 ```bash
-PYGRAPHISTRY_PATH=../pygraphistry2 ./bin/ci.sh
+PYGRAPHISTRY_PATH=../pygraphistry ./bin/ci.sh
 ```
 
 Install a specific ref from GitHub:

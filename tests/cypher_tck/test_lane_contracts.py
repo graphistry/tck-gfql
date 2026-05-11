@@ -115,6 +115,30 @@ def _scenario_map():
     return {scenario.key: scenario for scenario in SCENARIOS}
 
 
+def _is_direct_cypher_promoted(key: str) -> bool:
+    return key in DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS
+
+
+def _assert_status_and_tags(scenario, expected_status: str, forbidden_tags: tuple[str, ...]) -> None:
+    if _is_direct_cypher_promoted(scenario.key):
+        assert scenario.status == "supported"
+        assert "cypher-string" in scenario.tags
+        return
+
+    assert scenario.status == expected_status
+    for forbidden_tag in forbidden_tags:
+        assert forbidden_tag not in scenario.tags
+
+
+def _assert_family_or_direct_promoted(scenario, family: str) -> None:
+    if _is_direct_cypher_promoted(scenario.key):
+        assert scenario.status == "supported"
+        assert "cypher-string" in scenario.tags
+        return
+
+    assert classify_primary_xfail_family(scenario) == family
+
+
 def test_row_pipeline_tranche1_keys_exist() -> None:
     scenarios = _scenario_map()
     missing = sorted(set(ROW_PIPELINE_TRANCHE1_KEYS) - set(scenarios))
@@ -169,16 +193,18 @@ def test_row_pipeline_tranche3_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE3_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == ROW_PIPELINE_TRANCHE3_EXPECTED_STATUS
-        for forbidden_tag in ROW_PIPELINE_TRANCHE3_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            ROW_PIPELINE_TRANCHE3_EXPECTED_STATUS,
+            ROW_PIPELINE_TRANCHE3_FORBIDDEN_TAGS,
+        )
 
 
 def test_row_pipeline_tranche3_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE3_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+        _assert_family_or_direct_promoted(scenario, "row-pipeline-read-forms")
 
 
 def test_row_pipeline_tranche4_keys_exist() -> None:
@@ -585,16 +611,18 @@ def test_optional_null_tranche4_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in OPTIONAL_NULL_TRANCHE4_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == OPTIONAL_NULL_TRANCHE4_EXPECTED_STATUS
-        for forbidden_tag in OPTIONAL_NULL_TRANCHE4_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            OPTIONAL_NULL_TRANCHE4_EXPECTED_STATUS,
+            OPTIONAL_NULL_TRANCHE4_FORBIDDEN_TAGS,
+        )
 
 
 def test_optional_null_tranche4_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in OPTIONAL_NULL_TRANCHE4_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
+        _assert_family_or_direct_promoted(scenario, "optional-match-null-extension")
 
 
 def test_optional_null_lane_has_issue_tracker_wired() -> None:
@@ -703,16 +731,18 @@ def test_expression_long_tail_tranche4_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE4_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE4_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE4_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            EXPRESSION_LONG_TAIL_TRANCHE4_EXPECTED_STATUS,
+            EXPRESSION_LONG_TAIL_TRANCHE4_FORBIDDEN_TAGS,
+        )
 
 
 def test_expression_long_tail_tranche4_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE4_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        _assert_family_or_direct_promoted(scenario, "expression-long-tail")
 
 
 def test_expression_long_tail_tranche5_keys_exist() -> None:
@@ -725,16 +755,18 @@ def test_expression_long_tail_tranche5_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE5_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE5_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE5_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            EXPRESSION_LONG_TAIL_TRANCHE5_EXPECTED_STATUS,
+            EXPRESSION_LONG_TAIL_TRANCHE5_FORBIDDEN_TAGS,
+        )
 
 
 def test_expression_long_tail_tranche5_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE5_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        _assert_family_or_direct_promoted(scenario, "expression-long-tail")
 
 
 def test_expression_long_tail_tranche6_keys_exist() -> None:
@@ -747,16 +779,18 @@ def test_expression_long_tail_tranche6_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE6_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE6_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE6_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            EXPRESSION_LONG_TAIL_TRANCHE6_EXPECTED_STATUS,
+            EXPRESSION_LONG_TAIL_TRANCHE6_FORBIDDEN_TAGS,
+        )
 
 
 def test_expression_long_tail_tranche6_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE6_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        _assert_family_or_direct_promoted(scenario, "expression-long-tail")
 
 
 def test_expression_long_tail_tranche7_keys_exist() -> None:
@@ -769,16 +803,18 @@ def test_expression_long_tail_tranche7_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE7_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE7_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE7_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            EXPRESSION_LONG_TAIL_TRANCHE7_EXPECTED_STATUS,
+            EXPRESSION_LONG_TAIL_TRANCHE7_FORBIDDEN_TAGS,
+        )
 
 
 def test_expression_long_tail_tranche7_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE7_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        _assert_family_or_direct_promoted(scenario, "expression-long-tail")
 
 
 def test_expression_long_tail_tranche8_keys_exist() -> None:
@@ -813,16 +849,18 @@ def test_expression_long_tail_tranche9_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE9_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE9_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE9_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            EXPRESSION_LONG_TAIL_TRANCHE9_EXPECTED_STATUS,
+            EXPRESSION_LONG_TAIL_TRANCHE9_FORBIDDEN_TAGS,
+        )
 
 
 def test_expression_long_tail_tranche9_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE9_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        _assert_family_or_direct_promoted(scenario, "expression-long-tail")
 
 
 def test_row_pipeline_tranches_are_disjoint() -> None:
@@ -935,16 +973,18 @@ def test_other_read_gaps_tranche1_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in OTHER_READ_GAPS_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS
-        for forbidden_tag in OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            OTHER_READ_GAPS_TRANCHE1_EXPECTED_STATUS,
+            OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS,
+        )
 
 
 def test_other_read_gaps_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in OTHER_READ_GAPS_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "other-read-gaps"
+        _assert_family_or_direct_promoted(scenario, "other-read-gaps")
 
 
 def test_other_read_gaps_lane_has_issue_tracker_wired() -> None:
