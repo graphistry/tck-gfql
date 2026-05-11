@@ -4,7 +4,7 @@ Date: 2026-05-10
 Branch: `main`
 
 ## Objective
-Move from the current `2849 supported / 778 xfail / 0 supported_impure`
+Move from the current `2851 supported / 776 xfail / 0 supported_impure`
 checkpoint toward higher conformance without widening the blast radius. The
 old `10 -> 0` supported-impure burn-down is complete in the live report; the
 next useful slices are dependency hygiene, small P1 xfail promotions, and
@@ -26,19 +26,19 @@ direct-Cypher contract debt reduction.
 - Result: `match-where1-10` now promotes via direct-Cypher graph-id validation.
 - Remaining target: `3` tracked `unexpected_success_expected_error`
   direct-Cypher xfails.
-- Current direct-Cypher non-validation debt: `26` total
-  (`23 success_wrong_rows`, `3 unexpected_success_expected_error`).
+- Current direct-Cypher non-validation debt: `24` total
+  (`21 success_wrong_rows`, `3 unexpected_success_expected_error`).
 - Scope: keep the remaining expected-error keys as debt unless pygraphistry
   starts raising the expected runtime errors or the TCK scenario gains a valid
   success oracle.
 
 3. Remaining direct-Cypher display normalization
-- Target: the remaining display-style subset inside `23 success_wrong_rows`.
+- Target: the remaining display-style subset inside `21 success_wrong_rows`.
 - Scope: string escaping, quote rendering, map key order, and label order only
   when the oracle contract supports canonical equivalence. The integer/float
   and exponent-formatting slice was already promoted, and the
   `toString(boolean)` string-keyword rendering slice promoted four additional
-  cases.
+  cases. The nested numeric list/map literal slice promoted two more.
 
 4. Row-pipeline read forms
 - Target: `157` primary-family xfails, issue `#43`.

@@ -2097,6 +2097,8 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-literals5-5",
     "expr-literals5-6",
     "expr-literals5-8",
+    "expr-literals7-7",
+    "expr-literals8-11",
     "expr-literals8-10",
     "expr-literals8-9",
     "expr-map1-1",
