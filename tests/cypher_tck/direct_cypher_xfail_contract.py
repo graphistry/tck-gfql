@@ -49,7 +49,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "match5-8",
     "return2-10",
     "return2-9",
-    "match3-7",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
     # rejected the WITH-projection-driven join shape with a validation
@@ -155,6 +154,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match-where3-3",
     "match3-1",
     "match3-5",
+    "match3-7",
     "match4-3",
     "with-where3-3",
 )

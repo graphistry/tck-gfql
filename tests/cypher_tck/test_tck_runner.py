@@ -48,12 +48,16 @@ _NUMERIC_CONTAINER_ROW_EQUIVALENCE_KEYS = {
     "expr-literals7-7",
     "expr-literals8-11",
 }
+_LABEL_ORDER_ROW_EQUIVALENCE_KEYS = {
+    "match3-7",
+}
 _NUMERIC_TOKEN_PATTERN = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
 _NUMERIC_STRING_RE = re.compile(rf"^{_NUMERIC_TOKEN_PATTERN}$")
 _NUMERIC_LIST_STRING_RE = re.compile(rf"^\[\s*({_NUMERIC_TOKEN_PATTERN})\s*\]$")
 _NUMERIC_MAP_STRING_RE = re.compile(
     rf"^\{{\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*({_NUMERIC_TOKEN_PATTERN})\s*\}}$"
 )
+_SIMPLE_NODE_LABELS_RE = re.compile(r"^\(:([A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)*)\)$")
 _NUMERIC_ROW_VALUE_PREFIX = "__tck_numeric__:"
 
 
@@ -186,6 +190,22 @@ def _normalize_numeric_container_row_value(value: Any) -> Any:
     return _normalize_numeric_row_value(value)
 
 
+def _normalize_label_order_row_value(value: Any) -> Any:
+    if isinstance(value, (list, tuple)):
+        return [_normalize_label_order_row_value(v) for v in value]
+    if isinstance(value, dict):
+        return {
+            key: _normalize_label_order_row_value(nested)
+            for key, nested in value.items()
+        }
+    if isinstance(value, str):
+        match = _SIMPLE_NODE_LABELS_RE.fullmatch(value)
+        if match:
+            labels = sorted(match.group(1).split(":"))
+            return "(:" + ":".join(labels) + ")"
+    return value
+
+
 def _normalize_rows(
     rows: Sequence[Dict[str, Any]],
     expected_keys: Sequence[str],
@@ -193,6 +213,7 @@ def _normalize_rows(
     numeric_equivalence: bool = False,
     quote_keyword_strings: bool = False,
     numeric_container_equivalence: bool = False,
+    label_order_equivalence: bool = False,
 ) -> List[Dict[str, Any]]:
     normalized = []
     for row in rows:
@@ -205,6 +226,8 @@ def _normalize_rows(
                 value = _normalize_numeric_row_value(value)
             if numeric_container_equivalence:
                 value = _normalize_numeric_container_row_value(value)
+            if label_order_equivalence:
+                value = _normalize_label_order_row_value(value)
             normalized_row[key] = _normalize_row_value(
                 value,
                 quote_keyword_strings=quote_keyword_strings,
@@ -242,12 +265,14 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
     numeric_container_equivalence = (
         scenario.key in _NUMERIC_CONTAINER_ROW_EQUIVALENCE_KEYS
     )
+    label_order_equivalence = scenario.key in _LABEL_ORDER_ROW_EQUIVALENCE_KEYS
     expected_norm = _normalize_rows(
         expected_rows,
         expected_keys,
         numeric_equivalence=numeric_equivalence,
         quote_keyword_strings=quote_keyword_strings,
         numeric_container_equivalence=numeric_container_equivalence,
+        label_order_equivalence=label_order_equivalence,
     )
     actual_norm = _normalize_rows(
         actual_rows,
@@ -255,6 +280,7 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
         numeric_equivalence=numeric_equivalence,
         quote_keyword_strings=quote_keyword_strings,
         numeric_container_equivalence=numeric_container_equivalence,
+        label_order_equivalence=label_order_equivalence,
     )
 
     if _rows_ordered(scenario):
@@ -461,6 +487,37 @@ def test_numeric_container_equivalence_is_not_global() -> None:
 
     with pytest.raises(AssertionError, match="unordered row mismatch"):
         _assert_expected_rows(scenario, [{"literal": [-1e-06]}])
+
+
+def test_label_order_equivalence_is_allowlisted_for_node_labels() -> None:
+    scenario = Scenario(
+        key="match3-7",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="MATCH (n:A:B)-[:T]->(m:Z:Y) RETURN n, m",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"m": "(:Z:Y)"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"m": "(:Y:Z)"}])
+
+
+def test_label_order_equivalence_is_not_global() -> None:
+    scenario = Scenario(
+        key="unit-label-order",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="MATCH (n:A:B) RETURN n",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"n": "(:B:A)"}]),
+        gfql=None,
+        status="supported",
+    )
+
+    with pytest.raises(AssertionError, match="unordered row mismatch"):
+        _assert_expected_rows(scenario, [{"n": "(:A:B)"}])
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:
