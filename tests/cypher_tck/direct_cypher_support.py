@@ -1990,6 +1990,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "match-where3-3",
     "match3-1",
     "match3-5",
+    "match3-7",
     "match4-3",
     "with-where3-3",
     "expr-aggregation2-7",
