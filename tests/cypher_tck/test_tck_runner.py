@@ -38,6 +38,12 @@ _NUMERIC_ROW_EQUIVALENCE_KEYS = {
     "expr-literals5-25",
     "expr-literals5-26",
 }
+_STRING_KEYWORD_ROW_EQUIVALENCE_KEYS = {
+    "expr-typeconversion4-2",
+    "expr-typeconversion4-3",
+    "expr-typeconversion4-4",
+    "expr-typeconversion4-5",
+}
 _NUMERIC_STRING_RE = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
 _NUMERIC_ROW_VALUE_PREFIX = "__tck_numeric__:"
 
@@ -102,7 +108,7 @@ def _is_null(value: Any) -> bool:
     return False
 
 
-def _normalize_row_value(value: Any) -> Any:
+def _normalize_row_value(value: Any, *, quote_keyword_strings: bool = False) -> Any:
     if hasattr(value, "item") and not isinstance(value, (str, bytes, list, tuple, dict)):
         try:
             value = value.item()
@@ -116,15 +122,20 @@ def _normalize_row_value(value: Any) -> Any:
     if isinstance(value, str):
         if value.startswith(("(", "[", "{", "<", "'")):
             return value
-        if value in {"null", "true", "false"}:
+        if value in {"null", "true", "false"} and not quote_keyword_strings:
             return value
         return f"'{value}'"
     if isinstance(value, (list, tuple)):
-        return "[" + ", ".join(str(_normalize_row_value(v)) for v in value) + "]"
+        return "[" + ", ".join(
+            str(_normalize_row_value(v, quote_keyword_strings=quote_keyword_strings))
+            for v in value
+        ) + "]"
     if isinstance(value, dict):
         parts = []
         for key in sorted(value.keys()):
-            parts.append(f"{key}: {_normalize_row_value(value[key])}")
+            parts.append(
+                f"{key}: {_normalize_row_value(value[key], quote_keyword_strings=quote_keyword_strings)}"
+            )
         return "{" + ", ".join(parts) + "}"
     return value
 
@@ -149,6 +160,7 @@ def _normalize_rows(
     expected_keys: Sequence[str],
     *,
     numeric_equivalence: bool = False,
+    quote_keyword_strings: bool = False,
 ) -> List[Dict[str, Any]]:
     normalized = []
     for row in rows:
@@ -159,7 +171,10 @@ def _normalize_rows(
             value = row[key]
             if numeric_equivalence:
                 value = _normalize_numeric_row_value(value)
-            normalized_row[key] = _normalize_row_value(value)
+            normalized_row[key] = _normalize_row_value(
+                value,
+                quote_keyword_strings=quote_keyword_strings,
+            )
         normalized.append(normalized_row)
     return normalized
 
@@ -189,15 +204,18 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
 
     expected_keys = sorted({key for row in expected_rows for key in row.keys()})
     numeric_equivalence = scenario.key in _NUMERIC_ROW_EQUIVALENCE_KEYS
+    quote_keyword_strings = scenario.key in _STRING_KEYWORD_ROW_EQUIVALENCE_KEYS
     expected_norm = _normalize_rows(
         expected_rows,
         expected_keys,
         numeric_equivalence=numeric_equivalence,
+        quote_keyword_strings=quote_keyword_strings,
     )
     actual_norm = _normalize_rows(
         actual_rows,
         expected_keys,
         numeric_equivalence=numeric_equivalence,
+        quote_keyword_strings=quote_keyword_strings,
     )
 
     if _rows_ordered(scenario):
@@ -312,6 +330,52 @@ def test_numeric_string_equivalence_is_not_global() -> None:
 
     with pytest.raises(AssertionError, match="unordered row mismatch"):
         _assert_expected_rows(scenario, [{"value": 1}])
+
+
+def test_string_keyword_equivalence_is_allowlisted_for_to_string_boolean() -> None:
+    scenario = Scenario(
+        key="expr-typeconversion4-2",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN toString(true)",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"bool": "'true'"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"bool": "true"}])
+
+
+def test_string_keyword_equivalence_is_recursive_for_to_string_lists() -> None:
+    scenario = Scenario(
+        key="expr-typeconversion4-5",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN [toString(true)]",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"list": "['1', '2.3', 'true', 'apa']"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"list": ["1", "2.3", "true", "apa"]}])
+
+
+def test_string_keyword_equivalence_is_not_global() -> None:
+    scenario = Scenario(
+        key="unit-boolean-keyword",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN true",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"value": "'true'"}]),
+        gfql=None,
+        status="supported",
+    )
+
+    with pytest.raises(AssertionError, match="unordered row mismatch"):
+        _assert_expected_rows(scenario, [{"value": "true"}])
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:

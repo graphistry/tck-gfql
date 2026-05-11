@@ -60,7 +60,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     assert by_lane["row-pipeline-read-forms"] == 157
     assert by_lane["optional-match-null-extension"] == 62
     assert by_lane["grouped-match-aggregates"] == 26
-    assert by_lane["expression-long-tail"] == 140
+    assert by_lane["expression-long-tail"] == 136
 
 
 def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "868 (rows 755, errors 113)"
+        "872 (rows 759, errors 113)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -111,7 +111,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     assert samples["success_wrong_rows"] == [
         "expr-list12-3 (expressions/list)",
         "expr-literals6-4 (expressions/literals)",
-        "... 25 more",
+        "... 21 more",
     ]
     assert samples["unexpected_success_expected_error"] == [
         "expr-list1-6-4 (expressions/list)",
