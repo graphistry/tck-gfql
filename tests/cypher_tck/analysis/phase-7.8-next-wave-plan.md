@@ -4,7 +4,7 @@ Date: 2026-05-10
 Branch: `main`
 
 ## Objective
-Move from the current `2837 supported / 790 xfail / 0 supported_impure`
+Move from the current `2844 supported / 783 xfail / 0 supported_impure`
 checkpoint toward higher conformance without widening the blast radius. The
 old `10 -> 0` supported-impure burn-down is complete in the live report; the
 next useful slices are dependency hygiene, small P1 xfail promotions, and
@@ -22,13 +22,20 @@ direct-Cypher contract debt reduction.
   this repo; prefer explicit install commands such as
   `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh`.
 
-2. Direct-Cypher non-validation debt triage
-- Target: `38` tracked non-validation xfails in the live report.
-- Current split: `34 success_wrong_rows`, `4 unexpected_success_expected_error`.
-- Scope: add a row-diff/summary helper or report mode before promoting anything;
-  the previous `success_matches_expected` bucket was already promoted.
+2. Direct-Cypher expected-error drift audit
+- Target: `4` tracked `unexpected_success_expected_error` direct-Cypher xfails.
+- Current direct-Cypher non-validation debt: `31` total
+  (`27 success_wrong_rows`, `4 unexpected_success_expected_error`).
+- Scope: inspect each expected-error key with the focused detail command and
+  promote or reclassify only cases whose current result matches the TCK oracle.
 
-3. Row-pipeline read forms
+3. Remaining direct-Cypher display normalization
+- Target: the remaining display-style subset inside `27 success_wrong_rows`.
+- Scope: string escaping, quote rendering, map key order, and label order only
+  when the oracle contract supports canonical equivalence. The integer/float
+  and exponent-formatting slice was already promoted.
+
+4. Row-pipeline read forms
 - Target: `157` primary-family xfails, issue `#43`.
 - Scope: tiny tranches only, especially shapes already represented by existing
   row-pipeline helpers (`WITH`, `ORDER BY`, `LIMIT`, `SKIP`, `UNWIND`).
@@ -36,12 +43,12 @@ direct-Cypher contract debt reduction.
   pygraphistry checkout with parser dependencies installed before broad
   promotion sweeps.
 
-4. Grouped aggregates over expanded MATCH
+5. Grouped aggregates over expanded MATCH
 - Target: `26` read-only relationship aggregate xfails, issue `#45`.
 - Scope: small grouped count/rollup cases that avoid OPTIONAL MATCH, path
   materialization, writes, and CALL/procedure semantics.
 
-5. Explicit defer list
+6. Explicit defer list
 - Write clauses (`CREATE`, `MERGE`, `SET`, `DELETE`, `REMOVE`) remain lower ROI
   for the current read-only harness.
 - CALL/procedures remain niche and high risk.

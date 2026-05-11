@@ -41,7 +41,7 @@ def test_classify_primary_xfail_family_maps_representative_keys() -> None:
     assert classify_primary_xfail_family(_scenario("with-skip-limit1-2")) == "grouped-match-aggregates"
     assert classify_primary_xfail_family(_scenario("match7-29")) == "optional-match-null-extension"
     assert classify_primary_xfail_family(_scenario("unwind1-12")) == "row-pipeline-read-forms"
-    assert classify_primary_xfail_family(_scenario("expr-aggregation3-1")) == "expression-long-tail"
+    assert classify_primary_xfail_family(_scenario("expr-aggregation6-1-1")) == "expression-long-tail"
     assert classify_primary_xfail_family(_scenario("create1-1")) == "write-clauses"
     assert classify_primary_xfail_family(_scenario("call1-1")) == "procedures-and-call"
 
@@ -60,7 +60,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     assert by_lane["row-pipeline-read-forms"] == 157
     assert by_lane["optional-match-null-extension"] == 62
     assert by_lane["grouped-match-aggregates"] == 26
-    assert by_lane["expression-long-tail"] == 147
+    assert by_lane["expression-long-tail"] == 140
 
 
 def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
@@ -96,7 +96,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     )
     assert "Direct local Cypher non-validation triage samples:" in report
     assert "- success_wrong_rows:" in report
-    assert "expr-aggregation3-1 (expressions/aggregation)" in report
+    assert "expr-list12-3 (expressions/list)" in report
     assert "- unexpected_success_expected_error:" in report
     assert "match-where1-10 (clauses/match-where)" in report
 
@@ -105,9 +105,9 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
     assert samples["success_wrong_rows"] == [
-        "expr-aggregation3-1 (expressions/aggregation)",
         "expr-list12-3 (expressions/list)",
-        "... 32 more",
+        "expr-literals6-4 (expressions/literals)",
+        "... 25 more",
     ]
     assert samples["unexpected_success_expected_error"] == [
         "expr-list1-6-4 (expressions/list)",
