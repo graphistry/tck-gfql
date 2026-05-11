@@ -44,7 +44,16 @@ _STRING_KEYWORD_ROW_EQUIVALENCE_KEYS = {
     "expr-typeconversion4-4",
     "expr-typeconversion4-5",
 }
-_NUMERIC_STRING_RE = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
+_NUMERIC_CONTAINER_ROW_EQUIVALENCE_KEYS = {
+    "expr-literals7-7",
+    "expr-literals8-11",
+}
+_NUMERIC_TOKEN_PATTERN = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+_NUMERIC_STRING_RE = re.compile(rf"^{_NUMERIC_TOKEN_PATTERN}$")
+_NUMERIC_LIST_STRING_RE = re.compile(rf"^\[\s*({_NUMERIC_TOKEN_PATTERN})\s*\]$")
+_NUMERIC_MAP_STRING_RE = re.compile(
+    rf"^\{{\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*({_NUMERIC_TOKEN_PATTERN})\s*\}}$"
+)
 _NUMERIC_ROW_VALUE_PREFIX = "__tck_numeric__:"
 
 
@@ -120,6 +129,8 @@ def _normalize_row_value(value: Any, *, quote_keyword_strings: bool = False) -> 
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
+        if value.startswith(_NUMERIC_ROW_VALUE_PREFIX):
+            return value
         if value.startswith(("(", "[", "{", "<", "'")):
             return value
         if value in {"null", "true", "false"} and not quote_keyword_strings:
@@ -155,12 +166,33 @@ def _normalize_numeric_row_value(value: Any) -> Any:
     return value
 
 
+def _normalize_numeric_container_row_value(value: Any) -> Any:
+    if isinstance(value, (list, tuple)):
+        return [_normalize_numeric_container_row_value(v) for v in value]
+    if isinstance(value, dict):
+        return {
+            key: _normalize_numeric_container_row_value(nested)
+            for key, nested in value.items()
+        }
+    if isinstance(value, str):
+        list_match = _NUMERIC_LIST_STRING_RE.fullmatch(value)
+        if list_match:
+            return [_normalize_numeric_row_value(list_match.group(1))]
+        map_match = _NUMERIC_MAP_STRING_RE.fullmatch(value)
+        if map_match:
+            return {
+                map_match.group(1): _normalize_numeric_row_value(map_match.group(2))
+            }
+    return _normalize_numeric_row_value(value)
+
+
 def _normalize_rows(
     rows: Sequence[Dict[str, Any]],
     expected_keys: Sequence[str],
     *,
     numeric_equivalence: bool = False,
     quote_keyword_strings: bool = False,
+    numeric_container_equivalence: bool = False,
 ) -> List[Dict[str, Any]]:
     normalized = []
     for row in rows:
@@ -171,6 +203,8 @@ def _normalize_rows(
             value = row[key]
             if numeric_equivalence:
                 value = _normalize_numeric_row_value(value)
+            if numeric_container_equivalence:
+                value = _normalize_numeric_container_row_value(value)
             normalized_row[key] = _normalize_row_value(
                 value,
                 quote_keyword_strings=quote_keyword_strings,
@@ -205,17 +239,22 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
     expected_keys = sorted({key for row in expected_rows for key in row.keys()})
     numeric_equivalence = scenario.key in _NUMERIC_ROW_EQUIVALENCE_KEYS
     quote_keyword_strings = scenario.key in _STRING_KEYWORD_ROW_EQUIVALENCE_KEYS
+    numeric_container_equivalence = (
+        scenario.key in _NUMERIC_CONTAINER_ROW_EQUIVALENCE_KEYS
+    )
     expected_norm = _normalize_rows(
         expected_rows,
         expected_keys,
         numeric_equivalence=numeric_equivalence,
         quote_keyword_strings=quote_keyword_strings,
+        numeric_container_equivalence=numeric_container_equivalence,
     )
     actual_norm = _normalize_rows(
         actual_rows,
         expected_keys,
         numeric_equivalence=numeric_equivalence,
         quote_keyword_strings=quote_keyword_strings,
+        numeric_container_equivalence=numeric_container_equivalence,
     )
 
     if _rows_ordered(scenario):
@@ -376,6 +415,52 @@ def test_string_keyword_equivalence_is_not_global() -> None:
 
     with pytest.raises(AssertionError, match="unordered row mismatch"):
         _assert_expected_rows(scenario, [{"value": "true"}])
+
+
+def test_numeric_container_equivalence_is_allowlisted_for_list_literals() -> None:
+    scenario = Scenario(
+        key="expr-literals7-7",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN [-.1e-5]",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"literal": "[-0.000001]"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"literal": [-1e-06]}])
+
+
+def test_numeric_container_equivalence_is_allowlisted_for_map_literals() -> None:
+    scenario = Scenario(
+        key="expr-literals8-11",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN {k: -.1e-5}",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"literal": "{k: -0.000001}"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(scenario, [{"literal": {"k": -1e-06}}])
+
+
+def test_numeric_container_equivalence_is_not_global() -> None:
+    scenario = Scenario(
+        key="unit-numeric-container",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN [-.1e-5]",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"literal": "[-0.000001]"}]),
+        gfql=None,
+        status="supported",
+    )
+
+    with pytest.raises(AssertionError, match="unordered row mismatch"):
+        _assert_expected_rows(scenario, [{"literal": [-1e-06]}])
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:

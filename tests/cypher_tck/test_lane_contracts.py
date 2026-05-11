@@ -827,16 +827,18 @@ def test_expression_long_tail_tranche8_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE8_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == EXPRESSION_LONG_TAIL_TRANCHE8_EXPECTED_STATUS
-        for forbidden_tag in EXPRESSION_LONG_TAIL_TRANCHE8_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            EXPRESSION_LONG_TAIL_TRANCHE8_EXPECTED_STATUS,
+            EXPRESSION_LONG_TAIL_TRANCHE8_FORBIDDEN_TAGS,
+        )
 
 
 def test_expression_long_tail_tranche8_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in EXPRESSION_LONG_TAIL_TRANCHE8_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "expression-long-tail"
+        _assert_family_or_direct_promoted(scenario, "expression-long-tail")
 
 
 def test_expression_long_tail_tranche9_keys_exist() -> None:
