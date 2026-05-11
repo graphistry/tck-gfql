@@ -22,6 +22,7 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
 from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_KEYS
 from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from tests.cypher_tck.parse_cypher import _parse_literal
 from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
 
@@ -50,6 +51,10 @@ _NUMERIC_CONTAINER_ROW_EQUIVALENCE_KEYS = {
 }
 _LABEL_ORDER_ROW_EQUIVALENCE_KEYS = {
     "match3-7",
+}
+_MAP_KEY_ORDER_ROW_EQUIVALENCE_KEYS = {
+    "expr-literals7-18",
+    "expr-literals8-18",
 }
 _NUMERIC_TOKEN_PATTERN = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
 _NUMERIC_STRING_RE = re.compile(rf"^{_NUMERIC_TOKEN_PATTERN}$")
@@ -206,6 +211,22 @@ def _normalize_label_order_row_value(value: Any) -> Any:
     return value
 
 
+def _normalize_map_key_order_row_value(value: Any) -> Any:
+    if isinstance(value, (list, tuple)):
+        return [_normalize_map_key_order_row_value(v) for v in value]
+    if isinstance(value, dict):
+        return {
+            key: _normalize_map_key_order_row_value(nested)
+            for key, nested in value.items()
+        }
+    if isinstance(value, str) and value.startswith(("[", "{")):
+        try:
+            return _parse_literal(value, {})
+        except Exception:
+            return value
+    return value
+
+
 def _normalize_rows(
     rows: Sequence[Dict[str, Any]],
     expected_keys: Sequence[str],
@@ -214,6 +235,7 @@ def _normalize_rows(
     quote_keyword_strings: bool = False,
     numeric_container_equivalence: bool = False,
     label_order_equivalence: bool = False,
+    map_key_order_equivalence: bool = False,
 ) -> List[Dict[str, Any]]:
     normalized = []
     for row in rows:
@@ -228,6 +250,8 @@ def _normalize_rows(
                 value = _normalize_numeric_container_row_value(value)
             if label_order_equivalence:
                 value = _normalize_label_order_row_value(value)
+            if map_key_order_equivalence:
+                value = _normalize_map_key_order_row_value(value)
             normalized_row[key] = _normalize_row_value(
                 value,
                 quote_keyword_strings=quote_keyword_strings,
@@ -266,6 +290,7 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
         scenario.key in _NUMERIC_CONTAINER_ROW_EQUIVALENCE_KEYS
     )
     label_order_equivalence = scenario.key in _LABEL_ORDER_ROW_EQUIVALENCE_KEYS
+    map_key_order_equivalence = scenario.key in _MAP_KEY_ORDER_ROW_EQUIVALENCE_KEYS
     expected_norm = _normalize_rows(
         expected_rows,
         expected_keys,
@@ -273,6 +298,7 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
         quote_keyword_strings=quote_keyword_strings,
         numeric_container_equivalence=numeric_container_equivalence,
         label_order_equivalence=label_order_equivalence,
+        map_key_order_equivalence=map_key_order_equivalence,
     )
     actual_norm = _normalize_rows(
         actual_rows,
@@ -281,6 +307,7 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
         quote_keyword_strings=quote_keyword_strings,
         numeric_container_equivalence=numeric_container_equivalence,
         label_order_equivalence=label_order_equivalence,
+        map_key_order_equivalence=map_key_order_equivalence,
     )
 
     if _rows_ordered(scenario):
@@ -518,6 +545,40 @@ def test_label_order_equivalence_is_not_global() -> None:
 
     with pytest.raises(AssertionError, match="unordered row mismatch"):
         _assert_expected_rows(scenario, [{"n": "(:A:B)"}])
+
+
+def test_map_key_order_equivalence_is_allowlisted_for_nested_literals() -> None:
+    scenario = Scenario(
+        key="expr-literals8-18",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN {b: {d: 'z', c: [2, 1]}, a: 3} AS literal",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"literal": "{b: {d: 'z', c: [2, 1]}, a: 3}"}]),
+        gfql=None,
+        status="xfail",
+    )
+
+    _assert_expected_rows(
+        scenario,
+        [{"literal": "{a: 3, b: {c: [2, 1], d: 'z'}}"}],
+    )
+
+
+def test_map_key_order_equivalence_is_not_global() -> None:
+    scenario = Scenario(
+        key="unit-map-key-order",
+        feature_path="unit.feature",
+        scenario="unit",
+        cypher="RETURN {b: 1, a: 2} AS literal",
+        graph=GraphFixture(nodes=[], edges=[]),
+        expected=Expected(rows=[{"literal": "{b: 1, a: 2}"}]),
+        gfql=None,
+        status="supported",
+    )
+
+    with pytest.raises(AssertionError, match="unordered row mismatch"):
+        _assert_expected_rows(scenario, [{"literal": "{a: 2, b: 1}"}])
 
 
 def _ids_from_df(df: Any, id_col: str) -> set:
