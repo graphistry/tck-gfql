@@ -70,15 +70,6 @@ DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "expr-list1-6-4",
     "expr-typeconversion4-10-1",
     "expr-typeconversion4-10-2",
-    # match-where1-10: disjunctive WHERE predicate (`p1 = 12 OR p2 = 13`).
-    # Now parses + executes under pygraphistry #1217's Earley swap; the
-    # scenario only carries `node_ids`, no row-level oracle, so the TCK
-    # runner returns ``unexpected_success_expected_error``.  Native
-    # row-level validation lives in pygraphistry's
-    # test_string_cypher_executes_disjunctive_property_predicate_returns_union
-    # (see #1217).  Static-validation gap on row-boolean shapes tracked
-    # in pygraphistry/#1219.
-    "match-where1-10",
 )
 
 DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
@@ -160,6 +151,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-orderby3-2-4",
     "with-orderby3-2-5",
     "with-orderby3-2-6",
+    "match-where1-10",
     "match-where3-3",
     "match3-1",
     "match3-5",

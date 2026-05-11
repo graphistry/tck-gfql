@@ -83,6 +83,10 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Primary xfail families (disjoint heuristic):" in report
     assert "Priority candidate lanes:" in report
     assert "Supported-subset correctness / failfast audit" in report
+    assert (
+        "Promoted via direct Cypher string only (status/tagged): "
+        "868 (rows 755, errors 113)"
+    ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
     assert "Direct local Cypher xfail contract:" in report
@@ -98,7 +102,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "- success_wrong_rows:" in report
     assert "expr-list12-3 (expressions/list)" in report
     assert "- unexpected_success_expected_error:" in report
-    assert "match-where1-10 (clauses/match-where)" in report
+    assert "expr-typeconversion4-10-2 (expressions/typeConversion)" in report
 
 
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
@@ -112,7 +116,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     assert samples["unexpected_success_expected_error"] == [
         "expr-list1-6-4 (expressions/list)",
         "expr-typeconversion4-10-1 (expressions/typeConversion)",
-        "... 2 more",
+        "... 1 more",
     ]
 
 

@@ -351,6 +351,85 @@ def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
     return pdf.to_dict("records")
 
 
+def _ids_from_entity_projection_meta(
+    result: object,
+    *,
+    table: str,
+    alias_hint: str | None = None,
+) -> set:
+    meta = getattr(result, "_cypher_entity_projection_meta", None)
+    if not isinstance(meta, dict):
+        return set()
+
+    candidates: List[object] = []
+    if alias_hint is not None:
+        candidate = meta.get(alias_hint)
+        if candidate is not None:
+            candidates = [candidate]
+    else:
+        candidates = [
+            candidate
+            for candidate in meta.values()
+            if isinstance(candidate, dict) and candidate.get("table") == table
+        ]
+
+    if len(candidates) != 1:
+        return set()
+
+    candidate = candidates[0]
+    if not isinstance(candidate, dict) or candidate.get("table") != table:
+        return set()
+
+    ids = candidate.get("ids")
+    if ids is None:
+        return set()
+
+    values = ids.tolist() if hasattr(ids, "tolist") else list(ids)
+    normalized = set()
+    for value in values:
+        if hasattr(value, "item") and not isinstance(value, (str, bytes, list, tuple, dict)):
+            try:
+                value = value.item()
+            except Exception:
+                pass
+        if value is not None:
+            normalized.add(value)
+    return normalized
+
+
+def _assert_expected_graph_result(scenario: Scenario, result: object) -> None:
+    actual_nodes = _ids_from_df(getattr(result, "_nodes", None), scenario.graph.node_id)
+    actual_edges = _ids_from_df(getattr(result, "_edges", None), scenario.graph.edge_id)
+    if scenario.expected.node_ids is not None and not actual_nodes:
+        actual_nodes = _ids_from_entity_projection_meta(
+            result,
+            table="nodes",
+            alias_hint=scenario.return_alias,
+        )
+    if scenario.expected.edge_ids is not None and not actual_edges:
+        actual_edges = _ids_from_entity_projection_meta(
+            result,
+            table="edges",
+            alias_hint=scenario.return_alias,
+        )
+
+    if scenario.expected.node_ids is not None:
+        assert set(scenario.expected.node_ids) == actual_nodes, (
+            f"node id mismatch for {scenario.key}: "
+            f"expected={sorted(set(scenario.expected.node_ids))}, "
+            f"actual={sorted(actual_nodes)}"
+        )
+    if scenario.expected.edge_ids is not None:
+        assert set(scenario.expected.edge_ids) == actual_edges, (
+            f"edge id mismatch for {scenario.key}: "
+            f"expected={sorted(set(scenario.expected.edge_ids))}, "
+            f"actual={sorted(actual_edges)}"
+        )
+    assert scenario.expected.node_ids is not None or scenario.expected.edge_ids is not None, (
+        f"direct Cypher scenario {scenario.key} has no row or graph oracle"
+    )
+
+
 @pytest.mark.parametrize(
     "key",
     [
@@ -484,6 +563,21 @@ def test_match7_9_is_direct_only_promoted_not_phase_promoted() -> None:
     assert "phase1-executor" not in scenario.tags
 
 
+def test_match_where1_10_direct_cypher_graph_id_promotion() -> None:
+    scenario = next(s for s in SCENARIOS if s.key == "match-where1-10")
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" not in scenario.tags
+    assert scenario.expected.node_ids == ["a", "b"]
+
+    result = _build_graph(scenario.graph).gfql(
+        scenario.cypher,
+        params=scenario.params,
+        engine="pandas",
+    )
+    _assert_expected_graph_result(scenario, result)
+
+
 def _direct_cypher_xfail_outcome(scenario: Scenario) -> str:
     g = _build_graph(scenario.graph)
     try:
@@ -598,10 +692,16 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
                     g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
         else:
             pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
-            _assert_expected_rows(scenario, _rows_from_result(pandas_result))
+            if scenario.expected.rows is not None:
+                _assert_expected_rows(scenario, _rows_from_result(pandas_result))
+            else:
+                _assert_expected_graph_result(scenario, pandas_result)
             if _TEST_CUDF and _HAS_CUDF:
                 cudf_result = g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
-                _assert_expected_rows(scenario, _rows_from_result(cudf_result))
+                if scenario.expected.rows is not None:
+                    _assert_expected_rows(scenario, _rows_from_result(cudf_result))
+                else:
+                    _assert_expected_graph_result(scenario, cudf_result)
         return
 
     assert scenario.gfql is not None

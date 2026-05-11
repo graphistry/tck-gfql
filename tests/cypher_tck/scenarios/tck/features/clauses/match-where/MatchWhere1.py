@@ -162,7 +162,7 @@ SCENARIOS = [
         expected=Expected(node_ids=["a", "b"]),
         gfql=None,
         status="xfail",
-        reason="Now parses + executes correctly under Earley (pygraphistry #1217); kept xfail until broader OR-disjunction conformance is validated.  Tracked as `success_matches_expected` in the xfail-contract.",
+        reason="Direct-Cypher graph-id oracle is promoted via snapshot; GFQL translation remains absent.",
         tags=("match-where", "or", "xfail", "earley-success"),
     ),
 

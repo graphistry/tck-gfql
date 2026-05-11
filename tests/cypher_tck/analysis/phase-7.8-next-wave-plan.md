@@ -4,7 +4,7 @@ Date: 2026-05-10
 Branch: `main`
 
 ## Objective
-Move from the current `2844 supported / 783 xfail / 0 supported_impure`
+Move from the current `2845 supported / 782 xfail / 0 supported_impure`
 checkpoint toward higher conformance without widening the blast radius. The
 old `10 -> 0` supported-impure burn-down is complete in the live report; the
 next useful slices are dependency hygiene, small P1 xfail promotions, and
@@ -22,12 +22,15 @@ direct-Cypher contract debt reduction.
   this repo; prefer explicit install commands such as
   `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh`.
 
-2. Direct-Cypher expected-error drift audit
-- Target: `4` tracked `unexpected_success_expected_error` direct-Cypher xfails.
-- Current direct-Cypher non-validation debt: `31` total
-  (`27 success_wrong_rows`, `4 unexpected_success_expected_error`).
-- Scope: inspect each expected-error key with the focused detail command and
-  promote or reclassify only cases whose current result matches the TCK oracle.
+2. Direct-Cypher expected-error drift audit (partially done)
+- Result: `match-where1-10` now promotes via direct-Cypher graph-id validation.
+- Remaining target: `3` tracked `unexpected_success_expected_error`
+  direct-Cypher xfails.
+- Current direct-Cypher non-validation debt: `30` total
+  (`27 success_wrong_rows`, `3 unexpected_success_expected_error`).
+- Scope: keep the remaining expected-error keys as debt unless pygraphistry
+  starts raising the expected runtime errors or the TCK scenario gains a valid
+  success oracle.
 
 3. Remaining direct-Cypher display normalization
 - Target: the remaining display-style subset inside `27 success_wrong_rows`.

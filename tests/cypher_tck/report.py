@@ -183,13 +183,13 @@ def build_report() -> str:
         1
         for scenario in SCENARIOS
         if _is_cypher_string_supported_scenario(scenario)
-        and getattr(getattr(scenario, "expected", None), "rows", None) is not None
+        and "cypher-string-error" not in getattr(scenario, "tags", ())
     )
     cypher_string_supported_errors = sum(
         1
         for scenario in SCENARIOS
         if _is_cypher_string_supported_scenario(scenario)
-        and getattr(getattr(scenario, "expected", None), "rows", None) is None
+        and "cypher-string-error" in getattr(scenario, "tags", ())
     )
     translated_xfail = sum(
         1

@@ -2483,6 +2483,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-typeconversion3-3",
     "expr-typeconversion3-5",
     "expr-typeconversion4-7",
+    "match-where1-10",
     "match-where1-11",
     "match-where3-1",
     "match-where3-2",
