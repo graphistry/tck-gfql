@@ -8,6 +8,12 @@ WORKFLOW_FILES = (
     Path(".github/workflows/ci.yml"),
     Path(".github/workflows/nightly.yml"),
 )
+LOCAL_GUIDANCE_FILES = (
+    Path("README.md"),
+    Path("DEVELOP.md"),
+    Path("tests/cypher_tck/analysis/phase-7.8-next-wave-plan.md"),
+    Path("tests/cypher_tck/analysis/phase-7.8-post-wave-gap-inventory.md"),
+)
 
 MIN_ACTION_MAJORS = {
     "actions/checkout": 6,
@@ -45,3 +51,30 @@ def test_ci_action_majors_meet_minimums() -> None:
             assert observed >= min_major, (
                 f"{workflow_path}: {action}@v{observed} is below required v{min_major}"
             )
+
+
+def test_ci_preflight_checks_graphistry_row_expression_parser_backend() -> None:
+    ci_script = Path("bin/ci.sh").read_text(encoding="utf-8")
+
+    assert "graphistry.compute.gfql.expr_parser" in ci_script
+    assert 'parse_expr("1 = 1")' in ci_script
+    assert "lark parser package" in ci_script
+    assert "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh" in ci_script
+
+
+def test_local_pygraphistry_full_harness_guidance_uses_editable_install() -> None:
+    editable_install_command = re.compile(
+        r"PYGRAPHISTRY_INSTALL=1\s+PYGRAPHISTRY_PATH=\S+\s+\./bin/ci\.sh"
+    )
+    source_only_full_harness_command = re.compile(
+        r"(?<!PYGRAPHISTRY_INSTALL=1\s)PYGRAPHISTRY_PATH=\S+\s+\./bin/ci\.sh"
+    )
+
+    for path in LOCAL_GUIDANCE_FILES:
+        text = path.read_text(encoding="utf-8")
+        assert editable_install_command.search(text), (
+            f"{path}: missing editable pygraphistry install guidance"
+        )
+        assert source_only_full_harness_command.search(text) is None, (
+            f"{path}: full-harness sibling checkout guidance must install dependencies"
+        )
