@@ -283,11 +283,7 @@ ROW_PIPELINE_TRANCHE13_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 
 # Issue #43 tranche-14: row-pipeline expression forms (final residual sweep).
 ROW_PIPELINE_TRANCHE14_KEYS: Final[tuple[str, ...]] = (
-    "expr-string8-4",
-    "expr-string8-5",
     "expr-string8-8",
-    "expr-string9-4",
-    "expr-string9-5",
     "expr-string9-8",
     "expr-aggregation2-11",
     "expr-aggregation2-12",
@@ -722,7 +718,6 @@ EXPRESSION_LONG_TAIL_TRANCHE7_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 EXPRESSION_LONG_TAIL_TRANCHE8_KEYS: Final[tuple[str, ...]] = (
     "expr-list12-4",
     "expr-list12-6",
-    "expr-literals6-4",
     "expr-literals6-5",
     "expr-literals7-7",
     "expr-literals7-18",
@@ -730,8 +725,6 @@ EXPRESSION_LONG_TAIL_TRANCHE8_KEYS: Final[tuple[str, ...]] = (
     "expr-literals8-18",
     "expr-path2-1",
     "expr-path2-2",
-    "expr-string10-4",
-    "expr-string10-5",
 )
 
 EXPRESSION_LONG_TAIL_TRANCHE8_EXPECTED_STATUS: Final[str] = "xfail"

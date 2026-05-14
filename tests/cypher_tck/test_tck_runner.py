@@ -140,11 +140,21 @@ def _normalize_row_value(value: Any, *, quote_keyword_strings: bool = False) -> 
     if isinstance(value, str):
         if value.startswith(_NUMERIC_ROW_VALUE_PREFIX):
             return value
-        if value.startswith(("(", "[", "{", "<", "'")):
+        if value.startswith(("(", "[", "{", "<")):
+            return value
+        if value.startswith("'") and value.endswith("'") and len(value) > 1:
             return value
         if value in {"null", "true", "false"} and not quote_keyword_strings:
             return value
-        return f"'{value}'"
+        escaped = (
+            value
+            .replace("\\", "\\\\")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+            .replace("'", "\\'")
+        )
+        return f"'{escaped}'"
     if isinstance(value, (list, tuple)):
         return "[" + ", ".join(
             str(_normalize_row_value(v, quote_keyword_strings=quote_keyword_strings))

@@ -928,7 +928,7 @@ def test_expression_long_tail_tranches_are_disjoint() -> None:
 
 def test_row_pipeline_contract_coverage_floor() -> None:
     # Keep row-pipeline lane coverage non-decreasing across follow-on tranche work.
-    coverage_floor = 158  # 6 + 12 + 21 + 20 + 15 + 15 + 15 + 7 + 6 + 5 + 4 + 4 + 4 + 24
+    coverage_floor = 154  # 6 + 12 + 21 + 20 + 15 + 15 + 15 + 7 + 6 + 5 + 4 + 4 + 4 + 20
     covered = (
         set(ROW_PIPELINE_TRANCHE1_KEYS)
         | set(ROW_PIPELINE_TRANCHE2_KEYS)
@@ -950,7 +950,7 @@ def test_row_pipeline_contract_coverage_floor() -> None:
 
 def test_expression_long_tail_contract_coverage_floor() -> None:
     # Keep expression long-tail lane coverage non-decreasing across tranche expansion.
-    coverage_floor = 176  # 42 + 27 + 12 + 15 + 15 + 24 + 20 + 12 + 9
+    coverage_floor = 173  # 42 + 27 + 12 + 15 + 15 + 24 + 20 + 9 + 9
     covered = (
         set(EXPRESSION_LONG_TAIL_TRANCHE1_KEYS)
         | set(EXPRESSION_LONG_TAIL_TRANCHE2_KEYS)
