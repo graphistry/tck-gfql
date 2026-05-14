@@ -24,16 +24,16 @@ direct-Cypher contract debt reduction.
 
 2. Direct-Cypher expected-error drift audit (partially done)
 - Result: `match-where1-10` now promotes via direct-Cypher graph-id validation.
-- Remaining target: `3` tracked `unexpected_success_expected_error`
+- Remaining target: `1` tracked `unexpected_success_expected_error`
   direct-Cypher xfails.
-- Current direct-Cypher non-validation debt: `21` total
-  (`18 success_wrong_rows`, `3 unexpected_success_expected_error`).
+- Current direct-Cypher non-validation debt: `12` total
+  (`11 success_wrong_rows`, `1 unexpected_success_expected_error`).
 - Scope: keep the remaining expected-error keys as debt unless pygraphistry
   starts raising the expected runtime errors or the TCK scenario gains a valid
   success oracle.
 
 3. Remaining direct-Cypher display normalization
-- Target: the remaining display-style subset inside `18 success_wrong_rows`.
+- Target: the remaining display-style subset inside `11 success_wrong_rows`.
 - Scope: string escaping, quote rendering, map key order, and label order only
   when the oracle contract supports canonical equivalence. The integer/float
   and exponent-formatting slice was already promoted, and the

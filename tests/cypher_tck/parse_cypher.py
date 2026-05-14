@@ -302,7 +302,33 @@ def _extract_create_clauses(script: str) -> List[str]:
 
 
 def _normalize_script(script: str) -> str:
-    return " ".join(line.strip() for line in script.strip().splitlines())
+    parts: List[str] = []
+    in_quote = False
+    whitespace_pending = False
+
+    for ch in script.strip():
+        if ch == "'":
+            if whitespace_pending and not in_quote and parts:
+                parts.append(" ")
+            whitespace_pending = False
+            in_quote = not in_quote
+            parts.append(ch)
+            continue
+
+        if in_quote:
+            parts.append(ch)
+            continue
+
+        if ch.isspace():
+            whitespace_pending = True
+            continue
+
+        if whitespace_pending and parts:
+            parts.append(" ")
+        whitespace_pending = False
+        parts.append(ch)
+
+    return "".join(parts).strip()
 
 
 def _extract_unwind_bindings(script: str) -> Tuple[List[Dict[str, Any]], str]:

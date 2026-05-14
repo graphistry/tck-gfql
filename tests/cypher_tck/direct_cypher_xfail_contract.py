@@ -31,14 +31,7 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-list12-3",
-    "expr-literals6-4",
     "expr-literals6-5",
-    "expr-string10-4",
-    "expr-string10-5",
-    "expr-string8-4",
-    "expr-string8-5",
-    "expr-string9-4",
-    "expr-string9-5",
     "expr-pattern1-13",
     "expr-pattern1-18",
     "expr-pattern1-10",
@@ -59,8 +52,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
     "expr-list1-6-4",
-    "expr-typeconversion4-10-1",
-    "expr-typeconversion4-10-2",
 )
 
 DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (

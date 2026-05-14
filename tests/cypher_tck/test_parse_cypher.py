@@ -73,6 +73,18 @@ def test_parse_create_nested_list_and_map_literals() -> None:
     assert edge["attrs"] == {"score": 1.5, "flags": [False, True]}
 
 
+def test_parse_create_preserves_newlines_inside_string_literals() -> None:
+    script = """
+    CREATE (:TheLabel {name: 'Foo Foo'}),
+           (:TheLabel {name: 'Foo
+Foo'}),
+           (:TheLabel {name: 'Foo\tFoo'})
+    """
+    fixture = graph_fixture_from_create(script)
+    names = [node.get("name") for node in fixture.nodes]
+    assert names == ["Foo Foo", "Foo\nFoo", "Foo\tFoo"]
+
+
 def test_parse_unwind_create_scalar_expansion() -> None:
     script = """
     UNWIND [1, 2, 3] AS i

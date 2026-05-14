@@ -48,16 +48,16 @@ because local pygraphistry compatibility can still expose fallback paths.
 Source command:
 `python -m tests.cypher_tck.sweep_direct_cypher --show-nonvalidation-debt`
 
-Current split is `18 success_wrong_rows` and
-`3 unexpected_success_expected_error`. The focused details suggest the debt is
+Current split is `11 success_wrong_rows` and
+`1 unexpected_success_expected_error`. The focused details suggest the debt is
 not one uniform class:
 
 | likely class | keys | note |
 |---|---:|---|
-| Numeric/string/display normalization | 2 | Remaining string escaping display mismatches: `expr-literals6-4`, `expr-literals6-5`. Seven integer/float and exponent-formatting cases were promoted by the Step 17 numeric-equivalence slice; four `toString(boolean)` string-keyword rendering cases, two nested numeric literal display cases, one label-order display case, and two nested map key-order cases were promoted by later normalization slices. |
+| Numeric/string/display normalization | 1 | Remaining string escaping display mismatch: `expr-literals6-5`. Seven integer/float and exponent-formatting cases were promoted by the Step 17 numeric-equivalence slice; four `toString(boolean)` string-keyword rendering cases, two nested numeric literal display cases, one label-order display case, two nested map key-order cases, and `expr-literals6-4` were promoted by later normalization slices. |
 | Row-shape or post-aggregation expression mismatch | 3 | `expr-list12-3`, `return2-10`, `return2-9`. Direct inspection showed these are not safe alias-only harness fixes: the runtime returns an unevaluated post-aggregation value/list or a different row cardinality. |
-| Pattern/string/match semantic mismatch | 13 | Duplicate or missing rows for pattern predicates, string trim/newline cases, relationship expansion, and WITH join. Examples: `expr-pattern1-13`, `expr-string10-5`, `match5-25`, `with2-1`. Treat as likely pygraphistry-side until proven otherwise. |
-| Expected-error contract drift | 3 | `expr-list1-6-4`, `expr-typeconversion4-10-1`, `expr-typeconversion4-10-2`. `match-where1-10` now promotes via the direct-Cypher graph-id oracle after the runner learned to validate node/edge IDs for string-query promotions. |
+| Pattern/match semantic mismatch | 10 | Duplicate or missing rows for pattern predicates, relationship expansion, and WITH join. Examples: `expr-pattern1-13`, `match5-25`, `with2-1`. Treat as likely pygraphistry-side until proven otherwise. |
+| Expected-error contract drift | 1 | `expr-list1-6-4`. `expr-typeconversion4-10-1` and `expr-typeconversion4-10-2` moved back to validation-safe xfail after pygraphistry #1429 rejected `toString()` over list/map literal items in list comprehensions. `match-where1-10` now promotes via the direct-Cypher graph-id oracle after the runner learned to validate node/edge IDs for string-query promotions. |
 
 High-return repo-only follow-up:
 - The remaining `unexpected_success_expected_error` cases are runtime-error
