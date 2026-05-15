@@ -103,6 +103,8 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "match5-8 (clauses/match)" in report
     assert "- success_wrong_rows:" in report
     assert "expr-pattern1-10 (expressions/pattern)" in report
+    assert "- unexpected_success_expected_error:" not in report
+    assert "expr-list1-6-4 (expressions/list)" not in report
 
 
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
@@ -116,6 +118,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
         "expr-pattern1-13 (expressions/pattern)",
         "... 5 more",
     ]
+    assert "unexpected_success_expected_error" not in samples
 
 
 def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None:
