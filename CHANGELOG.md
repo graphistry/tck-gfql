@@ -9,7 +9,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
-- **Direct-Cypher CI preflight**: Added `test_direct_cypher_contract_fastfail.py` and wired `./bin/ci.sh` to run it before the full suite so sibling-target non-validation outcome drift fails early with key-level diagnostics.
+- **Direct-Cypher row promotions (string/typeconversion contract)**: Extended `parse_cypher` string literal handling, promoted `expr-literals6-4`, `expr-string8-{4,5}`, `expr-string9-{4,5}`, `expr-string10-{4,5}` to `success_matches_expected`, and rebaselined the related lane/contract/report assertions (PR #104).
+- **Direct-Cypher row promotions (map-key-order)**: Allowlisted map-key-order row-normalization; promoted `expr-literals7-18` and `expr-literals8-18` to `success_matches_expected` (PR #102).
+- **Direct-Cypher row promotions (label-order)**: Allowlisted label-order row-normalization for node labels; promoted `match3-7` (PR #101).
+- **Direct-Cypher row promotions (nested numeric literals)**: Allowlisted nested numeric container normalization for simple list/map displays; promoted `expr-literals7-7` and `expr-literals8-11` (PR #100).
+- **Direct-Cypher row promotions (string keywords)**: Allowlisted `toString(boolean)` string-keyword row normalization (recurses through lists); promoted `expr-typeconversion4-{2,3,4,5}` (PR #99).
+- **Direct-Cypher graph-id success oracle**: Added harness support for direct-Cypher success cases whose expected oracle is node/edge ids rather than row dicts; promoted `match-where1-10` (PR #98).
+- **Direct-Cypher row promotions (numeric formatting)**: Allowlisted numeric row-equivalence for audited float-format mismatches; promoted `expr-aggregation3-1` and `expr-literals5-{5,6,11,12,25,26}` (PR #97).
+- **Direct-Cypher non-validation taxonomy**: Phase 7.8 analysis docs classify remaining non-validation debt into normalization/row-shape/semantic/expected-error buckets (PR #96).
+- **Direct-Cypher non-validation detail command**: `python -m tests.cypher_tck.sweep_direct_cypher --show-nonvalidation-debt [--nonvalidation-limit N]` prints expected bucket + current pass/detail for tracked non-validation xfails (PR #95).
+- **Full TCK harness module preflight**: `./bin/ci.sh` now fails fast when `graphistry.gfql.ref.enumerator` or `graphistry.tests.test_compute` are missing, with editable-install guidance (PR #94).
+- **Parser preflight guard tests**: Static guards in `test_workflow_action_versions.py` pin the row-pipeline + parser-backend + full-harness module preflight in `bin/ci.sh` and `PYGRAPHISTRY_INSTALL=1` editable-install guidance in docs (PR #93).
+- **Direct-Cypher CI preflight**: Added `test_direct_cypher_contract_fastfail.py` and wired `./bin/ci.sh` to run it before the full suite so sibling-target non-validation outcome drift fails early with key-level diagnostics (PR #88).
 - **CI guardrails**: Added `test_workflow_action_versions.py` to enforce minimum GitHub Action major versions in `ci.yml` and `nightly.yml` (`checkout>=v6`, `setup-python>=v6`, `setup-uv>=v7`).
 - **CI observability**: Added a non-blocking `CI observability summary` step to `ci.yml` and `nightly.yml` that runs `python -m tests.cypher_tck.report` on every run (`if: always()`) and appends conformance/lane metrics to GitHub step summaries.
 - **TCK contract**: Promoted `match5-21..24` to `success_matches_expected` — multi-hop connected patterns with row bindings now pass (pygraphistry #973).
@@ -64,6 +75,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-null{1,2}-3` from `success_wrong_rows` to `success_matches_expected`.
 
 ### Changed
+- **Repo hygiene**: Gitignored `.claude/settings.local.json` (per-user permission allowlist) and `.claude/scheduled_tasks.lock` (per-session state) so local Claude Code use does not leak into `git status` (PR #103).
 - **CI workflows**: Centralized shared runtime pins (`PYTHON_VERSION`, `UV_VERSION`, `UV_EXCLUDE_NEWER`) and added inline compatibility notes in `ci.yml` and `nightly.yml` to keep workflow behavior aligned.
 - **CI workflows**: Upgraded GitHub Actions versions to Node24-era majors in `ci.yml` and `nightly.yml` (`actions/checkout@v6`, `actions/setup-python@v6`, `astral-sh/setup-uv@v7`) to avoid pending Node20 deprecation breakage.
 - **TCK xfail reason**: Updated `unwind1` scenario reason to reflect the multi-alias row-scope limitation that replaced the old parser/lowering block.
