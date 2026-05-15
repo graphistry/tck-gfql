@@ -111,7 +111,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     assert samples["success_wrong_rows"] == [
         "expr-pattern1-10 (expressions/pattern)",
         "expr-pattern1-13 (expressions/pattern)",
-        "... 6 more",
+        "... 5 more",
     ]
     assert samples["unexpected_success_expected_error"] == [
         "expr-list1-6-4 (expressions/list)",

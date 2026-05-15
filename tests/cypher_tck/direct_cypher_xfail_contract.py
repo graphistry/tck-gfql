@@ -35,7 +35,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-10",
     "match5-25",
     "match5-26",
-    "match5-8",
     "return2-9",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
@@ -150,8 +149,9 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-where3-3",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # Keep this bucket for future sibling-target drift that returns expected rows
-    # but has not yet been promoted through direct_cypher_support.py.
+    # Sibling-target drift that now returns expected rows but has not yet been
+    # promoted through direct_cypher_support.py.
+    "match5-8",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
