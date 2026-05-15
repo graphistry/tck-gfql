@@ -110,7 +110,8 @@ def _tag_scenario(scenario: Scenario) -> Scenario:
 
 
 _CLAUSE_RE = re.compile(
-    r"(?im)^\s*(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\b"
+    r"(?im)(?:^\s*(OPTIONAL MATCH|ORDER BY|MATCH|WHERE|WITH|RETURN|UNWIND|SKIP|LIMIT|CREATE|MERGE|DELETE|SET|REMOVE|CALL)\b)"
+    r"|(?:\s(SKIP|LIMIT)\b)"
 )
 _ORDER_DIR_RE = re.compile(r"(?is)^(?P<expr>.+?)\s+(?P<dir>asc(?:ending)?|desc(?:ending)?)$")
 _WITH_ORDERBY_KEY_RE = re.compile(
@@ -136,7 +137,7 @@ def _split_clauses(cypher: str) -> Tuple[Tuple[str, str], ...]:
     for idx, match in enumerate(matches):
         start = match.end()
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
-        clause = match.group(1).upper()
+        clause = (match.group(1) or match.group(2)).upper()
         body = text[start:end].strip()
         clauses.append((clause, body))
     return tuple(clauses)

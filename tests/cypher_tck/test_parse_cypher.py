@@ -1,4 +1,5 @@
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
+from tests.cypher_tck.scenarios import _plan_from_cypher
 
 
 def test_parse_create_nodes_only():
@@ -103,3 +104,25 @@ def test_parse_unwind_create_string_expansion() -> None:
     fixture = graph_fixture_from_create(script)
     names = sorted(node.get("name") for node in fixture.nodes)
     assert names == ["a", "b", "c"]
+
+
+def test_plan_from_cypher_splits_order_by_skip_on_same_line() -> None:
+    cypher = """
+    MATCH ()-[r1]->(x)
+    WITH x, sum(r1.num) AS c
+      ORDER BY c SKIP 1
+    RETURN x, c
+    """
+    ops = tuple(step.op for step in _plan_from_cypher(cypher))
+    assert ops == ("match", "with", "order_by", "skip", "select")
+
+
+def test_plan_from_cypher_splits_order_by_limit_on_same_line() -> None:
+    cypher = """
+    MATCH ()-[r1]->(x)
+    WITH x, sum(r1.num) AS c
+      ORDER BY c LIMIT 1
+    RETURN x, c
+    """
+    ops = tuple(step.op for step in _plan_from_cypher(cypher))
+    assert ops == ("match", "with", "order_by", "limit", "select")
