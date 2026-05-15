@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "917 (rows 778, errors 139)"
+        "919 (rows 780, errors 139)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -102,7 +102,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "- success_matches_expected:" in report
     assert "match5-8 (clauses/match)" in report
     assert "- success_wrong_rows:" in report
-    assert "match5-25 (clauses/match)" in report
+    assert "with2-1 (clauses/with)" in report
     assert "- unexpected_success_expected_error:" not in report
     assert "expr-list1-6-4 (expressions/list)" not in report
 
@@ -114,9 +114,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
         "match5-8 (clauses/match)",
     ]
     assert samples["success_wrong_rows"] == [
-        "match5-25 (clauses/match)",
-        "match5-26 (clauses/match)",
-        "... 1 more",
+        "with2-1 (clauses/with)",
     ]
     assert "unexpected_success_expected_error" not in samples
 
