@@ -5,6 +5,8 @@ from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
 from tests.cypher_tck.scenarios.fixtures import (
     MATCH5_GRAPH,
+    MATCH5_GRAPH_DEPTH5,
+    MATCH5_GRAPH_REVERSED_ROOT_DEPTH5,
     MATCH7_GRAPH_SINGLE,
     MATCH7_GRAPH_AB,
     MATCH7_GRAPH_ABC,
@@ -534,7 +536,7 @@ SCENARIOS = [
         feature_path="tck/features/clauses/match/Match5.feature",
         scenario="[25] Handling a variable length relationship and a standard relationship in chain, longer 3",
         cypher="MATCH (a:A)\nMATCH (a)-[:LIKES]->()-[:LIKES*3]->(c)\nRETURN c.name",
-        graph=MATCH5_GRAPH,
+        graph=MATCH5_GRAPH_DEPTH5,
         expected=Expected(
             rows=[
                 {"c.name": "'n00000'"},
@@ -566,7 +568,7 @@ SCENARIOS = [
         feature_path="tck/features/clauses/match/Match5.feature",
         scenario="[26] Handling mixed relationship patterns and directions 1",
         cypher="MATCH (a:A)\nMATCH (a)<-[:LIKES]-()-[:LIKES*3]->(c)\nRETURN c.name",
-        graph=MATCH5_GRAPH,
+        graph=MATCH5_GRAPH_REVERSED_ROOT_DEPTH5,
         expected=Expected(
             rows=[
                 {"c.name": "'n00000'"},
