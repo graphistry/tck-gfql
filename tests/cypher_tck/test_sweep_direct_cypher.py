@@ -54,7 +54,7 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
     scenarios = [
         scenario
         for scenario in SCENARIOS
-        if scenario.key in {"expr-list1-6-4", "expr-literals6-5"}
+        if scenario.key in {"expr-list1-6-4", "expr-list12-3"}
     ]
 
     def fake_run(scenario):
@@ -65,7 +65,7 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
         sweep_direct_cypher,
         "DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY",
         {
-            "expr-literals6-5": "success_wrong_rows",
+            "expr-list12-3": "success_wrong_rows",
             "expr-list1-6-4": "unexpected_success_expected_error",
         },
     )
@@ -80,10 +80,10 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
             "detail for expr-list1-6-4",
         ),
         (
-            "expr-literals6-5",
+            "expr-list12-3",
             "success_wrong_rows",
             False,
-            "detail for expr-literals6-5",
+            "detail for expr-list12-3",
         ),
     ]
 
