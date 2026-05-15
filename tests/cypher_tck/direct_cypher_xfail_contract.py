@@ -30,9 +30,6 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    "expr-pattern1-10",
-    "expr-pattern1-13",
-    "expr-pattern1-18",
     "match5-25",
     "match5-26",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
@@ -86,11 +83,14 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-mathematical8-2",
     "expr-null1-3",
     "expr-null2-3",
+    "expr-pattern1-10",
     "expr-pattern1-12",
+    "expr-pattern1-13",
     "expr-pattern1-14",
     "expr-pattern1-15",
     "expr-pattern1-16",
     "expr-pattern1-17",
+    "expr-pattern1-18",
     "expr-precedence2-1-10",
     "expr-precedence2-1-11",
     "expr-precedence2-1-12",
