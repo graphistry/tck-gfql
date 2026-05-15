@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - **Direct-Cypher error promotions (`range()` invalid arguments)**: Promoted the 26 `expr-list11-4-*` / `expr-list11-5-*` *"Fail on invalid arguments for `range()`"* scenarios from `xfail` to `supported` as expected-error cases — pygraphistry's direct-Cypher path correctly raises for invalid `range()` arguments/types. Added parametrized positive/negative regression coverage in `test_tck_runner.py` and widened the expression-long-tail lane contract to accept direct-Cypher error promotions (tck-gfql#108 cluster 2).
+- **Direct-Cypher pattern predicate rebaseline (pygraphistry #1337)**: Promoted `expr-pattern1-{10,13,18}` from `success_wrong_rows` to `success_matches_expected` for the paired pygraphistry schema branch.
 - **Direct-Cypher expected-error rebaseline**: Removed `expr-list1-6-4` from `unexpected_success_expected_error` non-validation debt after pygraphistry #1450 restored scalar-string integer subscript rejection.
 - **Direct-Cypher pattern predicate rebaseline correction**: Restored `expr-pattern1-{10,13,18}` to `success_wrong_rows` tracking after current pygraphistry master still returns wrong rows for those pattern predicate residuals.
 - **Direct-Cypher row promotions (escaped string literal contract)**: Promoted `expr-literals6-5` from `success_wrong_rows` to `success_matches_expected` after current pygraphistry direct-Cypher string literal parity.
