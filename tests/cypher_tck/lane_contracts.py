@@ -595,14 +595,11 @@ EXPRESSION_LONG_TAIL_TRANCHE3_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 
 # Issue #51 tranche-4: expression long-tail (Pattern1 + Pattern2 clusters).
 EXPRESSION_LONG_TAIL_TRANCHE4_KEYS: Final[tuple[str, ...]] = (
-    "expr-pattern1-10",
     "expr-pattern1-12",
-    "expr-pattern1-13",
     "expr-pattern1-14",
     "expr-pattern1-15",
     "expr-pattern1-16",
     "expr-pattern1-17",
-    "expr-pattern1-18",
     "expr-pattern2-1",
     "expr-pattern2-2",
     "expr-pattern2-3",

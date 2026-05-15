@@ -30,9 +30,6 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    "expr-pattern1-13",
-    "expr-pattern1-18",
-    "expr-pattern1-10",
     "match5-25",
     "match5-26",
     "return2-9",
@@ -149,6 +146,9 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # Sibling-target drift that now returns expected rows but has not yet been
     # promoted through direct_cypher_support.py.
+    "expr-pattern1-10",
+    "expr-pattern1-13",
+    "expr-pattern1-18",
     "match5-8",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
