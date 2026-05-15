@@ -100,22 +100,20 @@ def test_build_report_includes_gap_priority_sections() -> None:
     )
     assert "Direct local Cypher non-validation triage samples:" in report
     assert "- success_wrong_rows:" in report
+    assert "expr-pattern1-10 (expressions/pattern)" in report
     assert "match5-25 (clauses/match)" in report
-    assert "- unexpected_success_expected_error:" in report
-    assert "expr-list1-6-4 (expressions/list)" in report
+    assert "- unexpected_success_expected_error:" not in report
 
 
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
     assert samples["success_wrong_rows"] == [
-        "match5-25 (clauses/match)",
-        "match5-26 (clauses/match)",
-        "... 2 more",
+        "expr-pattern1-10 (expressions/pattern)",
+        "expr-pattern1-13 (expressions/pattern)",
+        "... 5 more",
     ]
-    assert samples["unexpected_success_expected_error"] == [
-        "expr-list1-6-4 (expressions/list)",
-    ]
+    assert "unexpected_success_expected_error" not in samples
 
 
 def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None:

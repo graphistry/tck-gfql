@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Direct-Cypher xfail contract rebaseline**: Reclassified `expr-pattern1-{10,13,18}` as `success_wrong_rows` and returned `expr-list1-6-4` to validation-safe xfail after confirming current pygraphistry `master` behavior.
 - **Direct-Cypher row promotions (escaped string literal contract)**: Promoted `expr-literals6-5` from `success_wrong_rows` to `success_matches_expected` after current pygraphistry direct-Cypher string literal parity.
 - **Direct-Cypher row promotions (comparison/list/null contract)**: Promoted `expr-list12-3` after pygraphistry #1367 fixed empty optional-match post-aggregate list-comprehension projection.
 - **Direct-Cypher row promotions (current pygraphistry compatibility)**: Promoted `return2-10` after current pygraphistry main began returning the expected empty-graph aggregate boolean row.
