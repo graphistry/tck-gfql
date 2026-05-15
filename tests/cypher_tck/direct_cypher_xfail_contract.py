@@ -30,14 +30,12 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    "expr-list12-3",
     "expr-pattern1-13",
     "expr-pattern1-18",
     "expr-pattern1-10",
     "match5-25",
     "match5-26",
     "match5-8",
-    "return2-10",
     "return2-9",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
@@ -73,6 +71,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison3-7",
     "expr-comparison3-8",
     "expr-list3-7",
+    "expr-list12-3",
     "expr-list5-21",
     "expr-list5-29",
     "expr-list5-31",
@@ -109,6 +108,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-precedence2-1-9",
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
+    "return2-10",
     "expr-temporal2-6-5",
     "expr-temporal6-6-2",
     "expr-temporal6-6-8",

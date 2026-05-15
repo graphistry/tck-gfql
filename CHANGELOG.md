@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - **Direct-Cypher row promotions (escaped string literal contract)**: Promoted `expr-literals6-5` from `success_wrong_rows` to `success_matches_expected` after current pygraphistry direct-Cypher string literal parity.
+- **Direct-Cypher row promotions (comparison/list/null contract)**: Promoted `expr-list12-3` after pygraphistry #1367 fixed empty optional-match post-aggregate list-comprehension projection.
+- **Direct-Cypher row promotions (current pygraphistry compatibility)**: Promoted `return2-10` after current pygraphistry main began returning the expected empty-graph aggregate boolean row.
 - **Direct-Cypher row promotions (string/typeconversion contract)**: Extended `parse_cypher` string literal handling, promoted `expr-literals6-4`, `expr-string8-{4,5}`, `expr-string9-{4,5}`, `expr-string10-{4,5}` to `success_matches_expected`, and rebaselined the related lane/contract/report assertions (PR #104).
 - **Direct-Cypher row promotions (map-key-order)**: Allowlisted map-key-order row-normalization; promoted `expr-literals7-18` and `expr-literals8-18` to `success_matches_expected` (PR #102).
 - **Direct-Cypher row promotions (label-order)**: Allowlisted label-order row-normalization for node labels; promoted `match3-7` (PR #101).
