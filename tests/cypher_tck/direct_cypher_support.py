@@ -1988,6 +1988,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
     "return2-10",
+    "return2-9",
     "expr-temporal2-6-5",
     "match-where3-3",
     "match3-1",

@@ -35,7 +35,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-18",
     "match5-25",
     "match5-26",
-    "return2-9",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
     # rejected the WITH-projection-driven join shape with a validation
@@ -49,9 +48,8 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
-    # These keys historically lived in the xfail non-validation "success_matches_expected"
-    # bucket. They now promote via direct-Cypher row support snapshot and are no longer
-    # tracked as xfail non-validation debt.
+    # These keys now match their expected row oracle via the direct-Cypher row
+    # support snapshot and are no longer tracked as xfail non-validation debt.
     "expr-aggregation3-1",
     "expr-comparison1-6-5",
     "expr-comparison1-7-12",
@@ -106,6 +104,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
     "return2-10",
+    "return2-9",
     "expr-temporal2-6-5",
     "expr-temporal6-6-2",
     "expr-temporal6-6-8",
