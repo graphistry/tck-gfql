@@ -202,7 +202,6 @@ SCENARIOS = [
         expected=Expected(
             rows=[
                 {"{a: 1, b: 'foo'}": "{a: 1, b: 'foo'}"},
-                {"{a: 1, b: 'foo'}": "{a: 1, b: 'foo'}"},
             ],
         ),
         gfql=None,
