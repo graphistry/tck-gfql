@@ -4,6 +4,9 @@ from tests.cypher_tck.gap_priority import (
     PRIMARY_FAMILY_DEFINITIONS,
     classify_primary_xfail_family,
 )
+from tests.cypher_tck.direct_cypher_support import (
+    DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
+)
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS,
 )
@@ -115,8 +118,17 @@ def _scenario_map():
     return {scenario.key: scenario for scenario in SCENARIOS}
 
 
+# Keys deliberately promoted out of xfail via the direct-Cypher path: either
+# row-oracle matches or expected-error scenarios. Lane tranche contracts treat
+# any of these as allowably "supported" rather than a regression.
+_DIRECT_CYPHER_PROMOTED_KEYS = (
+    set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS)
+    | set(DIRECT_CYPHER_PROMOTION_ERROR_KEYS)
+)
+
+
 def _is_direct_cypher_promoted(key: str) -> bool:
-    return key in DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS
+    return key in _DIRECT_CYPHER_PROMOTED_KEYS
 
 
 def _assert_status_and_tags(scenario, expected_status: str, forbidden_tags: tuple[str, ...]) -> None:
@@ -643,7 +655,7 @@ def test_expression_long_tail_tranche1_keys_exist() -> None:
 
 def test_expression_long_tail_tranche1_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
-    promoted = set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS)
+    promoted = _DIRECT_CYPHER_PROMOTED_KEYS
     for key in EXPRESSION_LONG_TAIL_TRANCHE1_KEYS:
         scenario = scenarios[key]
         if key in promoted:
@@ -657,7 +669,7 @@ def test_expression_long_tail_tranche1_status_and_tag_contract() -> None:
 
 def test_expression_long_tail_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
-    promoted = set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS)
+    promoted = _DIRECT_CYPHER_PROMOTED_KEYS
     for key in EXPRESSION_LONG_TAIL_TRANCHE1_KEYS:
         scenario = scenarios[key]
         if key in promoted:
