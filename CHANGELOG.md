@@ -79,6 +79,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-null{1,2}-3` from `success_wrong_rows` to `success_matches_expected`.
 
 ### Changed
+- **Direct-Cypher contract drift rebaseline**: Re-pinned three direct-Cypher non-validation buckets to current pygraphistry master so `./bin/ci.sh`'s drift preflight is green: `expr-pattern1-{10,13,18}` moved `success_matches_expected` → `success_wrong_rows` (master now returns wrong rows), and `expr-list1-6-4` left the `unexpected_success_expected_error` bucket entirely — it now raises `GFQLValidationError` (validation-safe xfail, no longer tracked non-validation debt).
 - **Cypher clause splitter**: `scenarios._CLAUSE_RE` now also matches clause keywords mid-line preceded by whitespace, so `ORDER BY c SKIP 1` / `ORDER BY c LIMIT 1` lower into separate `order_by` + `skip`/`limit` steps. Affects `with-skip-limit1-2` and `with-skip-limit2-4` parsed plans (scenarios remain xfail pending row-pipeline match projection / grouped-aggregate semantics on the pygraphistry side).
 - **Repo hygiene**: Gitignored `.claude/settings.local.json` (per-user permission allowlist) and `.claude/scheduled_tasks.lock` (per-session state) so local Claude Code use does not leak into `git status` (PR #103).
 - **CI workflows**: Centralized shared runtime pins (`PYTHON_VERSION`, `UV_VERSION`, `UV_EXCLUDE_NEWER`) and added inline compatibility notes in `ci.yml` and `nightly.yml` to keep workflow behavior aligned.

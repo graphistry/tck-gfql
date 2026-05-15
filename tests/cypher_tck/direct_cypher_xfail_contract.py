@@ -30,6 +30,9 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
+    "expr-pattern1-10",
+    "expr-pattern1-13",
+    "expr-pattern1-18",
     "match5-25",
     "match5-26",
     "return2-9",
@@ -43,9 +46,10 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "with2-1",
 )
 
-DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
-    "expr-list1-6-4",
-)
+# Emptied: expr-list1-6-4 now raises GFQLValidationError on current pygraphistry
+# master (validation-safe), so it is no longer tracked non-validation debt.
+# Kept as Final[tuple[str, ...]] so the DirectCypherXfailOutcome Literal stays valid.
+DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     # These keys historically lived in the xfail non-validation "success_matches_expected"
@@ -148,9 +152,6 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # Sibling-target drift that now returns expected rows but has not yet been
     # promoted through direct_cypher_support.py.
-    "expr-pattern1-10",
-    "expr-pattern1-13",
-    "expr-pattern1-18",
     "match5-8",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
