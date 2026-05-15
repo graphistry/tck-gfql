@@ -75,6 +75,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Direct-Cypher xfail contract**: Updated sibling-target drift snapshot for `expr-null{1,2}-3` from `success_wrong_rows` to `success_matches_expected`.
 
 ### Changed
+- **Cypher clause splitter**: `scenarios._CLAUSE_RE` now also matches clause keywords mid-line preceded by whitespace, so `ORDER BY c SKIP 1` / `ORDER BY c LIMIT 1` lower into separate `order_by` + `skip`/`limit` steps. Affects `with-skip-limit1-2` and `with-skip-limit2-4` parsed plans (scenarios remain xfail pending row-pipeline match projection / grouped-aggregate semantics on the pygraphistry side).
 - **Repo hygiene**: Gitignored `.claude/settings.local.json` (per-user permission allowlist) and `.claude/scheduled_tasks.lock` (per-session state) so local Claude Code use does not leak into `git status` (PR #103).
 - **CI workflows**: Centralized shared runtime pins (`PYTHON_VERSION`, `UV_VERSION`, `UV_EXCLUDE_NEWER`) and added inline compatibility notes in `ci.yml` and `nightly.yml` to keep workflow behavior aligned.
 - **CI workflows**: Upgraded GitHub Actions versions to Node24-era majors in `ci.yml` and `nightly.yml` (`actions/checkout@v6`, `actions/setup-python@v6`, `astral-sh/setup-uv@v7`) to avoid pending Node20 deprecation breakage.
