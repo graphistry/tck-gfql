@@ -58,7 +58,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
     assert by_lane["row-pipeline-read-forms"] == 153
-    assert by_lane["optional-match-null-extension"] == 62
+    assert by_lane["optional-match-null-extension"] == 61
     assert by_lane["grouped-match-aggregates"] == 26
     assert by_lane["expression-long-tail"] == 128
 
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "885 (rows 772, errors 113)"
+        "887 (rows 774, errors 113)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -100,7 +100,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     )
     assert "Direct local Cypher non-validation triage samples:" in report
     assert "- success_wrong_rows:" in report
-    assert "expr-list12-3 (expressions/list)" in report
+    assert "expr-pattern1-10 (expressions/pattern)" in report
     assert "- unexpected_success_expected_error:" in report
     assert "expr-list1-6-4 (expressions/list)" in report
 
@@ -109,9 +109,9 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
     assert samples["success_wrong_rows"] == [
-        "expr-list12-3 (expressions/list)",
         "expr-pattern1-10 (expressions/pattern)",
-        "... 8 more",
+        "expr-pattern1-13 (expressions/pattern)",
+        "... 6 more",
     ]
     assert samples["unexpected_success_expected_error"] == [
         "expr-list1-6-4 (expressions/list)",
