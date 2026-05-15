@@ -30,9 +30,9 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
+    "expr-pattern1-10",
     "expr-pattern1-13",
     "expr-pattern1-18",
-    "expr-pattern1-10",
     "match5-25",
     "match5-26",
     "return2-9",

@@ -19,7 +19,10 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_XFAIL_VALIDATION_OUTCOME,
     expected_direct_cypher_xfail_outcome,
 )
-from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_KEYS
+from tests.cypher_tck.direct_cypher_support import (
+    DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
+    DIRECT_CYPHER_PROMOTION_KEYS,
+)
 from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import _parse_literal
@@ -809,6 +812,55 @@ def test_direct_cypher_only_error_support_regression_typeconversion3(key: str) -
     assert "cypher-string" in scenario.tags
     assert "cypher-string-error" in scenario.tags
     assert "phase1-executor" not in scenario.tags
+
+
+_RANGE_INVALID_ARG_ERROR_KEYS = tuple(
+    f"expr-list11-4-{i}" for i in range(1, 5)
+) + tuple(f"expr-list11-5-{i}" for i in range(1, 23))
+
+
+@pytest.mark.parametrize("key", _RANGE_INVALID_ARG_ERROR_KEYS)
+def test_range_invalid_argument_scenarios_promoted_as_direct_cypher_errors(key: str) -> None:
+    """Positive: range() invalid-argument scenarios are supported error cases."""
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert "phase1-executor" not in scenario.tags
+    # These are error scenarios — no row/graph oracle.
+    assert scenario.expected.rows is None
+    assert scenario.expected.node_ids is None
+    assert scenario.expected.edge_ids is None
+    # Direct Cypher must actually raise for the promotion to be valid.
+    with pytest.raises(Exception):
+        _build_graph(scenario.graph).gfql(
+            scenario.cypher, params=scenario.params, engine="pandas"
+        )
+
+
+def test_range_invalid_argument_promotion_covers_exactly_the_audited_keys() -> None:
+    """Negative guard: promotion set matches the audited range() invalid-arg keys.
+
+    Catches drift if a range() scenario is added/removed or mis-bucketed.
+    """
+    promoted_list11 = {
+        key
+        for key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
+        if key.startswith("expr-list11-4-") or key.startswith("expr-list11-5-")
+    }
+    assert promoted_list11 == set(_RANGE_INVALID_ARG_ERROR_KEYS)
+
+
+def test_valid_range_scenario_is_not_promoted_as_an_error() -> None:
+    """Negative: a valid range() call stays a non-error supported scenario."""
+    scenario = next(s for s in SCENARIOS if s.key == "unwind1-2")
+    assert scenario.status == "supported"
+    assert "cypher-string-error" not in scenario.tags
+    # A valid range() executes and yields rows without raising.
+    result = _build_graph(scenario.graph).gfql(
+        scenario.cypher, params=scenario.params, engine="pandas"
+    )
+    assert _rows_from_result(result)
 
 
 def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
