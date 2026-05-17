@@ -298,7 +298,7 @@ SCENARIOS = [
         key='expr-quantifier7-3-1',
         feature_path='tck/features/expressions/quantifier/Quantifier7.feature',
         scenario='[3] Any quantifier is true if the single or the all quantifier is true (example 1)',
-        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x = 2) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x = 2)) <= any(<operands>) AS result',
+        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x = 2) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x = 2)) <= any(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x = 2) AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -315,7 +315,7 @@ SCENARIOS = [
         key='expr-quantifier7-3-2',
         feature_path='tck/features/expressions/quantifier/Quantifier7.feature',
         scenario='[3] Any quantifier is true if the single or the all quantifier is true (example 2)',
-        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 2 = 0) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 2 = 0)) <= any(<operands>) AS result',
+        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 2 = 0) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 2 = 0)) <= any(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 2 = 0) AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -332,7 +332,7 @@ SCENARIOS = [
         key='expr-quantifier7-3-3',
         feature_path='tck/features/expressions/quantifier/Quantifier7.feature',
         scenario='[3] Any quantifier is true if the single or the all quantifier is true (example 3)',
-        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 3 = 0) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 3 = 0)) <= any(<operands>) AS result',
+        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 3 = 0) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 3 = 0)) <= any(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x % 3 = 0) AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -349,7 +349,7 @@ SCENARIOS = [
         key='expr-quantifier7-3-4',
         feature_path='tck/features/expressions/quantifier/Quantifier7.feature',
         scenario='[3] Any quantifier is true if the single or the all quantifier is true (example 4)',
-        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x < 7) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x < 7)) <= any(<operands>) AS result',
+        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x < 7) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x < 7)) <= any(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x < 7) AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -366,7 +366,7 @@ SCENARIOS = [
         key='expr-quantifier7-3-5',
         feature_path='tck/features/expressions/quantifier/Quantifier7.feature',
         scenario='[3] Any quantifier is true if the single or the all quantifier is true (example 5)',
-        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x >= 3) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x >= 3)) <= any(<operands>) AS result',
+        cypher='RETURN (single(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x >= 3) OR all(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x >= 3)) <= any(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x >= 3) AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[

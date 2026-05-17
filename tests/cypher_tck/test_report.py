@@ -100,11 +100,13 @@ def test_build_report_includes_gap_priority_sections() -> None:
     )
     assert "Direct local Cypher non-validation triage samples:" in report
     assert "- success_matches_expected:" in report
+    assert "expr-comparison2-5-1 (expressions/comparison)" in report
+    assert "expr-comparison2-6-2 (expressions/comparison)" in report
     assert "expr-graph3-5 (expressions/graph)" in report
-    assert "match7-24 (clauses/match)" in report
-    assert "return-orderby2-6 (clauses/return-orderby)" in report
-    assert "usecase-countingsubgraphmatches1-5 (useCases/countingSubgraphMatches)" in report
+    assert "expr-quantifier7-3-1 (expressions/quantifier)" in report
     assert "- success_wrong_rows:" in report
+    assert "expr-comparison2-6-3 (expressions/comparison)" in report
+    assert "expr-comparison2-6-4 (expressions/comparison)" in report
     assert (
         "usecase-countingsubgraphmatches1-2 "
         "(useCases/countingSubgraphMatches)"
@@ -122,12 +124,14 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
     assert samples["success_matches_expected"] == [
-        "expr-graph3-5 (expressions/graph)",
-        "match7-24 (clauses/match)",
-        "... 5 more",
+        "expr-comparison2-5-1 (expressions/comparison)",
+        "expr-comparison2-5-2 (expressions/comparison)",
+        "... 16 more",
     ]
     assert samples["success_wrong_rows"] == [
-        "usecase-countingsubgraphmatches1-2 (useCases/countingSubgraphMatches)",
+        "expr-comparison2-6-3 (expressions/comparison)",
+        "expr-comparison2-6-4 (expressions/comparison)",
+        "... 1 more",
     ]
     assert "unexpected_success_expected_error" not in samples
 
