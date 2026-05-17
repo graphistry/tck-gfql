@@ -99,11 +99,20 @@ def test_build_report_includes_gap_priority_sections() -> None:
         in report
     )
     assert "Direct local Cypher non-validation triage samples:" in report
-    assert "- success_matches_expected:" not in report
+    assert "- success_matches_expected:" in report
+    assert "expr-graph3-5 (expressions/graph)" in report
+    assert "match7-24 (clauses/match)" in report
+    assert "return-orderby2-6 (clauses/return-orderby)" in report
+    assert "usecase-countingsubgraphmatches1-5 (useCases/countingSubgraphMatches)" in report
+    assert "- success_wrong_rows:" in report
+    assert (
+        "usecase-countingsubgraphmatches1-2 "
+        "(useCases/countingSubgraphMatches)"
+    ) in report
+    # with2-1 was promoted (tck-gfql#115); the current wrong-row bucket is
+    # limited to branch-paired pygraphistry#1490 drift.
     assert "match5-8 (clauses/match)" not in report
     assert "with5-2 (clauses/with)" not in report
-    # with2-1 was promoted (tck-gfql#115); the wrong-row bucket is now empty.
-    assert "- success_wrong_rows:" not in report
     assert "with2-1 (clauses/with)" not in report
     assert "- unexpected_success_expected_error:" not in report
     assert "expr-list1-6-4 (expressions/list)" not in report
@@ -112,8 +121,14 @@ def test_build_report_includes_gap_priority_sections() -> None:
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
-    assert samples == {}
-    assert "success_wrong_rows" not in samples
+    assert samples["success_matches_expected"] == [
+        "expr-graph3-5 (expressions/graph)",
+        "match7-24 (clauses/match)",
+        "... 5 more",
+    ]
+    assert samples["success_wrong_rows"] == [
+        "usecase-countingsubgraphmatches1-2 (useCases/countingSubgraphMatches)",
+    ]
     assert "unexpected_success_expected_error" not in samples
 
 

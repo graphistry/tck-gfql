@@ -35,9 +35,11 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # stringified the `a.id` property reference and conflated the Cypher `id`
 # property with the node-identity column; with an explicit fixture the
 # WITH-pipelined join returns the expected row, so with2-1 is promoted.
-# Bucket emptied; kept as Final[tuple[str, ...]] so the
-# DirectCypherXfailOutcome["success_wrong_rows"] Literal stays valid.
-DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
+# pygraphistry#1490 shifts one counting-subgraph use case into wrong-row
+# execution; keep it tracked as branch-paired drift until promoted/reconciled.
+DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
+    "usecase-countingsubgraphmatches1-2",
+)
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
@@ -158,9 +160,22 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match5-8",
     "with-where3-3",
     "with2-1",
-    "with5-2",
 )
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = ()
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # Sibling-target drift that now returns expected rows but has not yet been
+    # promoted through direct_cypher_support.py.
+    # pygraphistry#1490 fixes direct-Cypher self-loop identity handling while
+    # this scenario remains in the row-pipeline tranche-2 xfail lane.
+    "match7-24",
+    # pygraphistry#1490 also fixes node-entity identity grouping for these
+    # count-star ORDER BY, graph-expression, and counting-subgraph shapes.
+    "return-orderby2-6",
+    "expr-graph3-5",
+    "usecase-countingsubgraphmatches1-5",
+    "usecase-countingsubgraphmatches1-6",
+    "usecase-countingsubgraphmatches1-7",
+    "usecase-countingsubgraphmatches1-9",
+)
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
 )
