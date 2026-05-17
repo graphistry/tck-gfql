@@ -242,7 +242,7 @@ SCENARIOS = [
         key='expr-comparison2-5-1',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[5] Comparing NaN (example 1)',
-        cypher='RETURN 0.0 / 0.0 > 1 AS gt, 0.0 / 0.0 >= 1 AS gtE, 0.0 / 0.0 < <rhs> AS lt, 0.0 / 0.0 <= <rhs> AS ltE',
+        cypher='RETURN 0.0 / 0.0 > 1 AS gt, 0.0 / 0.0 >= 1 AS gtE, 0.0 / 0.0 < 1 AS lt, 0.0 / 0.0 <= 1 AS ltE',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -259,7 +259,7 @@ SCENARIOS = [
         key='expr-comparison2-5-2',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[5] Comparing NaN (example 2)',
-        cypher='RETURN 0.0 / 0.0 > 1.0 AS gt, 0.0 / 0.0 >= 1.0 AS gtE, 0.0 / 0.0 < <rhs> AS lt, 0.0 / 0.0 <= <rhs> AS ltE',
+        cypher='RETURN 0.0 / 0.0 > 1.0 AS gt, 0.0 / 0.0 >= 1.0 AS gtE, 0.0 / 0.0 < 1.0 AS lt, 0.0 / 0.0 <= 1.0 AS ltE',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -276,7 +276,7 @@ SCENARIOS = [
         key='expr-comparison2-5-3',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[5] Comparing NaN (example 3)',
-        cypher='RETURN 0.0 / 0.0 > 0.0 / 0.0 AS gt, 0.0 / 0.0 >= 0.0 / 0.0 AS gtE, 0.0 / 0.0 < <rhs> AS lt, 0.0 / 0.0 <= <rhs> AS ltE',
+        cypher='RETURN 0.0 / 0.0 > 0.0 / 0.0 AS gt, 0.0 / 0.0 >= 0.0 / 0.0 AS gtE, 0.0 / 0.0 < 0.0 / 0.0 AS lt, 0.0 / 0.0 <= 0.0 / 0.0 AS ltE',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -293,7 +293,7 @@ SCENARIOS = [
         key='expr-comparison2-5-4',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[5] Comparing NaN (example 4)',
-        cypher="RETURN 0.0 / 0.0 > 'a' AS gt, 0.0 / 0.0 >= 'a' AS gtE, 0.0 / 0.0 < <rhs> AS lt, 0.0 / 0.0 <= <rhs> AS ltE",
+        cypher="RETURN 0.0 / 0.0 > 'a' AS gt, 0.0 / 0.0 >= 'a' AS gtE, 0.0 / 0.0 < 'a' AS lt, 0.0 / 0.0 <= 'a' AS ltE",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -310,7 +310,7 @@ SCENARIOS = [
         key='expr-comparison2-6-1',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[6] Comparability between numbers and strings (example 1)',
-        cypher='RETURN 1.0 < <rhs> AS result',
+        cypher='RETURN 1.0 < 1.0 AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -327,7 +327,7 @@ SCENARIOS = [
         key='expr-comparison2-6-2',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[6] Comparability between numbers and strings (example 2)',
-        cypher='RETURN 1 < <rhs> AS result',
+        cypher='RETURN 1 < 1.0 AS result',
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -344,7 +344,7 @@ SCENARIOS = [
         key='expr-comparison2-6-3',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[6] Comparability between numbers and strings (example 3)',
-        cypher="RETURN '1.0' < <rhs> AS result",
+        cypher="RETURN '1.0' < 1.0 AS result",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
@@ -361,7 +361,7 @@ SCENARIOS = [
         key='expr-comparison2-6-4',
         feature_path='tck/features/expressions/comparison/Comparison2.feature',
         scenario='[6] Comparability between numbers and strings (example 4)',
-        cypher="RETURN '1' < <rhs> AS result",
+        cypher="RETURN '1' < 1 AS result",
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
