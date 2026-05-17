@@ -155,21 +155,12 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match4-3",
     "match5-25",
     "match5-26",
+    "match5-8",
     "with-where3-3",
     "with2-1",
-)
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # Sibling-target drift that now returns expected rows but has not yet been
-    # promoted through direct_cypher_support.py.
-    "match5-8",
-    # Current pygraphistry sibling target executes this DISTINCT aggregate
-    # shape and returns the expected row; keep the branch-paired TCK contract
-    # aligned so pygraphistry#1489 CI can exercise the real residual surface.
-    # tck-gfql#126 reaches the same contract bucket after preserving
-    # graph_fixture_from_create node identity outside Cypher's `id` property;
-    # row-pipeline tranche-2 still intentionally keeps it xfail.
     "with5-2",
 )
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
 )
