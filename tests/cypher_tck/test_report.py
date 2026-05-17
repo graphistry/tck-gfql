@@ -112,6 +112,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
 
     assert samples["success_matches_expected"] == [
         "match5-8 (clauses/match)",
+        "with5-2 (clauses/with)",
     ]
     assert samples["success_wrong_rows"] == [
         "with2-1 (clauses/with)",
