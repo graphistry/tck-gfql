@@ -144,6 +144,17 @@ def test_parse_unwind_create_resolves_map_property_reference() -> None:
     assert rows == [(1, 2024), (2, 2025)]
 
 
+def test_parse_unwind_empty_uses_reserved_identity_columns() -> None:
+    script = """
+    UNWIND [] AS event
+    CREATE (:Event {id: event.id})
+    """
+    fixture = graph_fixture_from_create(script)
+    assert fixture.nodes == []
+    assert fixture.node_id == "__node__"
+    assert fixture.node_columns == ("__node__", "labels")
+
+
 def test_plan_from_cypher_splits_order_by_skip_on_same_line() -> None:
     cypher = """
     MATCH ()-[r1]->(x)

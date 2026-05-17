@@ -233,7 +233,7 @@ def _parse_node(node_text: str, ctx: ParseContext, bindings: Mapping[str, Any]) 
         for key, value in props.items():
             node.setdefault(key, value)
     else:
-        node = {_NODE_ID_COLUMN: node_id, "labels": labels, **props}
+        node = {"labels": labels, **props, _NODE_ID_COLUMN: node_id}
         ctx.nodes_by_id[node_id] = node
     return node_id
 
@@ -391,7 +391,13 @@ def _extract_unwind_bindings(script: str) -> Tuple[List[Dict[str, Any]], str]:
 def graph_fixture_from_create(script: str) -> GraphFixture:
     bindings_list, create_script = _extract_unwind_bindings(script)
     if not bindings_list:
-        return GraphFixture(nodes=[], edges=[], edge_columns=("src", "dst", "edge_id", "type", "undirected"))
+        return GraphFixture(
+            nodes=[],
+            edges=[],
+            node_id=_NODE_ID_COLUMN,
+            node_columns=(_NODE_ID_COLUMN, "labels"),
+            edge_columns=("src", "dst", "edge_id", "type", "undirected"),
+        )
 
     ctx = ParseContext(nodes_by_id={}, var_to_id={}, node_counter=1, rel_counter=1)
     edges: List[Dict[str, Any]] = []
