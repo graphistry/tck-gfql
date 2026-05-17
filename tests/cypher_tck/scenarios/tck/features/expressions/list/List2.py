@@ -254,6 +254,7 @@ SCENARIOS = [
             {'r': '[2, 3]'}
             ],
         ),
+        params={"from": 1, "to": 3},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -271,6 +272,7 @@ SCENARIOS = [
             {'r': '[]'}
             ],
         ),
+        params={"from": 3, "to": 1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

@@ -33,6 +33,7 @@ SCENARIOS = [
             {'value': "'Apa'"}
             ],
         ),
+        params={"expr": {"name": "Apa"}, "idx": "name"},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -50,6 +51,7 @@ SCENARIOS = [
             {'value': "'Apa'"}
             ],
         ),
+        params={"expr": {"name": "Apa"}, "idx": "name"},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

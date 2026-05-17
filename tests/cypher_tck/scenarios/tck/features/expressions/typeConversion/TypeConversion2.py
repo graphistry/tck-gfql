@@ -118,6 +118,7 @@ SCENARIOS = [
             {'result': 0}
             ],
         ),
+        params={"param": 1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

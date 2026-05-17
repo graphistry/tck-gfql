@@ -39,6 +39,7 @@ SCENARIOS = [
             {'p': 10.0}
             ],
         ),
+        params={"percentile": 0.0},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -62,6 +63,7 @@ SCENARIOS = [
             {'p': 20.0}
             ],
         ),
+        params={"percentile": 0.5},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -85,6 +87,7 @@ SCENARIOS = [
             {'p': 30.0}
             ],
         ),
+        params={"percentile": 1.0},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -108,6 +111,7 @@ SCENARIOS = [
             {'p': 10.0}
             ],
         ),
+        params={"percentile": 0.0},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -131,6 +135,7 @@ SCENARIOS = [
             {'p': 20.0}
             ],
         ),
+        params={"percentile": 0.5},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -154,6 +159,7 @@ SCENARIOS = [
             {'p': 30.0}
             ],
         ),
+        params={"percentile": 1.0},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -171,6 +177,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(),
+        params={"param": 1000},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -188,6 +195,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(),
+        params={"param": -1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -205,6 +213,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(),
+        params={"param": 1.1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -222,6 +231,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(),
+        params={"param": 1000},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -239,6 +249,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(),
+        params={"param": -1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -256,6 +267,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(),
+        params={"param": 1.1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

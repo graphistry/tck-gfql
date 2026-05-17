@@ -47,9 +47,16 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'k': "['address', 'name', 'age']"}
+            {'k': "['name', 'age', 'address']"}
             ],
         ),
+        params={
+            "param": {
+                "name": "Alice",
+                "age": 38,
+                "address": {"city": "London", "residential": True},
+            }
+        },
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
