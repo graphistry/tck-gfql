@@ -27,7 +27,6 @@ ROW_PIPELINE_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
     "with1-2",
     "with1-3",
     "with1-4",
-    "with2-1",
     "with3-1",
     "with4-1",
     "with5-2",
@@ -64,6 +63,9 @@ ROW_PIPELINE_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
     "with-where2-2",
     "with-where3-3",
     "with-where4-2",
+    # with2-1 promoted via the direct-Cypher path (tck-gfql#115); kept in the
+    # row-pipeline lane via the promoted-tolerant tranche-3 contract.
+    "with2-1",
     "with6-5",
     "with6-6",
     "with6-7",

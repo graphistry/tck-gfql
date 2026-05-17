@@ -2696,6 +2696,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "with-where7-1",
     "with-where7-2",
     "with-where7-3",
+    "with2-1",
     "with2-2",
     # Promoted from direct-cypher non-validation `success_matches_expected` bucket.
     "with-orderby1-31-1",
