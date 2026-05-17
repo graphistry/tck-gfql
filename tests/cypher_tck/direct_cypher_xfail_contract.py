@@ -165,6 +165,9 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # Current pygraphistry sibling target executes this DISTINCT aggregate
     # shape and returns the expected row; keep the branch-paired TCK contract
     # aligned so pygraphistry#1489 CI can exercise the real residual surface.
+    # tck-gfql#126 reaches the same contract bucket after preserving
+    # graph_fixture_from_create node identity outside Cypher's `id` property;
+    # row-pipeline tranche-2 still intentionally keeps it xfail.
     "with5-2",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
