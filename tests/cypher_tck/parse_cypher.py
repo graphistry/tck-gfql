@@ -1,3 +1,4 @@
+import copy
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Tuple
@@ -142,7 +143,9 @@ def _resolve_property_reference(token: str, ctx: "ParseContext | None") -> Any:
     node = ctx.nodes_by_id.get(node_id)
     if node is None or prop not in node:
         return _UNRESOLVED_REF
-    return node[prop]
+    # Deep-copy so a container-valued property (list/map) does not alias the
+    # source node's value across fixtures.
+    return copy.deepcopy(node[prop])
 
 
 def _parse_literal(
