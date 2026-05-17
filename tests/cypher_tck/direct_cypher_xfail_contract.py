@@ -37,7 +37,12 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # WITH-pipelined join returns the expected row, so with2-1 is promoted.
 # pygraphistry#1490 shifts one counting-subgraph use case into wrong-row
 # execution; keep it tracked as branch-paired drift until promoted/reconciled.
+# tck-gfql#119 fixes outline placeholder substitution for Comparison2; after
+# becoming valid Cypher, the two string-vs-number comparability cases execute
+# but return the wrong null/non-null rows and remain true runtime residuals.
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
+    "expr-comparison2-6-3",
+    "expr-comparison2-6-4",
     "usecase-countingsubgraphmatches1-2",
 )
 
@@ -53,6 +58,12 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison1-7-14",
     "expr-comparison1-7-15",
     "expr-comparison1-7-16",
+    "expr-comparison2-5-1",
+    "expr-comparison2-5-2",
+    "expr-comparison2-5-3",
+    "expr-comparison2-5-4",
+    "expr-comparison2-6-1",
+    "expr-comparison2-6-2",
     "expr-comparison3-1",
     "expr-comparison3-2",
     "expr-comparison3-3",
@@ -114,6 +125,11 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-precedence2-1-9",
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
+    "expr-quantifier7-3-1",
+    "expr-quantifier7-3-2",
+    "expr-quantifier7-3-3",
+    "expr-quantifier7-3-4",
+    "expr-quantifier7-3-5",
     "return2-10",
     "return2-9",
     "expr-temporal2-6-5",

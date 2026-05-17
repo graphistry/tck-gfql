@@ -40,6 +40,9 @@ from tests.cypher_tck.phase_support import (
     PHASE1_EXECUTOR_SUPPORTED_ERROR_KEYS,
     PHASE1_EXECUTOR_SUPPORTED_KEYS,
 )
+from tests.cypher_tck.scenario_placeholders import (
+    apply_outline_placeholder_substitutions,
+)
 
 _SCENARIO_ROOT = Path(__file__).resolve().parent / "tck" / "features"
 SCENARIOS: list[Scenario] = []
@@ -892,7 +895,11 @@ for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
 SCENARIOS = [
     _promote_cypher_string_support(
         _promote_executor_support(
-            _apply_translation(_apply_expected_row_order(_tag_scenario(scenario)))
+            _apply_translation(
+                _apply_expected_row_order(
+                    _tag_scenario(apply_outline_placeholder_substitutions(scenario))
+                )
+            )
         )
     )
     for scenario in SCENARIOS

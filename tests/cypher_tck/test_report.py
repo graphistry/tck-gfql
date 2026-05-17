@@ -60,7 +60,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     assert by_lane["row-pipeline-read-forms"] == 147
     assert by_lane["optional-match-null-extension"] == 62
     assert by_lane["grouped-match-aggregates"] == 27
-    assert by_lane["expression-long-tail"] == 93
+    assert by_lane["expression-long-tail"] == 82
 
 
 def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "928 (rows 789, errors 139)"
+        "939 (rows 800, errors 139)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -105,6 +105,8 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "return-orderby2-6 (clauses/return-orderby)" in report
     assert "usecase-countingsubgraphmatches1-5 (useCases/countingSubgraphMatches)" in report
     assert "- success_wrong_rows:" in report
+    assert "expr-comparison2-6-3 (expressions/comparison)" in report
+    assert "expr-comparison2-6-4 (expressions/comparison)" in report
     assert (
         "usecase-countingsubgraphmatches1-2 "
         "(useCases/countingSubgraphMatches)"
@@ -127,7 +129,9 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
         "... 5 more",
     ]
     assert samples["success_wrong_rows"] == [
-        "usecase-countingsubgraphmatches1-2 (useCases/countingSubgraphMatches)",
+        "expr-comparison2-6-3 (expressions/comparison)",
+        "expr-comparison2-6-4 (expressions/comparison)",
+        "... 1 more",
     ]
     assert "unexpected_success_expected_error" not in samples
 

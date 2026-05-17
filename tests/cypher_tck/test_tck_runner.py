@@ -27,6 +27,7 @@ from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import _parse_literal
 from tests.cypher_tck.plan_executor import execute_plan
+from tests.cypher_tck.scenario_placeholders import PLACEHOLDER_SUBSTITUTION_KEYS
 from tests.cypher_tck.scenarios import SCENARIOS
 
 
@@ -938,6 +939,39 @@ def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
     scenario = next(s for s in SCENARIOS if s.key == "expr-quantifier11-3-4")
     assert scenario.status == "xfail"
     assert "phase1-executor" not in scenario.tags
+    assert "<operands>" not in scenario.cypher
+    assert "x IN list WHERE x < 7" in scenario.cypher
+
+
+def test_outline_placeholder_substitution_cluster_is_audited() -> None:
+    scenarios_by_key = {scenario.key: scenario for scenario in SCENARIOS}
+    assert len(PLACEHOLDER_SUBSTITUTION_KEYS) == 68
+    assert set(PLACEHOLDER_SUBSTITUTION_KEYS) <= set(scenarios_by_key)
+
+    leftovers = {
+        key: scenarios_by_key[key].cypher
+        for key in PLACEHOLDER_SUBSTITUTION_KEYS
+        if any(
+            token in scenarios_by_key[key].cypher
+            for token in ("<predicate>", "<rhs>", "<operands>")
+        )
+    }
+    assert leftovers == {}
+
+
+def test_outline_placeholder_substitution_samples() -> None:
+    scenarios_by_key = {scenario.key: scenario for scenario in SCENARIOS}
+
+    comparison = scenarios_by_key["expr-comparison2-5-4"]
+    assert "<rhs>" not in comparison.cypher
+    assert "0.0 / 0.0 < 'a' AS lt" in comparison.cypher
+
+    quantifier = scenarios_by_key["expr-quantifier7-3-5"]
+    assert "<operands>" not in quantifier.cypher
+    assert (
+        "any(x IN [1, 2, 3, 4, 5, 6, 7, 8, 9] WHERE x >= 3)"
+        in quantifier.cypher
+    )
 
 
 @pytest.mark.parametrize(
