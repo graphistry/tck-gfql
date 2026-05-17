@@ -101,6 +101,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Direct local Cypher non-validation triage samples:" in report
     assert "- success_matches_expected:" in report
     assert "match5-8 (clauses/match)" in report
+    assert "with5-2 (clauses/with)" in report
     # with2-1 was promoted (tck-gfql#115); the wrong-row bucket is now empty.
     assert "- success_wrong_rows:" not in report
     assert "with2-1 (clauses/with)" not in report
@@ -113,6 +114,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
 
     assert samples["success_matches_expected"] == [
         "match5-8 (clauses/match)",
+        "with5-2 (clauses/with)",
     ]
     assert "success_wrong_rows" not in samples
     assert "unexpected_success_expected_error" not in samples
