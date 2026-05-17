@@ -37,6 +37,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(rows=[]),
+        params={"friendIndex": 1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -58,6 +59,7 @@ SCENARIOS = [
             """
         ),
         expected=Expected(rows=[]),
+        params={"friendIndex": 1},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

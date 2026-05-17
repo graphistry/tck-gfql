@@ -84,6 +84,7 @@ SCENARIOS = [
             {'result': 'null'}
             ],
         ),
+        params={"elt": None, "coll": None},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -101,6 +102,7 @@ SCENARIOS = [
             {'result': 'null'}
             ],
         ),
+        params={"elt": None, "coll": [1, 2, 3]},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -118,6 +120,7 @@ SCENARIOS = [
             {'result': 'null'}
             ],
         ),
+        params={"elt": None, "coll": [1, 2, 3, None]},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -135,7 +138,7 @@ SCENARIOS = [
             {'result': 'false'}
             ],
         ),
-        params={"elt": 1, "coll": []},
+        params={"elt": None, "coll": []},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -153,6 +156,7 @@ SCENARIOS = [
             {'result': 'true'}
             ],
         ),
+        params={"elt": 1, "coll": [1, 2, 3, None]},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -170,6 +174,7 @@ SCENARIOS = [
             {'result': 'true'}
             ],
         ),
+        params={"elt": 1, "coll": [None, 1]},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',
@@ -187,6 +192,7 @@ SCENARIOS = [
             {'result': 'null'}
             ],
         ),
+        params={"elt": 5, "coll": [1, 2, 3, None]},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

@@ -427,16 +427,18 @@ def test_row_pipeline_tranche13_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE13_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == ROW_PIPELINE_TRANCHE13_EXPECTED_STATUS
-        for forbidden_tag in ROW_PIPELINE_TRANCHE13_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            ROW_PIPELINE_TRANCHE13_EXPECTED_STATUS,
+            ROW_PIPELINE_TRANCHE13_FORBIDDEN_TAGS,
+        )
 
 
 def test_row_pipeline_tranche13_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE13_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+        _assert_family_or_direct_promoted(scenario, "row-pipeline-read-forms")
 
 
 def test_row_pipeline_tranche14_keys_exist() -> None:
@@ -449,16 +451,18 @@ def test_row_pipeline_tranche14_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE14_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == ROW_PIPELINE_TRANCHE14_EXPECTED_STATUS
-        for forbidden_tag in ROW_PIPELINE_TRANCHE14_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            ROW_PIPELINE_TRANCHE14_EXPECTED_STATUS,
+            ROW_PIPELINE_TRANCHE14_FORBIDDEN_TAGS,
+        )
 
 
 def test_row_pipeline_tranche14_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE14_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+        _assert_family_or_direct_promoted(scenario, "row-pipeline-read-forms")
 
 
 def test_row_pipeline_lane_has_issue_tracker_wired() -> None:

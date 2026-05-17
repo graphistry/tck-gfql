@@ -71,6 +71,7 @@ SCENARIOS = [
             {'value': "'Apa'"}
             ],
         ),
+        params={"idx": "name"},
         gfql=None,
         status="xfail",
         reason='Parameter binding is not supported',

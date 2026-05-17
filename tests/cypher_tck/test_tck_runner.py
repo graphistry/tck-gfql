@@ -819,6 +819,77 @@ _RANGE_INVALID_ARG_ERROR_KEYS = tuple(
 ) + tuple(f"expr-list11-5-{i}" for i in range(1, 23))
 
 
+_PARAM_BINDING_CLUSTER3_KEYS = (
+    "delete5-1",
+    "delete5-2",
+    "expr-aggregation6-1-1",
+    "expr-aggregation6-1-2",
+    "expr-aggregation6-1-3",
+    "expr-aggregation6-2-1",
+    "expr-aggregation6-2-2",
+    "expr-aggregation6-2-3",
+    "expr-aggregation6-3-1",
+    "expr-aggregation6-3-2",
+    "expr-aggregation6-3-3",
+    "expr-aggregation6-4-1",
+    "expr-aggregation6-4-2",
+    "expr-aggregation6-4-3",
+    "expr-graph7-3",
+    "expr-list1-3",
+    "expr-list1-4",
+    "expr-list1-5",
+    "expr-list2-10",
+    "expr-list2-11",
+    "expr-map2-1",
+    "expr-map2-2",
+    "expr-map3-2",
+    "expr-null3-4-1",
+    "expr-null3-4-2",
+    "expr-null3-4-3",
+    "expr-null3-4-4",
+    "expr-null3-4-5",
+    "expr-null3-4-6",
+    "expr-null3-4-7",
+    "expr-typeconversion2-6",
+)
+
+_PARAM_BINDING_PROMOTED_ROW_KEYS = (
+    "expr-list1-3",
+    "expr-list1-4",
+    "expr-list1-5",
+    "expr-list2-10",
+    "expr-list2-11",
+    "expr-map3-2",
+    "expr-null3-4-1",
+    "expr-null3-4-2",
+    "expr-null3-4-3",
+    "expr-null3-4-5",
+    "expr-null3-4-6",
+    "expr-null3-4-7",
+    "expr-typeconversion2-6",
+)
+
+
+@pytest.mark.parametrize("key", _PARAM_BINDING_CLUSTER3_KEYS)
+def test_issue120_parameter_binding_cluster_has_explicit_params(key: str) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.params is not None
+
+
+@pytest.mark.parametrize("key", _PARAM_BINDING_PROMOTED_ROW_KEYS)
+def test_issue120_parameter_binding_row_promotions_execute_direct_cypher(key: str) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert key in DIRECT_CYPHER_PROMOTION_KEYS
+
+    result = _build_graph(scenario.graph).gfql(
+        scenario.cypher, params=scenario.params, engine="pandas"
+    )
+    assert scenario.expected.rows is not None
+    _assert_expected_rows(scenario, _rows_from_result(result))
+
+
 @pytest.mark.parametrize("key", _RANGE_INVALID_ARG_ERROR_KEYS)
 def test_range_invalid_argument_scenarios_promoted_as_direct_cypher_errors(key: str) -> None:
     """Positive: range() invalid-argument scenarios are supported error cases."""
