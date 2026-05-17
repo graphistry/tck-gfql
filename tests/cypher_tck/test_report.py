@@ -57,7 +57,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     summaries = build_primary_family_summaries(SCENARIOS)
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
-    assert by_lane["row-pipeline-read-forms"] == 153
+    assert by_lane["row-pipeline-read-forms"] == 152
     assert by_lane["optional-match-null-extension"] == 61
     assert by_lane["grouped-match-aggregates"] == 26
     assert by_lane["expression-long-tail"] == 99
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "919 (rows 780, errors 139)"
+        "920 (rows 781, errors 139)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -101,8 +101,9 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Direct local Cypher non-validation triage samples:" in report
     assert "- success_matches_expected:" in report
     assert "match5-8 (clauses/match)" in report
-    assert "- success_wrong_rows:" in report
-    assert "with2-1 (clauses/with)" in report
+    # with2-1 was promoted (tck-gfql#115); the wrong-row bucket is now empty.
+    assert "- success_wrong_rows:" not in report
+    assert "with2-1 (clauses/with)" not in report
     assert "- unexpected_success_expected_error:" not in report
     assert "expr-list1-6-4 (expressions/list)" not in report
 
@@ -113,9 +114,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     assert samples["success_matches_expected"] == [
         "match5-8 (clauses/match)",
     ]
-    assert samples["success_wrong_rows"] == [
-        "with2-1 (clauses/with)",
-    ]
+    assert "success_wrong_rows" not in samples
     assert "unexpected_success_expected_error" not in samples
 
 

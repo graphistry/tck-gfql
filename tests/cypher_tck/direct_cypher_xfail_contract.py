@@ -29,16 +29,15 @@ DIRECT_CYPHER_XFAIL_VALUE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # Literal stays valid for any future xfail that legitimately needs it.
 DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 
-DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
-    # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
-    # rejected the WITH-projection-driven join shape with a validation
-    # error.  Earley + the with_where_clause priority bump now lets the
-    # query parse + execute, but the join semantics aren't right yet —
-    # rows differ from the scenario oracle.  Real fix is out of slice 1
-    # scope; lock the current outcome here.
-    "with2-1",
-)
+# with2-1 (the last wrong-row entry) was reconciled in tck-gfql#115: its
+# `success_wrong_rows` outcome was a fixture-modeling artifact, not a
+# pygraphistry join bug.  The ported `graph_fixture_from_create` setup
+# stringified the `a.id` property reference and conflated the Cypher `id`
+# property with the node-identity column; with an explicit fixture the
+# WITH-pipelined join returns the expected row, so with2-1 is promoted.
+# Bucket emptied; kept as Final[tuple[str, ...]] so the
+# DirectCypherXfailOutcome["success_wrong_rows"] Literal stays valid.
+DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
@@ -144,6 +143,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match5-25",
     "match5-26",
     "with-where3-3",
+    "with2-1",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # Sibling-target drift that now returns expected rows but has not yet been
