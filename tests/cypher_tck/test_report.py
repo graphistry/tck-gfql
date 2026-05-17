@@ -57,7 +57,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     summaries = build_primary_family_summaries(SCENARIOS)
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
-    assert by_lane["row-pipeline-read-forms"] == 148
+    assert by_lane["row-pipeline-read-forms"] == 147
     assert by_lane["optional-match-null-extension"] == 62
     assert by_lane["grouped-match-aggregates"] == 27
     assert by_lane["expression-long-tail"] == 93
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "926 (rows 787, errors 139)"
+        "928 (rows 789, errors 139)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -99,9 +99,9 @@ def test_build_report_includes_gap_priority_sections() -> None:
         in report
     )
     assert "Direct local Cypher non-validation triage samples:" in report
-    assert "- success_matches_expected:" in report
-    assert "match5-8 (clauses/match)" in report
-    assert "with5-2 (clauses/with)" in report
+    assert "- success_matches_expected:" not in report
+    assert "match5-8 (clauses/match)" not in report
+    assert "with5-2 (clauses/with)" not in report
     # with2-1 was promoted (tck-gfql#115); the wrong-row bucket is now empty.
     assert "- success_wrong_rows:" not in report
     assert "with2-1 (clauses/with)" not in report
@@ -112,10 +112,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
-    assert samples["success_matches_expected"] == [
-        "match5-8 (clauses/match)",
-        "with5-2 (clauses/with)",
-    ]
+    assert samples == {}
     assert "success_wrong_rows" not in samples
     assert "unexpected_success_expected_error" not in samples
 

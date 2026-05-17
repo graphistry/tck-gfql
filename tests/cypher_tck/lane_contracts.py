@@ -29,7 +29,6 @@ ROW_PIPELINE_TRANCHE2_KEYS: Final[tuple[str, ...]] = (
     "with1-4",
     "with3-1",
     "with4-1",
-    "with5-2",
     "with-skip-limit1-1",
     "with-skip-limit2-2",
     "with-skip-limit2-3",

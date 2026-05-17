@@ -2553,6 +2553,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "match5-5",
     "match5-6",
     "match5-7",
+    "match5-8",
     "match5-9",
     "match7-1",
     "match7-13",
@@ -2754,6 +2755,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-temporal7-6-8",
     "with4-2",
     "with5-1",
+    "with5-2",
 }
 
 DIRECT_CYPHER_PROMOTION_ERROR_KEYS = {
