@@ -19,6 +19,11 @@ _UNWIND_PREFIX_RE = re.compile(
     flags=re.IGNORECASE,
 )
 
+_PROPERTY_REF_RE = re.compile(
+    r"^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)$"
+)
+_UNRESOLVED_REF = object()
+
 
 def _split_top_level(text: str) -> List[str]:
     parts: List[str] = []
@@ -117,7 +122,34 @@ def _split_key_value(item: str) -> Tuple[str, str] | None:
     return None
 
 
-def _parse_literal(raw: str, bindings: Mapping[str, Any]) -> Any:
+def _resolve_property_reference(token: str, ctx: "ParseContext | None") -> Any:
+    """Resolve a `<var>.<prop>` reference to a previously-created node's property.
+
+    Within a single CREATE, variables created earlier are in scope, so e.g.
+    ``CREATE (a:End {id: 0}), (:Begin {num: a.id})`` should give the Begin node
+    ``num = 0``.  Returns ``_UNRESOLVED_REF`` when the token is not a property
+    reference or the referenced node/property is not (yet) known.
+    """
+    if ctx is None:
+        return _UNRESOLVED_REF
+    match = _PROPERTY_REF_RE.match(token)
+    if match is None:
+        return _UNRESOLVED_REF
+    var, prop = match.group(1), match.group(2)
+    node_id = ctx.var_to_id.get(var)
+    if node_id is None:
+        return _UNRESOLVED_REF
+    node = ctx.nodes_by_id.get(node_id)
+    if node is None or prop not in node:
+        return _UNRESOLVED_REF
+    return node[prop]
+
+
+def _parse_literal(
+    raw: str,
+    bindings: Mapping[str, Any],
+    ctx: "ParseContext | None" = None,
+) -> Any:
     token = raw.strip()
     if token in bindings:
         return bindings[token]
@@ -135,13 +167,20 @@ def _parse_literal(raw: str, bindings: Mapping[str, Any]) -> Any:
         inner = token[1:-1].strip()
         if not inner:
             return []
-        return [_parse_literal(part, bindings) for part in _split_top_level(inner)]
+        return [_parse_literal(part, bindings, ctx) for part in _split_top_level(inner)]
     if token.startswith("{") and token.endswith("}"):
-        return _parse_properties(token, bindings)
+        return _parse_properties(token, bindings, ctx)
+    resolved = _resolve_property_reference(token, ctx)
+    if resolved is not _UNRESOLVED_REF:
+        return resolved
     return token
 
 
-def _parse_properties(prop_text: str, bindings: Mapping[str, Any]) -> Dict[str, Any]:
+def _parse_properties(
+    prop_text: str,
+    bindings: Mapping[str, Any],
+    ctx: "ParseContext | None" = None,
+) -> Dict[str, Any]:
     props: Dict[str, Any] = {}
     inner = prop_text.strip()[1:-1].strip()
     if not inner:
@@ -152,7 +191,7 @@ def _parse_properties(prop_text: str, bindings: Mapping[str, Any]) -> Dict[str, 
         if pair is None:
             continue
         key, raw = pair
-        props[key] = _parse_literal(raw, bindings)
+        props[key] = _parse_literal(raw, bindings, ctx)
     return props
 
 
@@ -162,7 +201,7 @@ def _parse_node(node_text: str, ctx: ParseContext, bindings: Mapping[str, Any]) 
     if '{' in inner:
         before, prop_part = inner.split('{', 1)
         inner = before.strip()
-        props = _parse_properties('{' + prop_part, bindings)
+        props = _parse_properties('{' + prop_part, bindings, ctx)
     var: str | None = None
     labels: List[str] = []
     if inner:
@@ -209,7 +248,7 @@ def _parse_rel_segment(
     if '{' in rel_inner:
         before, prop_part = rel_inner.split('{', 1)
         rel_inner = before.strip()
-        rel_props = _parse_properties('{' + prop_part, bindings)
+        rel_props = _parse_properties('{' + prop_part, bindings, ctx)
     rel_var = None
     rel_type = None
     if rel_inner:

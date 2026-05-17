@@ -74,6 +74,26 @@ def test_parse_create_nested_list_and_map_literals() -> None:
     assert edge["attrs"] == {"score": 1.5, "flags": [False, True]}
 
 
+def test_parse_create_resolves_property_reference() -> None:
+    # `a.num` must resolve to the previously-created node's `num` property (42),
+    # not be materialized as the literal string "a.num" (tck-gfql#126).
+    script = """
+    CREATE (a:End {num: 42}),
+           (:Begin {mirror: a.num})
+    """
+    fixture = graph_fixture_from_create(script)
+    begin = next(node for node in fixture.nodes if node.get("labels") == ["Begin"])
+    assert begin["mirror"] == 42
+
+
+def test_parse_create_property_reference_to_unknown_var_is_left_as_text() -> None:
+    # A reference whose variable was never created stays as the raw token
+    # rather than raising.
+    script = "CREATE (:Begin {mirror: ghost.num})"
+    fixture = graph_fixture_from_create(script)
+    assert fixture.nodes[0]["mirror"] == "ghost.num"
+
+
 def test_parse_create_preserves_newlines_inside_string_literals() -> None:
     script = """
     CREATE (:TheLabel {name: 'Foo Foo'}),
