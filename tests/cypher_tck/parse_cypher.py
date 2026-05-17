@@ -5,6 +5,10 @@ from typing import Any, Dict, Iterable, List, Mapping, Tuple
 from tests.cypher_tck.models import GraphFixture
 
 
+_NODE_ID_COLUMN = "__node__"
+_PROPERTY_REF_RE = re.compile(r"^(?P<var>[A-Za-z_][A-Za-z0-9_]*)\.(?P<prop>[A-Za-z_][A-Za-z0-9_]*)$")
+
+
 @dataclass
 class ParseContext:
     nodes_by_id: Dict[str, Dict[str, Any]]
@@ -117,10 +121,41 @@ def _split_key_value(item: str) -> Tuple[str, str] | None:
     return None
 
 
-def _parse_literal(raw: str, bindings: Mapping[str, Any]) -> Any:
+def _resolve_property_ref(
+    token: str,
+    bindings: Mapping[str, Any],
+    ctx: ParseContext | None,
+) -> Any:
+    match = _PROPERTY_REF_RE.fullmatch(token)
+    if match is None:
+        return token
+
+    var_name = match.group("var")
+    prop_name = match.group("prop")
+
+    bound = bindings.get(var_name)
+    if isinstance(bound, Mapping) and prop_name in bound:
+        return bound[prop_name]
+
+    if ctx is not None and var_name in ctx.var_to_id:
+        node = ctx.nodes_by_id.get(ctx.var_to_id[var_name], {})
+        if prop_name in node:
+            return node[prop_name]
+
+    return token
+
+
+def _parse_literal(
+    raw: str,
+    bindings: Mapping[str, Any],
+    ctx: ParseContext | None = None,
+) -> Any:
     token = raw.strip()
     if token in bindings:
         return bindings[token]
+    resolved = _resolve_property_ref(token, bindings, ctx)
+    if resolved != token:
+        return resolved
     if token.startswith("'") and token.endswith("'"):
         return token[1:-1]
     if re.fullmatch(r"-?\d+", token):
@@ -135,13 +170,17 @@ def _parse_literal(raw: str, bindings: Mapping[str, Any]) -> Any:
         inner = token[1:-1].strip()
         if not inner:
             return []
-        return [_parse_literal(part, bindings) for part in _split_top_level(inner)]
+        return [_parse_literal(part, bindings, ctx) for part in _split_top_level(inner)]
     if token.startswith("{") and token.endswith("}"):
-        return _parse_properties(token, bindings)
+        return _parse_properties(token, bindings, ctx)
     return token
 
 
-def _parse_properties(prop_text: str, bindings: Mapping[str, Any]) -> Dict[str, Any]:
+def _parse_properties(
+    prop_text: str,
+    bindings: Mapping[str, Any],
+    ctx: ParseContext | None = None,
+) -> Dict[str, Any]:
     props: Dict[str, Any] = {}
     inner = prop_text.strip()[1:-1].strip()
     if not inner:
@@ -152,7 +191,7 @@ def _parse_properties(prop_text: str, bindings: Mapping[str, Any]) -> Dict[str, 
         if pair is None:
             continue
         key, raw = pair
-        props[key] = _parse_literal(raw, bindings)
+        props[key] = _parse_literal(raw, bindings, ctx)
     return props
 
 
@@ -162,7 +201,7 @@ def _parse_node(node_text: str, ctx: ParseContext, bindings: Mapping[str, Any]) 
     if '{' in inner:
         before, prop_part = inner.split('{', 1)
         inner = before.strip()
-        props = _parse_properties('{' + prop_part, bindings)
+        props = _parse_properties('{' + prop_part, bindings, ctx)
     var: str | None = None
     labels: List[str] = []
     if inner:
@@ -194,7 +233,7 @@ def _parse_node(node_text: str, ctx: ParseContext, bindings: Mapping[str, Any]) 
         for key, value in props.items():
             node.setdefault(key, value)
     else:
-        node = {"id": node_id, "labels": labels, **props}
+        node = {_NODE_ID_COLUMN: node_id, "labels": labels, **props}
         ctx.nodes_by_id[node_id] = node
     return node_id
 
@@ -209,7 +248,7 @@ def _parse_rel_segment(
     if '{' in rel_inner:
         before, prop_part = rel_inner.split('{', 1)
         rel_inner = before.strip()
-        rel_props = _parse_properties('{' + prop_part, bindings)
+        rel_props = _parse_properties('{' + prop_part, bindings, ctx)
     rel_var = None
     rel_type = None
     if rel_inner:
@@ -366,6 +405,8 @@ def graph_fixture_from_create(script: str) -> GraphFixture:
     return GraphFixture(
         nodes=list(ctx.nodes_by_id.values()),
         edges=edges,
+        node_id=_NODE_ID_COLUMN,
+        node_columns=(_NODE_ID_COLUMN, "labels"),
         edge_columns=("src", "dst", "edge_id", "type", "undirected"),
     )
 

@@ -24,7 +24,7 @@ def test_parse_create_relationship():
     CREATE (a)-[:KNOWS]->(b)
     """
     fixture = graph_fixture_from_create(script)
-    nodes = {node["id"]: node for node in fixture.nodes}
+    nodes = {node[fixture.node_id]: node for node in fixture.nodes}
     assert set(nodes) == {"a", "b"}
     assert nodes["a"].get("labels") == ["A"]
     assert nodes["b"].get("labels") == ["B"]
@@ -66,7 +66,7 @@ def test_parse_create_nested_list_and_map_literals() -> None:
     """
     fixture = graph_fixture_from_create(script)
     assert len(fixture.nodes) == 2
-    source = next(node for node in fixture.nodes if node["id"] == "a")
+    source = next(node for node in fixture.nodes if node[fixture.node_id] == "a")
     assert source["payload"] == [1, -2, True, None, "z", {"k": [3, 4]}]
     assert source["meta"] == {"rank": 7, "tags": ["x", "y"]}
     assert len(fixture.edges) == 1
@@ -104,6 +104,44 @@ def test_parse_unwind_create_string_expansion() -> None:
     fixture = graph_fixture_from_create(script)
     names = sorted(node.get("name") for node in fixture.nodes)
     assert names == ["a", "b", "c"]
+
+
+def test_parse_create_resolves_node_property_reference() -> None:
+    script = """
+    CREATE (a:End {num: 42, id: 0}),
+           (:End {num: 3}),
+           (:Begin {num: a.id})
+    """
+    fixture = graph_fixture_from_create(script)
+    begin = next(node for node in fixture.nodes if node.get("labels") == ["Begin"])
+    assert begin["num"] == 0
+
+
+def test_parse_create_preserves_id_property_separate_from_node_identity() -> None:
+    script = """
+    CREATE (a:End {num: 42, id: 0}),
+           (:End {num: 3}),
+           (:Begin {num: a.id})
+    """
+    fixture = graph_fixture_from_create(script)
+    assert fixture.node_id == "__node__"
+    assert fixture.node_columns == ("__node__", "labels")
+
+    nodes = {node[fixture.node_id]: node for node in fixture.nodes}
+    assert set(nodes) == {"a", "anon_2", "anon_3"}
+    assert nodes["a"]["id"] == 0
+    assert nodes["a"]["num"] == 42
+    assert nodes["anon_3"]["num"] == 0
+
+
+def test_parse_unwind_create_resolves_map_property_reference() -> None:
+    script = """
+    UNWIND [{id: 1, year: 2024}, {id: 2, year: 2025}] AS event
+    CREATE (:Event {id: event.id, year: event.year})
+    """
+    fixture = graph_fixture_from_create(script)
+    rows = sorted((node["id"], node["year"]) for node in fixture.nodes)
+    assert rows == [(1, 2024), (2, 2025)]
 
 
 def test_plan_from_cypher_splits_order_by_skip_on_same_line() -> None:
