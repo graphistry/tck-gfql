@@ -58,6 +58,12 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison1-7-14",
     "expr-comparison1-7-15",
     "expr-comparison1-7-16",
+    "expr-comparison2-5-1",
+    "expr-comparison2-5-2",
+    "expr-comparison2-5-3",
+    "expr-comparison2-5-4",
+    "expr-comparison2-6-1",
+    "expr-comparison2-6-2",
     "expr-comparison3-1",
     "expr-comparison3-2",
     "expr-comparison3-3",
@@ -88,6 +94,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-literals7-7",
     "expr-literals8-18",
     "expr-literals8-11",
+    "expr-graph3-5",
     "expr-map3-2",
     "expr-mathematical8-1",
     "expr-mathematical8-2",
@@ -119,6 +126,11 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-precedence2-1-9",
     "expr-precedence3-6-1",
     "expr-precedence3-6-2",
+    "expr-quantifier7-3-1",
+    "expr-quantifier7-3-2",
+    "expr-quantifier7-3-3",
+    "expr-quantifier7-3-4",
+    "expr-quantifier7-3-5",
     "return2-10",
     "return2-9",
     "expr-temporal2-6-5",
@@ -140,6 +152,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-typeconversion4-3",
     "expr-typeconversion4-4",
     "expr-typeconversion4-5",
+    "return-orderby2-6",
     "with-orderby1-31-1",
     "with-orderby1-31-2",
     "with-orderby1-31-3",
@@ -163,37 +176,17 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match5-25",
     "match5-26",
     "match5-8",
-    "with-where3-3",
-    "with2-1",
-)
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # Sibling-target drift that now returns expected rows but has not yet been
-    # promoted through direct_cypher_support.py.
-    # pygraphistry#1490 fixes direct-Cypher self-loop identity handling while
-    # this scenario remains in the row-pipeline tranche-2 xfail lane.
     "match7-24",
-    # pygraphistry#1490 also fixes node-entity identity grouping for these
-    # count-star ORDER BY, graph-expression, and counting-subgraph shapes.
-    "return-orderby2-6",
-    "expr-graph3-5",
     "usecase-countingsubgraphmatches1-5",
     "usecase-countingsubgraphmatches1-6",
     "usecase-countingsubgraphmatches1-7",
     "usecase-countingsubgraphmatches1-9",
-    # tck-gfql#119 fixes Scenario Outline placeholder substitution for these
-    # expression-lane xfails; direct Cypher now reaches the row oracle and
-    # matches expected results, but the scenarios remain xfail debt.
-    "expr-comparison2-5-1",
-    "expr-comparison2-5-2",
-    "expr-comparison2-5-3",
-    "expr-comparison2-5-4",
-    "expr-comparison2-6-1",
-    "expr-comparison2-6-2",
-    "expr-quantifier7-3-1",
-    "expr-quantifier7-3-2",
-    "expr-quantifier7-3-3",
-    "expr-quantifier7-3-4",
-    "expr-quantifier7-3-5",
+    "with-where3-3",
+    "with2-1",
+)
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
+    # Empty after tck-gfql#142: all tracked success_matches_expected xfails
+    # are represented in the direct-Cypher row support snapshot.
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

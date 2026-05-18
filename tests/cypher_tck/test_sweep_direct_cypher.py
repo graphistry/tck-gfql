@@ -1,4 +1,4 @@
-
+from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_ERROR_KEYS
 from tests.cypher_tck.report import build_report
 from tests.cypher_tck.scenarios import SCENARIOS
 from tests.cypher_tck import sweep_direct_cypher
@@ -51,10 +51,11 @@ def test_build_report_includes_direct_cypher_metrics() -> None:
 def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
     monkeypatch,
 ) -> None:
+    target_keys = {"expr-comparison2-6-3", "usecase-countingsubgraphmatches1-2"}
     scenarios = [
         scenario
         for scenario in SCENARIOS
-        if scenario.key in {"expr-list1-6-4", "with1-1"}
+        if scenario.key in target_keys
     ]
 
     def fake_run(scenario):
@@ -65,8 +66,8 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
         sweep_direct_cypher,
         "DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY",
         {
-            "expr-list1-6-4": "unexpected_success_expected_error",
-            "with1-1": "success_wrong_rows",
+            "expr-comparison2-6-3": "unexpected_success_expected_error",
+            "usecase-countingsubgraphmatches1-2": "success_wrong_rows",
         },
     )
 
@@ -74,16 +75,16 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
 
     assert details == [
         (
-            "expr-list1-6-4",
+            "expr-comparison2-6-3",
             "unexpected_success_expected_error",
             False,
-            "detail for expr-list1-6-4",
+            "detail for expr-comparison2-6-3",
         ),
         (
-            "with1-1",
+            "usecase-countingsubgraphmatches1-2",
             "success_wrong_rows",
             False,
-            "detail for with1-1",
+            "detail for usecase-countingsubgraphmatches1-2",
         ),
     ]
 
@@ -102,3 +103,17 @@ def test_render_direct_cypher_nonvalidation_details_supports_limit() -> None:
         "- shown: 1 / 2",
         "- a: expected=success_wrong_rows; current=row mismatch",
     ]
+
+
+def test_direct_cypher_sweep_keeps_promoted_error_scenarios_in_error_bucket() -> None:
+    """Regression for cypher-string-error scenarios being swept as row cases."""
+    range_error_keys = {
+        key
+        for key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
+        if key.startswith("expr-list11-4-") or key.startswith("expr-list11-5-")
+    }
+    scenarios = [scenario for scenario in SCENARIOS if scenario.key in range_error_keys]
+
+    _, _, promotion_error_keys, _, _ = _compute_direct_cypher_sets(scenarios)
+
+    assert set(promotion_error_keys) == range_error_keys

@@ -869,6 +869,33 @@ _PARAM_BINDING_PROMOTED_ROW_KEYS = (
     "expr-typeconversion2-6",
 )
 
+_ISSUE142_PROMOTED_ROW_KEYS = (
+    "match7-24",
+    "return-orderby2-6",
+    "expr-comparison2-5-1",
+    "expr-comparison2-5-2",
+    "expr-comparison2-5-3",
+    "expr-comparison2-5-4",
+    "expr-comparison2-6-1",
+    "expr-comparison2-6-2",
+    "expr-graph3-5",
+    "expr-quantifier7-3-1",
+    "expr-quantifier7-3-2",
+    "expr-quantifier7-3-3",
+    "expr-quantifier7-3-4",
+    "expr-quantifier7-3-5",
+    "usecase-countingsubgraphmatches1-5",
+    "usecase-countingsubgraphmatches1-6",
+    "usecase-countingsubgraphmatches1-7",
+    "usecase-countingsubgraphmatches1-9",
+)
+
+_ISSUE142_PROMOTED_ERROR_KEYS = (
+    "expr-list1-6-4",
+    "expr-typeconversion4-10-1",
+    "expr-typeconversion4-10-2",
+)
+
 
 @pytest.mark.parametrize("key", _PARAM_BINDING_CLUSTER3_KEYS)
 def test_issue120_parameter_binding_cluster_has_explicit_params(key: str) -> None:
@@ -922,6 +949,40 @@ def test_range_invalid_argument_promotion_covers_exactly_the_audited_keys() -> N
     assert promoted_list11 == set(_RANGE_INVALID_ARG_ERROR_KEYS)
 
 
+@pytest.mark.parametrize("key", _ISSUE142_PROMOTED_ROW_KEYS)
+def test_issue142_refreshed_xfail_row_promotions_execute_direct_cypher(
+    key: str,
+) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" not in scenario.tags
+    assert key in DIRECT_CYPHER_PROMOTION_KEYS
+
+    result = _build_graph(scenario.graph).gfql(
+        scenario.cypher, params=scenario.params, engine="pandas"
+    )
+    assert scenario.expected.rows is not None
+    _assert_expected_rows(scenario, _rows_from_result(result))
+
+
+@pytest.mark.parametrize("key", _ISSUE142_PROMOTED_ERROR_KEYS)
+def test_issue142_refreshed_xfail_error_promotions_raise_direct_cypher(
+    key: str,
+) -> None:
+    scenario = next(s for s in SCENARIOS if s.key == key)
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
+    assert scenario.expected.rows is None
+
+    with pytest.raises(Exception):
+        _build_graph(scenario.graph).gfql(
+            scenario.cypher, params=scenario.params, engine="pandas"
+        )
+
+
 def test_valid_range_scenario_is_not_promoted_as_an_error() -> None:
     """Negative: a valid range() call stays a non-error supported scenario."""
     scenario = next(s for s in SCENARIOS if s.key == "unwind1-2")
@@ -947,7 +1008,6 @@ def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
         "usecase-countingsubgraphmatches1-2",
         "usecase-countingsubgraphmatches1-3",
         "usecase-countingsubgraphmatches1-4",
-        "usecase-countingsubgraphmatches1-5",
     ],
 )
 def test_counting_subgraph_match_count_star_cases_are_not_direct_promoted(key: str) -> None:

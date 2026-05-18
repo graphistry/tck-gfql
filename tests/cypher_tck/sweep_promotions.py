@@ -36,7 +36,7 @@ def _expects_error_scenario(scenario: object) -> bool:
     if expected is None or getattr(expected, "rows", None) is not None:
         return False
     tags = set(getattr(scenario, "tags", ()))
-    if "syntax-error" in tags or "runtime-error" in tags:
+    if "syntax-error" in tags or "runtime-error" in tags or "cypher-string-error" in tags:
         return True
     reason = str(getattr(scenario, "reason", "") or "").lower()
     return any(

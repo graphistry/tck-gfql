@@ -57,10 +57,10 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     summaries = build_primary_family_summaries(SCENARIOS)
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
-    assert by_lane["row-pipeline-read-forms"] == 147
-    assert by_lane["optional-match-null-extension"] == 62
-    assert by_lane["grouped-match-aggregates"] == 27
-    assert by_lane["expression-long-tail"] == 93
+    assert by_lane["row-pipeline-read-forms"] == 145
+    assert by_lane["optional-match-null-extension"] == 61
+    assert by_lane["grouped-match-aggregates"] == 25
+    assert by_lane["expression-long-tail"] == 79
 
 
 def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "928 (rows 789, errors 139)"
+        "949 (rows 807, errors 142)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -99,11 +99,11 @@ def test_build_report_includes_gap_priority_sections() -> None:
         in report
     )
     assert "Direct local Cypher non-validation triage samples:" in report
-    assert "- success_matches_expected:" in report
-    assert "expr-comparison2-5-1 (expressions/comparison)" in report
-    assert "expr-comparison2-6-2 (expressions/comparison)" in report
-    assert "expr-graph3-5 (expressions/graph)" in report
-    assert "expr-quantifier7-3-1 (expressions/quantifier)" in report
+    assert "- success_matches_expected:" not in report
+    assert "expr-comparison2-5-1 (expressions/comparison)" not in report
+    assert "expr-comparison2-6-2 (expressions/comparison)" not in report
+    assert "expr-graph3-5 (expressions/graph)" not in report
+    assert "expr-quantifier7-3-1 (expressions/quantifier)" not in report
     assert "- success_wrong_rows:" in report
     assert "expr-comparison2-6-3 (expressions/comparison)" in report
     assert "expr-comparison2-6-4 (expressions/comparison)" in report
@@ -123,11 +123,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
 
-    assert samples["success_matches_expected"] == [
-        "expr-comparison2-5-1 (expressions/comparison)",
-        "expr-comparison2-5-2 (expressions/comparison)",
-        "... 16 more",
-    ]
+    assert "success_matches_expected" not in samples
     assert samples["success_wrong_rows"] == [
         "expr-comparison2-6-3 (expressions/comparison)",
         "expr-comparison2-6-4 (expressions/comparison)",
