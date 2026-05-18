@@ -45,6 +45,25 @@ def test_direct_cypher_literal_regressions_are_overlap_supported() -> None:
     assert promotion_failures == []
 
 
+def test_direct_cypher_with_orderby_scope_regressions_are_overlap_supported() -> None:
+    scope_keys = {f"with-orderby1-46-{i}" for i in range(1, 11)}
+    scenarios = [scenario for scenario in SCENARIOS if scenario.key in scope_keys]
+
+    (
+        overlap_keys,
+        row_keys,
+        error_keys,
+        overlap_failures,
+        promotion_failures,
+    ) = _compute_direct_cypher_sets(scenarios)
+
+    assert set(overlap_keys) == scope_keys
+    assert row_keys == []
+    assert error_keys == []
+    assert overlap_failures == []
+    assert promotion_failures == []
+
+
 def test_cypher_string_error_tag_is_expected_error_without_legacy_tags(
     monkeypatch,
 ) -> None:
