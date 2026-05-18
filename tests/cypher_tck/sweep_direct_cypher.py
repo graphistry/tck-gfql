@@ -15,7 +15,9 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
 )
 from tests.cypher_tck.models import Scenario
 from tests.cypher_tck.scenarios import SCENARIOS
-from tests.cypher_tck.sweep_promotions import _expects_error_scenario
+from tests.cypher_tck.sweep_promotions import (
+    _expects_error_scenario as _expects_translated_error_scenario,
+)
 from tests.cypher_tck.test_tck_runner import (
     _assert_expected_rows,
     _build_graph,
@@ -24,6 +26,22 @@ from tests.cypher_tck.test_tck_runner import (
 )
 
 _SUPPORT_FILE = Path(__file__).resolve().parent / "direct_cypher_support.py"
+
+
+def _expects_direct_cypher_error_scenario(scenario: object) -> bool:
+    status = getattr(scenario, "status", None)
+    if status == "skip":
+        return False
+
+    expected = getattr(scenario, "expected", None)
+    if expected is None or getattr(expected, "rows", None) is not None:
+        return False
+
+    tags = set(getattr(scenario, "tags", ()))
+    if "cypher-string-error" in tags:
+        return True
+
+    return _expects_translated_error_scenario(scenario)
 
 
 def _ids_from_entity_projection_meta(
@@ -110,7 +128,7 @@ def _compare_graph_result(scenario: Scenario, result: object) -> None:
 
 def _run_direct_cypher_scenario(scenario: Scenario) -> Tuple[bool, str]:
     graph = _build_graph(scenario.graph)
-    expects_error = _expects_error_scenario(scenario)
+    expects_error = _expects_direct_cypher_error_scenario(scenario)
 
     try:
         result = graph.gfql(scenario.cypher, params=scenario.params)
@@ -162,7 +180,7 @@ def _compute_direct_cypher_sets(
             continue
 
         if passed:
-            if _expects_error_scenario(scenario):
+            if _expects_direct_cypher_error_scenario(scenario):
                 promotion_error_keys.append(scenario.key)
             else:
                 promotion_row_keys.append(scenario.key)
