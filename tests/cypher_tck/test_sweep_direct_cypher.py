@@ -5,6 +5,7 @@ from tests.cypher_tck import sweep_direct_cypher
 from tests.cypher_tck.sweep_direct_cypher import (
     _compute_direct_cypher_nonvalidation_details,
     _compute_direct_cypher_sets,
+    _expects_direct_cypher_error_scenario,
     _render_direct_cypher_nonvalidation_details,
 )
 
@@ -23,6 +24,40 @@ def test_compute_direct_cypher_sets_tracks_overlap_row_and_error_promotions() ->
     assert overlap_keys == ["return-orderby2-1"]
     assert row_keys == ["with-orderby1-45-8"]
     assert error_keys == ["call1-7"]
+
+
+def test_cypher_string_error_tag_is_expected_error_without_legacy_tags(
+    monkeypatch,
+) -> None:
+    scenario = next(
+        scenario for scenario in SCENARIOS if scenario.key == "expr-list11-4-1"
+    )
+    assert scenario.status == "supported"
+    assert scenario.reason is None
+    assert scenario.expected.rows is None
+    assert "cypher-string-error" in scenario.tags
+    assert "syntax-error" not in scenario.tags
+    assert "runtime-error" not in scenario.tags
+    assert _expects_direct_cypher_error_scenario(scenario)
+
+    def fake_run(scenario):
+        return True, ""
+
+    monkeypatch.setattr(sweep_direct_cypher, "_run_direct_cypher_scenario", fake_run)
+
+    (
+        overlap_keys,
+        row_keys,
+        error_keys,
+        overlap_failures,
+        promotion_failures,
+    ) = _compute_direct_cypher_sets([scenario])
+
+    assert overlap_keys == []
+    assert row_keys == []
+    assert error_keys == ["expr-list11-4-1"]
+    assert overlap_failures == []
+    assert promotion_failures == []
 
 
 def test_compute_direct_cypher_sets_uses_entity_projection_meta_for_graph_oracle_rows() -> None:
