@@ -507,16 +507,18 @@ def test_grouped_match_aggregate_tranche2_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in GROUPED_MATCH_AGG_TRANCHE2_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == GROUPED_MATCH_AGG_TRANCHE2_EXPECTED_STATUS
-        for forbidden_tag in GROUPED_MATCH_AGG_TRANCHE2_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            GROUPED_MATCH_AGG_TRANCHE2_EXPECTED_STATUS,
+            GROUPED_MATCH_AGG_TRANCHE2_FORBIDDEN_TAGS,
+        )
 
 
 def test_grouped_match_aggregate_tranche2_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in GROUPED_MATCH_AGG_TRANCHE2_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "grouped-match-aggregates"
+        _assert_family_or_direct_promoted(scenario, "grouped-match-aggregates")
 
 
 def test_grouped_match_aggregate_tranche3_keys_exist() -> None:
