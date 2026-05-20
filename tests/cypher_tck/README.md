@@ -32,6 +32,12 @@ PYGRAPHISTRY_PATH=/path/to/pygraphistry python -m tests.cypher_tck.report
 python -m tests.cypher_tck.snapshot_delta old-report.json new-report.json \
   --json-output build/direct-cypher-snapshot-delta.json \
   --markdown-output build/direct-cypher-snapshot-delta.md
+python -m tests.cypher_tck.unified_conformance_summary \
+  --report-json build/cypher-tck-report.json \
+  --manifest tests/cypher_tck/capability_debt_manifest.json \
+  --snapshot-delta build/direct-cypher-snapshot-delta.json \
+  --json-output build/unified-conformance-summary.json \
+  --markdown-output build/unified-conformance-summary.md
 ```
 
 ## Porting backlog
@@ -58,3 +64,7 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   `tests.cypher_tck.report` artifacts provide aggregate count and debt deltas;
   artifacts that also include a first-party `direct_cypher_cases` inventory
   enable exact added/removed/changed case summaries.
+- `tests.cypher_tck.unified_conformance_summary` consumes the report JSON,
+  capability/debt manifest, and snapshot-delta JSON artifacts to write a
+  schema-versioned JSON summary plus PR-ready markdown. It is a consumer of the
+  three artifact contracts and does not change their schemas.
