@@ -1,7 +1,7 @@
 import os
 import re
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, Iterable, List, Sequence
+from typing import Any, Callable, Dict, Iterable, List, Sequence
 
 import pandas as pd
 import pytest
@@ -11,6 +11,10 @@ from graphistry.embed_utils import check_cudf
 from graphistry.gfql.ref.enumerator import OracleCaps, enumerate_chain
 from graphistry.tests.test_compute import CGFull
 
+from tests.cypher_tck.comparator import (
+    render_expected_error_mismatch,
+    render_row_mismatch,
+)
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
     DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS,
@@ -325,8 +329,13 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
 
     if _rows_ordered(scenario):
         assert actual_norm == expected_norm, (
-            f"ordered row mismatch for scenario {scenario.key}; "
-            f"expected={expected_norm}, actual={actual_norm}"
+            render_row_mismatch(
+                scenario_key=scenario.key,
+                expected_rows=expected_norm,
+                actual_rows=actual_norm,
+                expected_columns=expected_keys,
+                ordered=True,
+            )
         )
         return
 
@@ -336,8 +345,31 @@ def _assert_expected_rows(scenario: Scenario, actual_rows: Sequence[Dict[str, An
     actual_sorted = sorted(_row_key(row) for row in actual_norm)
     expected_sorted = sorted(_row_key(row) for row in expected_norm)
     assert actual_sorted == expected_sorted, (
-        f"unordered row mismatch for scenario {scenario.key}; "
-        f"expected={expected_sorted}, actual={actual_sorted}"
+        render_row_mismatch(
+            scenario_key=scenario.key,
+            expected_rows=expected_norm,
+            actual_rows=actual_norm,
+            expected_columns=expected_keys,
+            ordered=False,
+        )
+    )
+
+
+def _assert_expected_error(
+    scenario: Scenario,
+    operation: Callable[[], object],
+    *,
+    expected: str,
+) -> None:
+    try:
+        operation()
+    except Exception:
+        return
+
+    assert False, render_expected_error_mismatch(
+        scenario_key=scenario.key,
+        expected=expected,
+        actual="success",
     )
 
 
@@ -1145,11 +1177,25 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
 
     if _is_cypher_string_supported(scenario):
         if _is_cypher_string_error(scenario):
-            with pytest.raises(Exception):
-                g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+            _assert_expected_error(
+                scenario,
+                lambda: g.gfql(
+                    scenario.cypher,
+                    params=scenario.params,
+                    engine="pandas",
+                ),
+                expected="direct Cypher exception",
+            )
             if _TEST_CUDF and _HAS_CUDF:
-                with pytest.raises(Exception):
-                    g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
+                _assert_expected_error(
+                    scenario,
+                    lambda: g.gfql(
+                        scenario.cypher,
+                        params=scenario.params,
+                        engine="cudf",
+                    ),
+                    expected="direct Cypher exception",
+                )
         else:
             pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
             if scenario.expected.rows is not None:
@@ -1176,14 +1222,17 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
     if is_plan:
         expects_error = scenario.expected.rows is None and "phase1-executor-error" in scenario.tags
         if expects_error:
-            with pytest.raises(Exception):
-                execute_plan(
+            _assert_expected_error(
+                scenario,
+                lambda: execute_plan(
                     g,
                     scenario.graph,
                     scenario.gfql,
                     params=scenario.params,
                     strict_pure=_STRICT_PURE,
-                )
+                ),
+                expected="phase1 executor exception",
+            )
         else:
             plan_rows_df = execute_plan(
                 g,
