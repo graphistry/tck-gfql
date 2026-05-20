@@ -29,6 +29,9 @@ optional cuDF runs when enabled.
 pytest tests/cypher_tck -xvs
 TEST_CUDF=1 pytest tests/cypher_tck -xvs
 PYGRAPHISTRY_PATH=/path/to/pygraphistry python -m tests.cypher_tck.report
+python -m tests.cypher_tck.snapshot_delta old-report.json new-report.json \
+  --json-output build/direct-cypher-snapshot-delta.json \
+  --markdown-output build/direct-cypher-snapshot-delta.md
 ```
 
 ## Porting backlog
@@ -50,3 +53,8 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
 - `tests.cypher_tck.report` now emits both conformance counts and a reusable
   lane-priority view for backlog planning, including tracker placeholders for
   the current top candidate workstreams.
+- `tests.cypher_tck.snapshot_delta` compares two direct-Cypher report artifacts
+  and writes a structured JSON delta plus a PR-ready markdown summary. Plain
+  `tests.cypher_tck.report` artifacts provide aggregate count and debt deltas;
+  artifacts that also include a first-party `direct_cypher_cases` inventory
+  enable exact added/removed/changed case summaries.
