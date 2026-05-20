@@ -10,8 +10,10 @@ GFQL queries and validate results.
 
 ## Layout
 - [`tests/cypher_tck/`](tests/cypher_tck/): Scenario translations, runner, and gap analysis.
+- [`docs/conformance-ownership-map.md`](docs/conformance-ownership-map.md): Ownership boundary with PyGraphistry and shared conformance artifact contracts.
+- [`docs/conformance-profile-handoff-template.md`](docs/conformance-profile-handoff-template.md): Coordinator-facing template for cross-repo conformance lanes.
 - TCK clone (gitignored): `plans/cypher-tck-conformance/tck`.
-- Sync guide: [SYNC.md](SYNC.md).
+- Cross-repo coordination guide: [SYNC.md](SYNC.md).
 
 ## Links
 - PyGraphistry repo: [graphistry/pygraphistry](https://github.com/graphistry/pygraphistry)
