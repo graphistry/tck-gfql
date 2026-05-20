@@ -1,3 +1,5 @@
+import json
+
 from tests.cypher_tck import report as report_module
 from tests.cypher_tck.gap_priority import (
     build_primary_family_summaries,
@@ -19,7 +21,7 @@ def _scenario(key: str):
 def _dummy_scenario(
     key: str,
     *,
-    gfql: object,
+    gfql: tuple[object, ...] | None,
     status: str,
     tags: tuple[str, ...] = (),
 ) -> Scenario:
@@ -37,11 +39,26 @@ def _dummy_scenario(
 
 
 def test_classify_primary_xfail_family_maps_representative_keys() -> None:
-    assert classify_primary_xfail_family(_scenario("return6-12")) == "grouped-match-aggregates"
-    assert classify_primary_xfail_family(_scenario("with-skip-limit1-2")) == "grouped-match-aggregates"
-    assert classify_primary_xfail_family(_scenario("match7-29")) == "optional-match-null-extension"
-    assert classify_primary_xfail_family(_scenario("unwind1-12")) == "row-pipeline-read-forms"
-    assert classify_primary_xfail_family(_scenario("expr-aggregation6-1-1")) == "expression-long-tail"
+    assert (
+        classify_primary_xfail_family(_scenario("return6-12"))
+        == "grouped-match-aggregates"
+    )
+    assert (
+        classify_primary_xfail_family(_scenario("with-skip-limit1-2"))
+        == "grouped-match-aggregates"
+    )
+    assert (
+        classify_primary_xfail_family(_scenario("match7-29"))
+        == "optional-match-null-extension"
+    )
+    assert (
+        classify_primary_xfail_family(_scenario("unwind1-12"))
+        == "row-pipeline-read-forms"
+    )
+    assert (
+        classify_primary_xfail_family(_scenario("expr-aggregation6-1-1"))
+        == "expression-long-tail"
+    )
     assert classify_primary_xfail_family(_scenario("create1-1")) == "write-clauses"
     assert classify_primary_xfail_family(_scenario("call1-1")) == "procedures-and-call"
 
@@ -72,7 +89,10 @@ def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
     )
 
     assert grouped.definition.tracker_ref == "#45"
-    assert grouped.definition.tracker_url == "https://github.com/graphistry/tck-gfql/issues/45"
+    assert (
+        grouped.definition.tracker_url
+        == "https://github.com/graphistry/tck-gfql/issues/45"
+    )
     assert "return6-12" in grouped.sample_keys
     assert grouped.signal.startswith("read-only relationship aggregate xfails:")
 
@@ -108,8 +128,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "expr-comparison2-6-3 (expressions/comparison)" in report
     assert "expr-comparison2-6-4 (expressions/comparison)" in report
     assert (
-        "usecase-countingsubgraphmatches1-2 "
-        "(useCases/countingSubgraphMatches)"
+        "usecase-countingsubgraphmatches1-2 (useCases/countingSubgraphMatches)"
     ) in report
     # with2-1 was promoted (tck-gfql#115); the current wrong-row bucket is
     # limited to branch-paired pygraphistry#1490 drift.
@@ -121,7 +140,9 @@ def test_build_report_includes_gap_priority_sections() -> None:
 
 
 def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
-    samples = report_module._direct_cypher_nonvalidation_samples(SCENARIOS, per_outcome=2)
+    samples = report_module._direct_cypher_nonvalidation_samples(
+        SCENARIOS, per_outcome=2
+    )
 
     assert "success_matches_expected" not in samples
     assert samples["success_wrong_rows"] == [
@@ -167,3 +188,41 @@ def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None
     assert overlap_keys == {"translated"}
     assert promotion_row_keys == {"direct-row-only"}
     assert promotion_error_keys == {"direct-error-only"}
+
+
+def test_json_artifact_schema_and_counts(tmp_path) -> None:
+    artifact = report_module.build_json_artifact(generated_at="2026-05-20T00:00:00Z")
+    output_path = tmp_path / "cypher-tck-report.json"
+
+    report_module.write_json_artifact(output_path, artifact)
+    parsed = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert parsed["schema_version"] == 1
+    assert parsed["generated_at"] == "2026-05-20T00:00:00Z"
+    assert parsed["source_refs"]["open_cypher_tck"]["commit"] == (
+        "59edf2e1c17b845bf97c334ed06b2eb780950c13"
+    )
+    assert parsed["scenario_counts"]["total"] == len(SCENARIOS)
+    assert parsed["gfql_counts"]["translated_supported"] > 0
+    assert parsed["direct_cypher_counts"]["total_snapshot"] > 0
+    assert parsed["expected_error_counts"]["direct_cypher_promoted_only"] == 142
+    assert parsed["debt_keys"] == [
+        {
+            "key": key,
+            "outcome": outcome,
+            "reason": f"direct_cypher_nonvalidation:{outcome}",
+        }
+        for key, outcome in sorted(
+            DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY.items()
+        )
+    ]
+
+
+def test_json_artifact_is_stable_modulo_generated_at() -> None:
+    first = report_module.build_json_artifact(generated_at="2026-05-20T00:00:00Z")
+    second = report_module.build_json_artifact(generated_at="2026-05-20T00:00:01Z")
+
+    first["generated_at"] = "<time>"
+    second["generated_at"] = "<time>"
+
+    assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
