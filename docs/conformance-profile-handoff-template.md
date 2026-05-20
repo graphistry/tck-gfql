@@ -18,13 +18,25 @@ rationale.
 | Execution profile | `cpu-pandas / cpu-polars / gpu-cudf / mixed` |
 | Validation location | `local / GitHub Actions / dgx-spark / other` |
 
+## Artifact inputs
+
+| Artifact | Value |
+|---|---|
+| JSON conformance report | `<path or URL to build/cypher-tck-report.json>` |
+| JSON report schema version | `<integer from report schema_version>` |
+| Snapshot delta JSON | `<path or URL to direct-cypher snapshot delta JSON, if applicable>` |
+| Snapshot delta markdown | `<path or URL to PR-ready delta summary, if applicable>` |
+| Capability/debt manifest | `<path or URL once #152 lands; otherwise not available>` |
+| Capability/debt manifest version | `<manifest schema version once available; otherwise not available>` |
+| Coverage baseline receipt | `<pygraphistry coverage artifact URL/path, if applicable>` |
+
 ## Classification
 
 | Field | Value |
 |---|---|
 | Primary owner repo | `tck-gfql / pygraphistry / shared` |
 | Failure class | `harness translation / pygraphistry implementation / environment-dependency / upstream freshness / docs-process` |
-| Snapshot category touched | `phase_support / direct_cypher_support / direct_cypher_xfail_contract / gap_priority / lane_contracts / coverage_baseline / none` |
+| Snapshot category touched | `phase_support / direct_cypher_support / direct_cypher_xfail_contract / snapshot_delta / gap_priority / lane_contracts / capability_debt_manifest / coverage_baseline / none` |
 | Public issue(s) | `<repo#issue links>` |
 | Private artifact(s) | `<plans/... links, if any>` |
 
@@ -46,6 +58,9 @@ rationale.
 | Local command | `<command>` |
 | CI run | `<url>` |
 | Report output | `<summary or artifact path>` |
+| JSON report artifact | `<path/URL and schema_version>` |
+| Snapshot delta summary | `<path/URL and headline counts, if applicable>` |
+| Capability/debt manifest validation | `<command/result once #152 lands; otherwise not available>` |
 | Cross-repo ref pair | `<tck-gfql sha> + <pygraphistry sha>` |
 | GPU/RAPIDS evidence | `<required/not required; dgx-spark run link or command>` |
 
@@ -64,6 +79,9 @@ rationale.
 - [ ] No upstream source files are vendored or copied into `tck-gfql`.
 - [ ] Recorded source commit and provenance references are preserved where relevant.
 - [ ] Snapshot category updates are named explicitly.
+- [ ] JSON conformance report artifact and `schema_version` are attached or linked.
+- [ ] Direct-Cypher snapshot delta JSON/markdown is attached or linked when a snapshot changed.
+- [ ] Capability/debt manifest version is attached once #152 lands, or marked not available with rationale.
 - [ ] CI gate owner is named explicitly.
 - [ ] GPU/RAPIDS validation is either completed or marked not required with rationale.
 - [ ] Cross-link added between `tck-gfql` and `pygraphistry` issues/PRs when both repos are touched.
@@ -76,6 +94,9 @@ Conformance handoff closeout:
 - pygraphistry ref:
 - Scenario families:
 - Snapshot categories updated:
+- JSON report artifact:
+- Snapshot delta artifact:
+- Capability/debt manifest:
 - Tests/CI:
 - GPU/RAPIDS:
 - Remaining owner:
