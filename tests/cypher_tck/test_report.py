@@ -1,6 +1,8 @@
 import json
 
 from tests.cypher_tck import report as report_module
+from tests.cypher_tck.capability_debt_manifest import build_manifest
+from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_ROW_KEYS
 from tests.cypher_tck.gap_priority import (
     build_primary_family_summaries,
     build_priority_lane_summaries,
@@ -16,6 +18,43 @@ from tests.cypher_tck.scenarios import SCENARIOS
 
 def _scenario(key: str):
     return next(scenario for scenario in SCENARIOS if scenario.key == key)
+
+
+def test_match5_8_promotion_bookkeeping_is_resolved() -> None:
+    scenario = _scenario("match5-8")
+    artifact = report_module.build_json_artifact(generated_at="1970-01-01T00:00:00Z")
+    debt_by_key = {entry["key"]: entry for entry in artifact["debt_keys"]}
+    manifest_entry = next(
+        entry
+        for entry in build_manifest()["scenario_entries"]
+        if entry["key"] == "match5-8"
+    )
+
+    assert scenario.status == "supported"
+    assert scenario.gfql is None
+    assert "cypher-string" in scenario.tags
+    assert "xfail" not in scenario.tags
+    assert "match5-8" in DIRECT_CYPHER_PROMOTION_ROW_KEYS
+    assert "match5-8" not in DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY
+    assert "match5-8" not in debt_by_key
+    assert (
+        artifact["expected_error_counts"]["direct_cypher_nonvalidation_by_outcome"].get(
+            "success_matches_expected", 0
+        )
+        == 0
+    )
+    assert manifest_entry == {
+        "key": "match5-8",
+        "support_status": "supported",
+        "implementation_status": "direct_cypher_only",
+        "ownership": "direct-cypher-promotion",
+        "tags": [
+            "cypher-string",
+            "cypher-string-pure",
+            "match",
+            "variable-length",
+        ],
+    }
 
 
 def _dummy_scenario(
