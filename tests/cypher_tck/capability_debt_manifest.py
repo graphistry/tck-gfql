@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence, cast
 
 from tests.cypher_tck import report
+from tests.cypher_tck.comparator import compare_expected_error
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY,
 )
@@ -15,12 +16,13 @@ from tests.cypher_tck.gap_priority import classify_primary_xfail_family
 from tests.cypher_tck.models import Scenario
 from tests.cypher_tck.scenarios import SCENARIOS
 
-MANIFEST_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = 2
 DEFAULT_MANIFEST_PATH = Path("tests/cypher_tck/capability_debt_manifest.json")
 ALLOWED_SUPPORT_STATUSES = frozenset({"supported", "xfail", "skip", "other"})
 ALLOWED_IMPLEMENTATION_STATUSES = frozenset(
     {"translated", "direct_cypher_only", "not_yet_implemented"}
 )
+EXPECTED_ERROR_CASE_CATEGORY = "expected_error"
 CATEGORY_DEFINITIONS = {
     "supported": "Current expected-pass scenario, including translated GFQL and direct-Cypher-only promotions.",
     "xfail": "Known conformance debt that remains represented in the harness with a reason string.",
@@ -29,8 +31,8 @@ CATEGORY_DEFINITIONS = {
 }
 
 # Capability/debt manifest contract:
-# - `schema_version` starts at 1 and must be bumped for incompatible shape or
-#   meaning changes.
+# - `schema_version` starts at 1 and is bumped for shape or meaning changes
+#   that downstream consumers should explicitly acknowledge.
 # - The manifest is scenario-level metadata. It does not copy the #147 report
 #   artifact source refs, runtime profile, or headline-count ownership.
 # - Validation consumes the #147 JSON artifact so future snapshot-delta and
@@ -152,6 +154,164 @@ def _artifact_debt_by_key(artifact: Mapping[str, Any]) -> dict[str, dict[str, st
     return debt_by_key
 
 
+def _normalize_case_category(value: object) -> str | None:
+    if value is None:
+        return None
+    normalized = str(value).strip().lower().replace("-", "_")
+    if normalized in {
+        "error",
+        "errors",
+        "expected_error",
+        "expected_errors",
+        "expectederror",
+    }:
+        return EXPECTED_ERROR_CASE_CATEGORY
+    return normalized or None
+
+
+def _artifact_expected_error_by_key(
+    artifact: Mapping[str, Any],
+) -> dict[str, Mapping[str, Any]]:
+    cases = artifact.get("direct_cypher_cases")
+    if not isinstance(cases, list):
+        return {}
+
+    errors_by_key: dict[str, Mapping[str, Any]] = {}
+    for item in cases:
+        if not isinstance(item, Mapping):
+            continue
+        key = item.get("key")
+        if not isinstance(key, str) or not key:
+            continue
+        category = _normalize_case_category(item.get("category", item.get("status")))
+        if category != EXPECTED_ERROR_CASE_CATEGORY:
+            continue
+        errors_by_key[key] = _normalize_actual_expected_error(item)
+    return errors_by_key
+
+
+def _normalize_actual_expected_error(case: Mapping[str, Any]) -> Mapping[str, Any]:
+    nested = case.get("expected_error")
+    if isinstance(nested, Mapping):
+        payload: dict[str, Any] = dict(nested)
+    else:
+        payload = {}
+
+    for source, target in (
+        ("code", "code"),
+        ("error_code", "code"),
+        ("category", "case_category"),
+        ("error_category", "category"),
+        ("field", "field"),
+        ("value", "value"),
+        ("message", "message"),
+        ("error_message", "message"),
+        ("detail", "message"),
+    ):
+        if target not in payload and source in case:
+            payload[target] = case[source]
+    return payload
+
+
+def _manifest_expected_error(
+    value: object,
+    *,
+    key: str,
+    errors: list[str],
+) -> Mapping[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        errors.append(f"{key}.expected_error must be an object")
+        return None
+
+    code = value.get("code")
+    if not isinstance(code, str) or not code.strip():
+        errors.append(f"{key}.expected_error.code must be a non-empty string")
+        return None
+
+    payload: dict[str, Any] = {"code": code}
+    key_fields = value.get("key_fields", {})
+    if not isinstance(key_fields, Mapping):
+        errors.append(f"{key}.expected_error.key_fields must be an object when present")
+        key_fields = {}
+    for field, field_value in key_fields.items():
+        if not isinstance(field, str) or not field.strip():
+            errors.append(f"{key}.expected_error.key_fields keys must be strings")
+            continue
+        payload[field] = field_value
+
+    anchored_substrings = value.get("anchored_substrings", [])
+    if not isinstance(anchored_substrings, list) or not all(
+        isinstance(item, str) and item for item in anchored_substrings
+    ):
+        errors.append(
+            f"{key}.expected_error.anchored_substrings must be a list of "
+            "non-empty strings when present"
+        )
+        anchored_substrings = []
+    payload["anchored_substrings"] = tuple(cast(list[str], anchored_substrings))
+    payload["key_field_names"] = tuple(
+        field for field in key_fields if isinstance(field, str) and field.strip()
+    )
+    return payload
+
+
+def _error_message(actual_error: Mapping[str, Any]) -> str:
+    message = actual_error.get("message")
+    if message is None:
+        return ""
+    return str(message)
+
+
+def _expected_error_claim_diagnostic(
+    *,
+    key: str,
+    expected_error: Mapping[str, Any],
+    actual_error: Mapping[str, Any] | None,
+) -> str:
+    actual_payload = actual_error or {"code": "<missing error code>"}
+    result = compare_expected_error(
+        scenario_key=key,
+        expected=expected_error,
+        actual=actual_payload,
+        key_fields=cast(Sequence[str], expected_error.get("key_field_names", ())),
+    )
+    if result.matched:
+        return ""
+    return f"{key}: expected_error claim mismatch\n{result.diagnostic}"
+
+
+def _expected_error_drift_diagnostic(
+    *,
+    key: str,
+    expected_error: Mapping[str, Any],
+    actual_error: Mapping[str, Any],
+) -> str:
+    result = compare_expected_error(
+        scenario_key=key,
+        expected=expected_error,
+        actual=actual_error,
+        key_fields=cast(Sequence[str], expected_error.get("key_field_names", ())),
+    )
+    if result.matched:
+        for index, substring in enumerate(
+            cast(Sequence[str], expected_error.get("anchored_substrings", ()))
+        ):
+            message = _error_message(actual_error)
+            if substring not in message:
+                return (
+                    f"{key}: expected_error drift\n"
+                    f"expected error mismatch for scenario {key}\n"
+                    f"context: field='anchored_substrings[{index}]'\n"
+                    f"expected: {substring!r}\n"
+                    f"actual: {message!r}\n"
+                    "note: anchored substring was not present in actual error text"
+                )
+        return ""
+    return f"{key}: expected_error drift\n{result.diagnostic}"
+
+
 def _current_status_counts(scenarios: Sequence[Scenario]) -> dict[str, int]:
     counter = Counter(scenario.status for scenario in scenarios)
     return {
@@ -245,6 +405,8 @@ def validate_manifest(
     status_counts: Counter[str] = Counter()
     implementation_counts: Counter[str] = Counter()
     manifest_debt_by_key: dict[str, dict[str, str]] = {}
+    actual_expected_error_by_key = _artifact_expected_error_by_key(artifact)
+    manifest_expected_error_by_key: dict[str, Mapping[str, Any]] = {}
 
     for idx, entry in enumerate(entries):
         key = entry.get("key")
@@ -257,6 +419,13 @@ def validate_manifest(
         reason = entry.get("reason")
         ownership = entry.get("ownership")
         tags = entry.get("tags")
+        expected_error = _manifest_expected_error(
+            entry.get("expected_error"),
+            key=key,
+            errors=errors,
+        )
+        if expected_error is not None:
+            manifest_expected_error_by_key[key] = expected_error
 
         if support_status not in ALLOWED_SUPPORT_STATUSES:
             errors.append(f"{key}: unsupported support_status {support_status!r}")
@@ -322,6 +491,35 @@ def validate_manifest(
             status_counts.update([support_status])
         if isinstance(implementation_status, str):
             implementation_counts.update([implementation_status])
+
+    for key, expected_error in sorted(manifest_expected_error_by_key.items()):
+        actual_error = actual_expected_error_by_key.get(key)
+        if actual_error is None:
+            errors.append(
+                _expected_error_claim_diagnostic(
+                    key=key,
+                    expected_error=expected_error,
+                    actual_error=None,
+                )
+            )
+            continue
+        diagnostic = _expected_error_drift_diagnostic(
+            key=key,
+            expected_error=expected_error,
+            actual_error=actual_error,
+        )
+        if diagnostic:
+            errors.append(diagnostic)
+
+    for key, actual_error in sorted(actual_expected_error_by_key.items()):
+        if key in manifest_expected_error_by_key:
+            continue
+        if actual_error.get("code") is not None:
+            errors.append(
+                f"{key}: expected_error drift\n"
+                "actual direct_cypher_cases entry has structured expected-error "
+                "output, but manifest expected_error block is absent"
+            )
 
     source_refs = _require_mapping(artifact.get("source_refs"), "source_refs", errors)
     local_fixtures = _require_mapping(
