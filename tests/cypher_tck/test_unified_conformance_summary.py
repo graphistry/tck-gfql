@@ -1,6 +1,9 @@
 import json
 
+from tests.cypher_tck import capability_debt_manifest as manifest_module
+from tests.cypher_tck import report as report_module
 from tests.cypher_tck import unified_conformance_summary as unified_summary
+from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 
 
 def _report_artifact(*, debt_keys=()) -> dict[str, object]:
@@ -86,6 +89,94 @@ def _manifest(*entries: dict[str, object]) -> dict[str, object]:
             "not_yet_implemented": "Scenario without current implementation.",
         },
         "scenario_entries": list(entries),
+    }
+
+
+def _single_expected_error_scenario() -> Scenario:
+    return Scenario(
+        key="unit-error-1",
+        feature_path="synthetic/unit.feature",
+        scenario="synthetic expected-error scenario",
+        cypher="RETURN range(1, 'bad')",
+        graph=GraphFixture(nodes=(), edges=()),
+        expected=Expected(rows=None),
+        gfql=None,
+        status="supported",
+        tags=("cypher-string", "cypher-string-error"),
+    )
+
+
+def _single_scenario_manifest(
+    *,
+    expected_error: dict[str, object] | None = None,
+) -> dict[str, object]:
+    entry: dict[str, object] = {
+        "key": "unit-error-1",
+        "support_status": "supported",
+        "implementation_status": "direct_cypher_only",
+        "ownership": "direct-cypher-promotion",
+        "tags": ["cypher-string", "cypher-string-error"],
+    }
+    if expected_error is not None:
+        entry["expected_error"] = expected_error
+    return _manifest(entry)
+
+
+def _single_scenario_artifact(
+    *,
+    direct_cypher_cases: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    scenarios = [_single_expected_error_scenario()]
+    artifact: dict[str, object] = {
+        "schema_version": report_module.SCHEMA_VERSION,
+        "generated_at": "2026-05-20T00:00:00Z",
+        "source_refs": {
+            "local_fixtures": {
+                "scenario_inventory_sha256": report_module._scenario_inventory_revision(
+                    scenarios
+                ),
+            },
+        },
+        "scenario_counts": {
+            "total": 1,
+            "supported": 1,
+            "xfail": 0,
+            "skip": 0,
+            "other": 0,
+        },
+        "gfql_counts": {},
+        "direct_cypher_counts": {},
+        "expected_error_counts": {"direct_cypher_nonvalidation_debt": 0},
+        "debt_keys": [],
+    }
+    if direct_cypher_cases is not None:
+        artifact["direct_cypher_cases"] = direct_cypher_cases
+    return artifact
+
+
+def _expected_error_block() -> dict[str, object]:
+    return {
+        "code": "GFQL_RANGE_ARGUMENT",
+        "key_fields": {
+            "category": "validation",
+            "field": "range",
+            "value": "bad",
+        },
+        "anchored_substrings": ["range", "bad"],
+    }
+
+
+def _actual_expected_error_case() -> dict[str, object]:
+    return {
+        "key": "unit-error-1",
+        "category": manifest_module.EXPECTED_ERROR_CASE_CATEGORY,
+        "expected_error": {
+            "code": "GFQL_RANGE_ARGUMENT",
+            "category": "validation",
+            "field": "range",
+            "value": "bad",
+            "message": "range argument rejected: bad",
+        },
     }
 
 
@@ -247,6 +338,55 @@ def test_build_summary_reports_recovered_debt_transition() -> None:
         "| recovered-xfail | debt -> passing | supported | direct_cypher_only |"
         in markdown
     )
+
+
+def test_build_summary_surfaces_manifest_expected_error_drift_warning() -> None:
+    scenarios = [_single_expected_error_scenario()]
+    stale_block = _expected_error_block()
+    stale_block["code"] = "STALE_CODE"
+
+    summary = unified_summary.build_summary(
+        _single_scenario_artifact(
+            direct_cypher_cases=[_actual_expected_error_case()]
+        ),
+        _single_scenario_manifest(expected_error=stale_block),
+        _delta(),
+        scenarios=scenarios,
+    )
+
+    warnings = summary["input_warnings"]
+    assert len(warnings) == 1
+    warning = warnings[0]
+    assert "manifest validation: unit-error-1: expected_error drift" in warning
+    assert "context: field='code'" in warning
+    assert "expected: 'STALE_CODE'" in warning
+    assert "actual: 'GFQL_RANGE_ARGUMENT'" in warning
+
+    markdown = unified_summary.render_markdown(summary)
+    assert "## Input Warnings" in markdown
+    assert "manifest validation: unit-error-1: expected_error drift" in markdown
+    assert "  expected error mismatch for scenario unit-error-1" in markdown
+
+
+def test_build_summary_surfaces_missing_expected_error_block_drift_warning() -> None:
+    scenarios = [_single_expected_error_scenario()]
+
+    summary = unified_summary.build_summary(
+        _single_scenario_artifact(
+            direct_cypher_cases=[_actual_expected_error_case()]
+        ),
+        _single_scenario_manifest(),
+        _delta(),
+        scenarios=scenarios,
+    )
+
+    assert summary["input_warnings"] == [
+        "manifest validation: unit-error-1: expected_error drift\n"
+        "actual direct_cypher_cases entry has structured expected-error output, "
+        "but manifest expected_error block is absent"
+    ]
+    markdown = unified_summary.render_markdown(summary)
+    assert "manifest expected_error block is absent" in markdown
 
 
 def test_main_writes_json_and_markdown_outputs(tmp_path, capsys) -> None:

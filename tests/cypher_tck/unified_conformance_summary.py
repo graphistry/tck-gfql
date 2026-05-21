@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence, cast
 
 from tests.cypher_tck import capability_debt_manifest, report, snapshot_delta
+from tests.cypher_tck.models import Scenario
 
 SUMMARY_SCHEMA_VERSION = 1
 DEFAULT_JSON_OUTPUT = Path("build/unified-conformance-summary.json")
@@ -67,6 +68,7 @@ def _input_warnings(
     report_artifact: Mapping[str, Any],
     manifest: Mapping[str, Any],
     delta: Mapping[str, Any],
+    scenarios: Sequence[Scenario],
 ) -> list[str]:
     warnings: list[str] = []
     if report_artifact.get("schema_version") != report.SCHEMA_VERSION:
@@ -104,6 +106,14 @@ def _input_warnings(
     delta_warnings = delta.get("input_warnings")
     if isinstance(delta_warnings, list):
         warnings.extend(str(warning) for warning in delta_warnings)
+    try:
+        capability_debt_manifest.validate_manifest(
+            manifest,
+            artifact=report_artifact,
+            scenarios=scenarios,
+        )
+    except capability_debt_manifest.ManifestValidationError as exc:
+        warnings.extend(f"manifest validation: {error}" for error in exc.errors)
     return warnings
 
 
@@ -252,6 +262,8 @@ def build_summary(
     report_artifact: Mapping[str, Any],
     manifest: Mapping[str, Any],
     delta: Mapping[str, Any],
+    *,
+    scenarios: Sequence[Scenario] = capability_debt_manifest.SCENARIOS,
 ) -> dict[str, Any]:
     manifest_by_key = _manifest_by_key(manifest)
     movement = _debt_movement(delta, manifest_by_key)
@@ -289,7 +301,12 @@ def build_summary(
         },
         "debt_movement": movement,
         "newly_broken_support_classifications": movement["newly_broken"],
-        "input_warnings": _input_warnings(report_artifact, manifest, delta),
+        "input_warnings": _input_warnings(
+            report_artifact,
+            manifest,
+            delta,
+            scenarios,
+        ),
     }
 
 
@@ -509,7 +526,9 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
     if warnings:
         lines.extend(["## Input Warnings", ""])
         for warning in warnings:
-            lines.append(f"- {warning}")
+            warning_lines = str(warning).splitlines() or [""]
+            lines.append(f"- {warning_lines[0]}")
+            lines.extend(f"  {line}" for line in warning_lines[1:])
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
