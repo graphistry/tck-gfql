@@ -77,7 +77,7 @@ def _entry(
 
 def _manifest(*entries: dict[str, object]) -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "compatible_report_schema_version": 1,
         "category_definitions": {
             "supported": "Expected pass scenario.",
