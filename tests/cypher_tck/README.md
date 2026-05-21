@@ -68,3 +68,25 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   capability/debt manifest, and snapshot-delta JSON artifacts to write a
   schema-versioned JSON summary plus PR-ready markdown. It is a consumer of the
   three artifact contracts and does not change their schemas.
+- `tests.cypher_tck.capability_debt_manifest` validates the versioned
+  capability/debt manifest. Manifest schema version 2 adds an optional
+  per-scenario `expected_error` block:
+
+  ```json
+  {
+    "expected_error": {
+      "code": "GFQL_RANGE_ARGUMENT",
+      "key_fields": {
+        "category": "validation",
+        "field": "range",
+        "value": "bad"
+      },
+      "anchored_substrings": ["range", "bad"]
+    }
+  }
+  ```
+
+  The block is structured matcher input for case-level direct-Cypher expected
+  error payloads when a report artifact includes `direct_cypher_cases`. Entries
+  without the block remain valid against artifacts that do not carry case-level
+  actual error payloads.
