@@ -38,6 +38,18 @@ Notes:
 GitHub Actions runs the suite on PRs. See `.github/workflows`.
 `nightly.yml` runs on schedule and updates the pygraphistry badge.
 
+`pr-conformance-summary.yml` runs on PRs to generate the unified conformance
+summary from the PR checkout against the base `main` checkout. It uploads the
+structured JSON and markdown artifacts as `unified-conformance-summary`, then
+posts or updates one marker-based PR comment. Local reproduction:
+
+```bash
+python -m tests.cypher_tck.pr_conformance_comment \
+  --base-dir /path/to/base/tck-gfql \
+  --head-dir /path/to/pr/tck-gfql \
+  --pygraphistry-path /path/to/pygraphistry
+```
+
 ## Debugging Tips
 
 - Use `python3 -m tests.cypher_tck.report` to print the conformance summary.

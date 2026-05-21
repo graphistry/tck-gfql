@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **PR conformance summary comments**: Added an additive PR workflow that
+  generates the unified conformance summary against the PR state vs `main`,
+  uploads the structured JSON/markdown artifacts, and posts or updates a single
+  marker-based PR comment for reviewer consumption (tck-gfql#170).
 - **Capability/debt manifest expected-error validation**: Bumped the manifest
   schema to version 2 and added an optional per-scenario `expected_error`
   matcher block for structured direct-Cypher expected-error diagnostics. The
