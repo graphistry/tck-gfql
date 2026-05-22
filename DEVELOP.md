@@ -54,6 +54,9 @@ python -m tests.cypher_tck.pr_conformance_comment \
 
 - Use `python3 -m tests.cypher_tck.report` to print the conformance summary.
 - Use `python3 -m tests.cypher_tck.porting_backlog` for xfail coverage stats.
+- Use `PYGRAPHISTRY_PATH=/path/to/pygraphistry python3 -m tests.cypher_tck.coverage_gap_report`
+  to run the scenario suite under coverage.py and write the pygraphistry GFQL
+  zero-hit range JSON/markdown artifacts under `build/`.
 - If `./bin/ci.sh` reports missing `graphistry.compute` row-pipeline symbols,
   point `PYGRAPHISTRY_PATH` at a newer pygraphistry checkout or run with
   `PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=<ref>`.

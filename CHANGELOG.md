@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Coverage-gap report artifact**: Added `tests.cypher_tck.coverage_gap_report`,
+  an evidence-only coverage runner that executes the TCK scenario suite under
+  coverage.py, restricts accounting to pygraphistry GFQL source targets, and
+  emits schema-versioned JSON plus markdown zero-hit range summaries for shrink
+  targeting (tck-gfql#176).
 - **PR conformance summary comments**: Added an additive PR workflow that
   generates the unified conformance summary against the PR state vs `main`,
   uploads the structured JSON/markdown artifacts, and posts or updates a single
