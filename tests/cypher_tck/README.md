@@ -38,6 +38,9 @@ python -m tests.cypher_tck.unified_conformance_summary \
   --snapshot-delta build/direct-cypher-snapshot-delta.json \
   --json-output build/unified-conformance-summary.json \
   --markdown-output build/unified-conformance-summary.md
+PYGRAPHISTRY_PATH=/path/to/pygraphistry python -m tests.cypher_tck.coverage_gap_report \
+  --json-output build/coverage-gap-report.json \
+  --markdown-output build/coverage-gap-report.md
 ```
 
 ## Porting backlog
@@ -68,6 +71,10 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   capability/debt manifest, and snapshot-delta JSON artifacts to write a
   schema-versioned JSON summary plus PR-ready markdown. It is a consumer of the
   three artifact contracts and does not change their schemas.
+- `tests.cypher_tck.coverage_gap_report` runs the scenario suite under
+  coverage.py and writes a schema-versioned pygraphistry GFQL zero-hit range
+  inventory as JSON plus markdown. It is evidence-only for shrink targeting:
+  the report does not recommend deletion or modify pygraphistry files.
 - `tests.cypher_tck.capability_debt_manifest` validates the versioned
   capability/debt manifest. Manifest schema version 2 adds an optional
   per-scenario `expected_error` block:
