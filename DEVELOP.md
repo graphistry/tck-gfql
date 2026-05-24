@@ -50,6 +50,24 @@ python -m tests.cypher_tck.pr_conformance_comment \
   --pygraphistry-path /path/to/pygraphistry
 ```
 
+The same workflow also emits `coverage-gap-pr-delta` artifacts when the paired
+pygraphistry ref touches a shrink-targeting priority file. It compares #177
+coverage-gap reports for the pygraphistry PR head against its merge-base and
+posts or updates a separate marker-based comment with newly uncovered lines,
+newly covered lines, and net coverage percentage deltas. If no requested
+priority file is touched, the workflow writes a suppressed artifact and skips
+creating a new coverage-delta comment; any existing marker comment is updated
+in place to show the suppressed state.
+
+Local delta reproduction from existing #177 coverage-gap JSON reports:
+
+```bash
+python -m tests.cypher_tck.coverage_gap_pr_delta \
+  --base-report-json /path/to/base-coverage-gap-report.json \
+  --head-report-json /path/to/head-coverage-gap-report.json \
+  --changed-files /path/to/pygraphistry-changed-files.txt
+```
+
 ## Debugging Tips
 
 - Use `python3 -m tests.cypher_tck.report` to print the conformance summary.

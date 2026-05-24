@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Coverage-gap PR delta comments**: Added `tests.cypher_tck.coverage_gap_pr_delta`
+  and extended the PR conformance workflow to compare #177 coverage-gap reports
+  for a pygraphistry PR head against its merge-base, upload structured delta
+  artifacts, and post/update an evidence-only coverage delta comment when a
+  requested shrink priority file is touched (tck-gfql#178).
 - **Coverage-gap report artifact**: Added `tests.cypher_tck.coverage_gap_report`,
   an evidence-only coverage runner that executes the TCK scenario suite under
   coverage.py, restricts accounting to pygraphistry GFQL source targets, and
