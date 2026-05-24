@@ -68,6 +68,30 @@ python -m tests.cypher_tck.coverage_gap_pr_delta \
   --changed-files /path/to/pygraphistry-changed-files.txt
 ```
 
+Cross-PR shrink-cycle accounting can be reproduced from a sequence of existing
+#177 coverage-gap reports:
+
+```bash
+python -m tests.cypher_tck.coverage_gap_cumulative_tracker \
+  --report baseline=/path/to/post-1609-coverage-gap-report.json \
+  --report pr1604=/path/to/pr1604-coverage-gap-report.json \
+  --report pr1605=/path/to/pr1605-coverage-gap-report.json
+```
+
+When regenerating reports from pygraphistry master commits, first capture the
+public commit list, then pass it with a local pygraphistry checkout. The tracker
+uses temporary git worktrees under `build/coverage-gap-cumulative/reports/` and
+does not edit the pygraphistry checkout:
+
+```bash
+gh api repos/graphistry/pygraphistry/commits > build/pygraphistry-commits.json
+python -m tests.cypher_tck.coverage_gap_cumulative_tracker \
+  --github-commits-json build/pygraphistry-commits.json \
+  --pygraphistry-repo /path/to/pygraphistry \
+  --baseline-commit 2d0be647690d \
+  --commit-limit 5
+```
+
 ## Debugging Tips
 
 - Use `python3 -m tests.cypher_tck.report` to print the conformance summary.

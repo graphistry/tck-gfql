@@ -41,6 +41,11 @@ python -m tests.cypher_tck.unified_conformance_summary \
 PYGRAPHISTRY_PATH=/path/to/pygraphistry python -m tests.cypher_tck.coverage_gap_report \
   --json-output build/coverage-gap-report.json \
   --markdown-output build/coverage-gap-report.md
+python -m tests.cypher_tck.coverage_gap_cumulative_tracker \
+  --report baseline=build/coverage-gap-report-baseline.json \
+  --report head=build/coverage-gap-report-head.json \
+  --json-output build/coverage-gap-cumulative.json \
+  --markdown-output build/coverage-gap-cumulative.md
 ```
 
 ## Porting backlog
@@ -75,6 +80,11 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   coverage.py and writes a schema-versioned pygraphistry GFQL zero-hit range
   inventory as JSON plus markdown. It is evidence-only for shrink targeting:
   the report does not recommend deletion or modify pygraphistry files.
+- `tests.cypher_tck.coverage_gap_cumulative_tracker` consumes a sequence of
+  coverage-gap reports and writes a separate schema-versioned JSON plus
+  markdown summary of cumulative priority-file zero-hit movement across a
+  shrink cycle. It reports gap-closed, gap-opened, gap-shuffled, or flat
+  trajectory evidence without changing the input report schema.
 - `tests.cypher_tck.capability_debt_manifest` validates the versioned
   capability/debt manifest. Manifest schema version 2 adds an optional
   per-scenario `expected_error` block:
