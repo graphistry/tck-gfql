@@ -39510,6 +39510,81 @@
       ]
     },
     {
+      "implementation_status": "not_yet_implemented",
+      "key": "firstparty-predicates-isnotin1-1",
+      "ownership": "skipped",
+      "reason": "pygraphistry#966 is still open; is_not_in() is not available on current pygraphistry master",
+      "support_status": "skip",
+      "tags": [
+        "first-party",
+        "is-not-in",
+        "not-yet-implemented",
+        "positive-match",
+        "predicate",
+        "pygraphistry-966"
+      ]
+    },
+    {
+      "implementation_status": "not_yet_implemented",
+      "key": "firstparty-predicates-isnotin1-2",
+      "ownership": "skipped",
+      "reason": "pygraphistry#966 is still open; is_not_in() is not available on current pygraphistry master",
+      "support_status": "skip",
+      "tags": [
+        "first-party",
+        "is-not-in",
+        "negative-match",
+        "not-yet-implemented",
+        "predicate",
+        "pygraphistry-966"
+      ]
+    },
+    {
+      "implementation_status": "not_yet_implemented",
+      "key": "firstparty-predicates-isnotin1-3",
+      "ownership": "skipped",
+      "reason": "pygraphistry#966 is still open; is_not_in() is not available on current pygraphistry master",
+      "support_status": "skip",
+      "tags": [
+        "empty-list",
+        "first-party",
+        "is-not-in",
+        "not-yet-implemented",
+        "predicate",
+        "pygraphistry-966"
+      ]
+    },
+    {
+      "implementation_status": "not_yet_implemented",
+      "key": "firstparty-predicates-isnotin1-4",
+      "ownership": "skipped",
+      "reason": "pygraphistry#966 is still open; is_not_in() is not available on current pygraphistry master",
+      "support_status": "skip",
+      "tags": [
+        "first-party",
+        "is-not-in",
+        "none-handling",
+        "not-yet-implemented",
+        "predicate",
+        "pygraphistry-966"
+      ]
+    },
+    {
+      "implementation_status": "not_yet_implemented",
+      "key": "firstparty-predicates-isnotin1-5",
+      "ownership": "skipped",
+      "reason": "pygraphistry#966 is still open; is_not_in() is not available on current pygraphistry master",
+      "support_status": "skip",
+      "tags": [
+        "first-party",
+        "is-not-in",
+        "mixed-types",
+        "not-yet-implemented",
+        "predicate",
+        "pygraphistry-966"
+      ]
+    },
+    {
       "implementation_status": "direct_cypher_only",
       "key": "match-where1-10",
       "ownership": "direct-cypher-promotion",

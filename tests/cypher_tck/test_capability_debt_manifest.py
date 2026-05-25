@@ -126,10 +126,10 @@ def test_default_capability_debt_manifest_validates_against_report_artifact() ->
     summary = manifest_module.validate_manifest(_manifest(), artifact=_artifact())
 
     assert summary.scenario_count == len(SCENARIOS)
-    assert summary.status_counts == {"supported": 2926, "xfail": 701}
+    assert summary.status_counts == {"skip": 5, "supported": 2926, "xfail": 701}
     assert summary.implementation_counts == {
         "direct_cypher_only": 238,
-        "not_yet_implemented": 451,
+        "not_yet_implemented": 456,
         "translated": 2938,
     }
     assert summary.direct_cypher_debt_count == len(
@@ -164,9 +164,14 @@ def test_manifest_sample_entries_cover_current_categories() -> None:
     assert direct_cypher_only["implementation_status"] == "direct_cypher_only"
     assert direct_cypher_only["ownership"] == "direct-cypher-promotion"
 
-    entries = manifest["scenario_entries"]
-    assert isinstance(entries, list)
-    assert not any(entry["support_status"] == "skip" for entry in entries)
+    skip = _entry_by_key(manifest, "firstparty-predicates-isnotin1-1")
+    assert skip["support_status"] == "skip"
+    assert skip["implementation_status"] == "not_yet_implemented"
+    assert skip["ownership"] == "skipped"
+    assert skip["reason"] == (
+        "pygraphistry#966 is still open; is_not_in() is not available on "
+        "current pygraphistry master"
+    )
 
 
 def test_manifest_rejects_stale_scenario_key() -> None:

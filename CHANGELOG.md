@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **First-party `is_not_in()` predicate smoke inventory**: Added pending-support
+  scenario coverage for pygraphistry#966 across positive, negative, empty-list,
+  None-handling, and mixed-type cases so the predicate can be promoted when it
+  lands upstream (tck-gfql#185).
 - **Conformance DRY ref-pair summaries**: Standardized CI/nightly conformance
   ref-pair summary fields through `tests.cypher_tck.report`, documenting
   `tck_gfql_ref`, `tck_gfql_sha`, `pygraphistry_ref`, `pygraphistry_sha`, and
