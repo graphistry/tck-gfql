@@ -4,10 +4,11 @@ import argparse
 import hashlib
 import json
 import os
+import subprocess
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 
 from tests.cypher_tck.direct_cypher_xfail_contract import (
@@ -31,6 +32,13 @@ from tests.cypher_tck.scenarios import SCENARIOS
 SCHEMA_VERSION = 1
 DEFAULT_JSON_OUTPUT = Path("build/cypher-tck-report.json")
 OPEN_CYPHER_TCK_SOURCE_COMMIT = "59edf2e1c17b845bf97c334ed06b2eb780950c13"
+REF_PAIR_FIELDS = (
+    "tck_gfql_ref",
+    "tck_gfql_sha",
+    "pygraphistry_ref",
+    "pygraphistry_sha",
+    "execution_profile",
+)
 
 # JSON artifact contract:
 # - `schema_version` starts at 1 and must be bumped for incompatible shape changes.
@@ -153,6 +161,101 @@ def _utc_now_iso() -> str:
         .isoformat()
         .replace("+00:00", "Z")
     )
+
+
+def _first_env(env: Mapping[str, str], names: Sequence[str]) -> str | None:
+    for name in names:
+        value = env.get(name)
+        if value:
+            return value
+    return None
+
+
+def _git_output(args: Sequence[str], *, cwd: Path) -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except OSError:
+        return None
+    if completed.returncode != 0:
+        return None
+    value = completed.stdout.strip()
+    return value or None
+
+
+def _git_ref(path: Path) -> str | None:
+    branch = _git_output(("branch", "--show-current"), cwd=path)
+    if branch:
+        return branch
+    return _git_output(("rev-parse", "--short", "HEAD"), cwd=path)
+
+
+def _git_sha(path: Path) -> str | None:
+    return _git_output(("rev-parse", "HEAD"), cwd=path)
+
+
+def _execution_profile(env: Mapping[str, str]) -> str:
+    explicit = env.get("EXECUTION_PROFILE")
+    if explicit:
+        return explicit
+    if env.get("TEST_CUDF") or env.get("CUDA_VISIBLE_DEVICES"):
+        return "gpu-cudf"
+    return "cpu-pandas"
+
+
+def build_conformance_ref_pair(
+    *,
+    env: Mapping[str, str] | None = None,
+    repo_root: Path | None = None,
+) -> Dict[str, str]:
+    source_env = os.environ if env is None else env
+    root = repo_root or Path.cwd()
+    pygraphistry_path = source_env.get("PYGRAPHISTRY_PATH")
+    pygraphistry_git_path = Path(pygraphistry_path) if pygraphistry_path else None
+
+    fields = {
+        "tck_gfql_ref": _first_env(
+            source_env,
+            ("TCK_GFQL_REF", "GITHUB_HEAD_REF", "GITHUB_REF_NAME"),
+        )
+        or _git_ref(root)
+        or "unknown",
+        "tck_gfql_sha": _first_env(source_env, ("TCK_GFQL_SHA", "GITHUB_SHA"))
+        or _git_sha(root)
+        or "unknown",
+        "pygraphistry_ref": _first_env(
+            source_env,
+            ("PYGRAPHISTRY_REF", "PYGRAPHISTRY_REF_INPUT"),
+        )
+        or "unknown",
+        "pygraphistry_sha": source_env.get("PYGRAPHISTRY_SHA")
+        or (
+            _git_sha(pygraphistry_git_path)
+            if pygraphistry_git_path is not None and pygraphistry_git_path.exists()
+            else None
+        )
+        or "unknown",
+        "execution_profile": _execution_profile(source_env),
+    }
+    return {field: fields[field] for field in REF_PAIR_FIELDS}
+
+
+def render_conformance_ref_pair_markdown(ref_pair: Mapping[str, str]) -> str:
+    lines = [
+        "### Conformance ref pair",
+        "",
+        "| field | value |",
+        "|---|---|",
+    ]
+    for field in REF_PAIR_FIELDS:
+        lines.append(f"| `{field}` | `{ref_pair.get(field, 'unknown')}` |")
+    return "\n".join(lines) + "\n"
 
 
 def _report_metrics(scenarios: Sequence[object]) -> Dict[str, Any]:
@@ -633,13 +736,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    ref_pair_summary = render_conformance_ref_pair_markdown(
+        build_conformance_ref_pair()
+    )
     report = build_report()
+    print(ref_pair_summary)
     print(report)
     write_json_artifact(args.json_output, build_json_artifact())
     print(f"JSON artifact written: {args.json_output}")
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as summary:
+            summary.write(ref_pair_summary)
+            summary.write("\n")
             summary.write(report)
             summary.write(f"\nJSON artifact written: `{args.json_output}`\n")
 

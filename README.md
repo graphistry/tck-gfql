@@ -11,6 +11,7 @@ GFQL queries and validate results.
 ## Layout
 - [`tests/cypher_tck/`](tests/cypher_tck/): Scenario translations, runner, and gap analysis.
 - [`docs/conformance-ownership-map.md`](docs/conformance-ownership-map.md): Ownership boundary with PyGraphistry and shared conformance artifact contracts.
+- [`docs/capability-debt-manifest-schema.md`](docs/capability-debt-manifest-schema.md): Public schema for scenario-level capability/debt metadata and validation drift checks.
 - [`docs/conformance-profile-handoff-template.md`](docs/conformance-profile-handoff-template.md): Coordinator-facing template for cross-repo conformance lanes.
 - TCK clone (gitignored): `plans/cypher-tck-conformance/tck`.
 - Cross-repo coordination guide: [SYNC.md](SYNC.md).

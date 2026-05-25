@@ -9,6 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Conformance DRY ref-pair summaries**: Standardized CI/nightly conformance
+  ref-pair summary fields through `tests.cypher_tck.report`, documenting
+  `tck_gfql_ref`, `tck_gfql_sha`, `pygraphistry_ref`, `pygraphistry_sha`, and
+  `execution_profile` without changing artifact schemas. Added the public
+  capability/debt manifest schema reference and tightened the handoff template
+  as the checklist source (tck-gfql#154).
 - **Coverage-gap cumulative tracker**: Added
   `tests.cypher_tck.coverage_gap_cumulative_tracker`, an evidence-only
   shrink-cycle artifact that consumes #177 coverage-gap reports, computes

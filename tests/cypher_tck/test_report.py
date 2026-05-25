@@ -265,3 +265,64 @@ def test_json_artifact_is_stable_modulo_generated_at() -> None:
     second["generated_at"] = "<time>"
 
     assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+
+
+def test_conformance_ref_pair_prefers_workflow_fields() -> None:
+    ref_pair = report_module.build_conformance_ref_pair(
+        env={
+            "TCK_GFQL_REF": "feature/tck",
+            "TCK_GFQL_SHA": "1" * 40,
+            "PYGRAPHISTRY_REF": "feature/pygraphistry",
+            "PYGRAPHISTRY_SHA": "2" * 40,
+            "EXECUTION_PROFILE": "cpu-polars",
+        }
+    )
+
+    assert ref_pair == {
+        "tck_gfql_ref": "feature/tck",
+        "tck_gfql_sha": "1" * 40,
+        "pygraphistry_ref": "feature/pygraphistry",
+        "pygraphistry_sha": "2" * 40,
+        "execution_profile": "cpu-polars",
+    }
+
+
+def test_conformance_ref_pair_uses_github_fallbacks() -> None:
+    ref_pair = report_module.build_conformance_ref_pair(
+        env={
+            "GITHUB_HEAD_REF": "pull-head",
+            "GITHUB_REF_NAME": "main",
+            "GITHUB_SHA": "3" * 40,
+            "PYGRAPHISTRY_REF_INPUT": "master",
+        }
+    )
+
+    assert ref_pair["tck_gfql_ref"] == "pull-head"
+    assert ref_pair["tck_gfql_sha"] == "3" * 40
+    assert ref_pair["pygraphistry_ref"] == "master"
+    assert ref_pair["pygraphistry_sha"] == "unknown"
+    assert ref_pair["execution_profile"] == "cpu-pandas"
+
+
+def test_conformance_ref_pair_derives_gpu_profile() -> None:
+    ref_pair = report_module.build_conformance_ref_pair(
+        env={"TEST_CUDF": "1", "CUDA_VISIBLE_DEVICES": "0"}
+    )
+
+    assert ref_pair["execution_profile"] == "gpu-cudf"
+
+
+def test_render_conformance_ref_pair_markdown_uses_standard_field_names() -> None:
+    markdown = report_module.render_conformance_ref_pair_markdown(
+        {
+            "tck_gfql_ref": "main",
+            "tck_gfql_sha": "a" * 40,
+            "pygraphistry_ref": "master",
+            "pygraphistry_sha": "b" * 40,
+            "execution_profile": "cpu-pandas",
+        }
+    )
+
+    assert markdown.startswith("### Conformance ref pair")
+    for field in report_module.REF_PAIR_FIELDS:
+        assert f"| `{field}` |" in markdown

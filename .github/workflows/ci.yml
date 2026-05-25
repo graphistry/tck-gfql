@@ -56,11 +56,13 @@ jobs:
           echo "Using pygraphistry ref: ${pygraphistry_ref}"
 
       - name: Checkout pygraphistry
+        id: checkout-pygraphistry
         run: |
           git clone --depth 1 "${{ steps.pygraphistry.outputs.repo }}" pygraphistry
           cd pygraphistry
           git fetch --depth 1 origin "${{ steps.pygraphistry.outputs.ref }}"
           git checkout FETCH_HEAD
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         # Keep aligned with nightly.yml via job env pin.
@@ -83,6 +85,11 @@ jobs:
         env:
           PYGRAPHISTRY_INSTALL: "1"
           PYGRAPHISTRY_PATH: pygraphistry
+          PYGRAPHISTRY_REF: ${{ steps.pygraphistry.outputs.ref }}
+          PYGRAPHISTRY_SHA: ${{ steps.checkout-pygraphistry.outputs.sha }}
+          TCK_GFQL_REF: ${{ github.head_ref || github.ref_name || github.sha }}
+          TCK_GFQL_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
         run: |
           echo "Using pygraphistry ref: ${{ steps.pygraphistry.outputs.ref }}"
           ./bin/ci.sh
@@ -90,5 +97,11 @@ jobs:
       - name: CI observability summary
         if: ${{ always() }}
         continue-on-error: true
+        env:
+          PYGRAPHISTRY_REF: ${{ steps.pygraphistry.outputs.ref }}
+          PYGRAPHISTRY_SHA: ${{ steps.checkout-pygraphistry.outputs.sha }}
+          TCK_GFQL_REF: ${{ github.head_ref || github.ref_name || github.sha }}
+          TCK_GFQL_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
         run: |
           python -m tests.cypher_tck.report

@@ -5,6 +5,13 @@ Use this template when a conformance lane needs coordination between
 apply and leave non-applicable fields marked `not required` with a short
 rationale.
 
+This template is the public checklist source for conformance handoffs. Keep
+owner repo, ref pair, failure class, snapshot category, GPU/RAPIDS
+applicability, and closeout cross-link fields here rather than repeating
+alternate checklists in issue bodies or private planning artifacts. Future issue
+forms should derive option lists from
+[`capability-debt-manifest-schema.md`](capability-debt-manifest-schema.md).
+
 ## Header
 
 | Field | Value |
