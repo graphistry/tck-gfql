@@ -39815,6 +39815,165 @@
     },
     {
       "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "basic-shape",
+        "cypher-string",
+        "cypher-string-pure",
+        "edge-topology",
+        "edge-type",
+        "experimental-surface",
+        "first-party",
+        "node-type",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-2",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "bind-schema",
+        "cypher-string",
+        "cypher-string-pure",
+        "experimental-surface",
+        "first-party",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "typed-schema",
+        "validate-happy-path"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-3",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "experimental-surface",
+        "first-party",
+        "permissive-validation",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "strict-false",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-4",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "experimental-surface",
+        "first-party",
+        "label-validation",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "strict-true",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-5",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "experimental-surface",
+        "first-party",
+        "label-validation",
+        "node-type-labels",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-6",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "experimental-surface",
+        "first-party",
+        "node-properties",
+        "property-validation",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-7",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "edge-properties",
+        "experimental-surface",
+        "first-party",
+        "property-validation",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-8",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "experimental-surface",
+        "first-party",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "relationship-type-validation",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-typed-schema1-9",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "edge-topology",
+        "experimental-surface",
+        "first-party",
+        "pygraphistry-1337",
+        "pygraphistry-1457",
+        "topology-validation",
+        "typed-schema"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
       "key": "match-where1-10",
       "ownership": "direct-cypher-promotion",
       "support_status": "supported",

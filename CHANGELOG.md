@@ -9,6 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **First-party typed-schema smoke scenarios**: Added experimental-surface
+  conformance coverage for pygraphistry#1457 across `NodeType`, `EdgeType`,
+  `GraphSchema`, `EdgeTopology`, `bind(schema=...)`, schema-bound
+  `gfql_validate()`, strict/permissive validation, labels, properties,
+  relationship types, and edge topology without changing conformance artifact
+  schemas (tck-gfql#188).
 - **First-party `is_not_in()` predicate smoke inventory**: Added pending-support
   scenario coverage for pygraphistry#966 across positive, negative, empty-list,
   None-handling, and mixed-type cases so the predicate can be promoted when it

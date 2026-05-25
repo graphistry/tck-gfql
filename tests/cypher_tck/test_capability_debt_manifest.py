@@ -126,9 +126,9 @@ def test_default_capability_debt_manifest_validates_against_report_artifact() ->
     summary = manifest_module.validate_manifest(_manifest(), artifact=_artifact())
 
     assert summary.scenario_count == len(SCENARIOS)
-    assert summary.status_counts == {"skip": 5, "supported": 2943, "xfail": 701}
+    assert summary.status_counts == {"skip": 5, "supported": 2952, "xfail": 701}
     assert summary.implementation_counts == {
-        "direct_cypher_only": 255,
+        "direct_cypher_only": 264,
         "not_yet_implemented": 456,
         "translated": 2938,
     }
@@ -163,6 +163,13 @@ def test_manifest_sample_entries_cover_current_categories() -> None:
     assert direct_cypher_only["support_status"] == "supported"
     assert direct_cypher_only["implementation_status"] == "direct_cypher_only"
     assert direct_cypher_only["ownership"] == "direct-cypher-promotion"
+
+    experimental_surface = _entry_by_key(manifest, "firstparty-typed-schema1-1")
+    assert experimental_surface["support_status"] == "supported"
+    assert experimental_surface["implementation_status"] == "direct_cypher_only"
+    assert experimental_surface["ownership"] == "direct-cypher-promotion"
+    assert "experimental-surface" in experimental_surface["tags"]
+    assert "typed-schema" in experimental_surface["tags"]
 
     skip = _entry_by_key(manifest, "firstparty-predicates-isnotin1-1")
     assert skip["support_status"] == "skip"
