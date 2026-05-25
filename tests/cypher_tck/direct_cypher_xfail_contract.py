@@ -33,6 +33,7 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     "match5-25",
     "match5-26",
     "return2-9",
+    "usecase-countingsubgraphmatches1-2",
     # with2-1: WITH-pipelined join (`MATCH (a:Begin) WITH a.num AS p
     # MATCH (b) WHERE b.id = p RETURN b`).  Pre-#1217 LALR/binder
     # rejected the WITH-projection-driven join shape with a validation
@@ -135,6 +136,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-orderby3-2-4",
     "with-orderby3-2-5",
     "with-orderby3-2-6",
+    "with5-2",
     "match-where1-10",
     "match-where3-3",
     "match3-1",
@@ -150,6 +152,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-pattern1-13",
     "expr-pattern1-18",
     "match5-8",
+    "usecase-countingsubgraphmatches1-5",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

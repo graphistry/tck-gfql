@@ -57,7 +57,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     summaries = build_primary_family_summaries(SCENARIOS)
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
-    assert by_lane["row-pipeline-read-forms"] == 153
+    assert by_lane["row-pipeline-read-forms"] == 152
     assert by_lane["optional-match-null-extension"] == 61
     assert by_lane["grouped-match-aggregates"] == 26
     assert by_lane["expression-long-tail"] == 102
@@ -85,7 +85,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Promoted via direct Cypher string only (status/tagged): "
-        "913 (rows 774, errors 139)"
+        "914 (rows 775, errors 139)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -113,12 +113,12 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     assert samples["success_matches_expected"] == [
         "expr-pattern1-10 (expressions/pattern)",
         "expr-pattern1-13 (expressions/pattern)",
-        "... 2 more",
+        "... 3 more",
     ]
     assert samples["success_wrong_rows"] == [
         "match5-25 (clauses/match)",
         "match5-26 (clauses/match)",
-        "... 2 more",
+        "... 3 more",
     ]
     assert "unexpected_success_expected_error" not in samples
 

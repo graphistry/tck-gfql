@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Direct-Cypher row promotions (pygraphistry #1337)**: Promoted `with5-2` from xfail validation debt to direct-Cypher row support for the paired pygraphistry typed-schema branch, and widened the row-pipeline tranche-2 lane contract to accept audited direct-Cypher promotions.
+- **Direct-Cypher use-case drift (pygraphistry #1337)**: Rebaselined `usecase-countingsubgraphmatches1-2` as `success_wrong_rows` and `usecase-countingsubgraphmatches1-5` as `success_matches_expected` while keeping the use-case lane xfail-only.
 - **Direct-Cypher error promotions (`range()` invalid arguments)**: Promoted the 26 `expr-list11-4-*` / `expr-list11-5-*` *"Fail on invalid arguments for `range()`"* scenarios from `xfail` to `supported` as expected-error cases — pygraphistry's direct-Cypher path correctly raises for invalid `range()` arguments/types. Added parametrized positive/negative regression coverage in `test_tck_runner.py` and widened the expression-long-tail lane contract to accept direct-Cypher error promotions (tck-gfql#108 cluster 2).
 - **Direct-Cypher pattern predicate rebaseline (pygraphistry #1337)**: Promoted `expr-pattern1-{10,13,18}` from `success_wrong_rows` to `success_matches_expected` for the paired pygraphistry schema branch.
 - **Direct-Cypher expected-error rebaseline**: Removed `expr-list1-6-4` from `unexpected_success_expected_error` non-validation debt after pygraphistry #1450 restored scalar-string integer subscript rejection.
