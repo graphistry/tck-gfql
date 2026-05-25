@@ -32,6 +32,11 @@ from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.parse_cypher import _parse_literal
 from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
+from tests.cypher_tck.typed_schema_support import (
+    bind_schema_for_scenario,
+    is_typed_schema_scenario,
+    validate_typed_schema_scenario,
+)
 
 
 _HAS_CUDF, _ = check_cudf()
@@ -1250,6 +1255,29 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
         pytest.xfail(scenario.reason or "expected failure")
 
     g = _build_graph(scenario.graph)
+
+    if is_typed_schema_scenario(scenario):
+        g = bind_schema_for_scenario(g, scenario)
+        if _is_cypher_string_error(scenario):
+            _assert_expected_error(
+                scenario,
+                lambda: validate_typed_schema_scenario(g, scenario),
+                expected="typed schema validation exception",
+            )
+            return
+        validate_typed_schema_scenario(g, scenario)
+        pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+        if scenario.expected.rows is not None:
+            _assert_expected_rows(scenario, _rows_from_result(pandas_result))
+        else:
+            _assert_expected_graph_result(scenario, pandas_result)
+        if _TEST_CUDF and _HAS_CUDF:
+            cudf_result = g.gfql(scenario.cypher, params=scenario.params, engine="cudf")
+            if scenario.expected.rows is not None:
+                _assert_expected_rows(scenario, _rows_from_result(cudf_result))
+            else:
+                _assert_expected_graph_result(scenario, cudf_result)
+        return
 
     if _is_cypher_string_supported(scenario):
         if _is_cypher_string_error(scenario):
