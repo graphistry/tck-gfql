@@ -9,6 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Coverage-gap cumulative tracker**: Added
+  `tests.cypher_tck.coverage_gap_cumulative_tracker`, an evidence-only
+  shrink-cycle artifact that consumes #177 coverage-gap reports, computes
+  cumulative priority-file zero-hit range movement across pygraphistry master
+  commits, and emits schema-versioned JSON plus markdown with cycle trajectory,
+  top closures, and top opens (tck-gfql#180).
 - **Coverage-gap PR delta comments**: Added `tests.cypher_tck.coverage_gap_pr_delta`
   and extended the PR conformance workflow to compare #177 coverage-gap reports
   for a pygraphistry PR head against its merge-base, upload structured delta
