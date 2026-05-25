@@ -41,6 +41,35 @@ jobs:
         # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
         uses: actions/checkout@v6
 
+      - name: Resolve conformance ref pair
+        id: conformance-ref-pair
+        env:
+          TCK_GFQL_REF_INPUT: ${{ github.head_ref || github.ref_name || 'main' }}
+          TCK_GFQL_SHA_INPUT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          pygraphistry_sha=""
+          if [[ "${PYGRAPHISTRY_REF}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            pygraphistry_sha="${PYGRAPHISTRY_REF}"
+          else
+            pygraphistry_sha="$(
+              git ls-remote --exit-code "${PYGRAPHISTRY_REPO}" \
+                "${PYGRAPHISTRY_REF}" \
+                "refs/heads/${PYGRAPHISTRY_REF}" \
+                "refs/tags/${PYGRAPHISTRY_REF}" \
+                | awk 'NR == 1 {print $1}'
+            )"
+          fi
+          if [[ -z "${pygraphistry_sha}" ]]; then
+            echo "Failed to resolve sha for pygraphistry ref: ${PYGRAPHISTRY_REF}" >&2
+            exit 1
+          fi
+
+          echo "tck_gfql_ref=${TCK_GFQL_REF_INPUT}" >> "$GITHUB_OUTPUT"
+          echo "tck_gfql_sha=${TCK_GFQL_SHA_INPUT}" >> "$GITHUB_OUTPUT"
+          echo "pygraphistry_ref=${PYGRAPHISTRY_REF}" >> "$GITHUB_OUTPUT"
+          echo "pygraphistry_sha=${pygraphistry_sha}" >> "$GITHUB_OUTPUT"
+          echo "Resolved conformance ref pair: tck-gfql ${TCK_GFQL_REF_INPUT}@${TCK_GFQL_SHA_INPUT}, pygraphistry ${PYGRAPHISTRY_REF}@${pygraphistry_sha}"
+
       - name: Set up Python
         # Keep aligned with ci.yml via job env pin.
         uses: actions/setup-python@v6
@@ -59,12 +88,22 @@ jobs:
           UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas
 
       - name: Run tests
+        env:
+          TCK_GFQL_REF: ${{ steps.conformance-ref-pair.outputs.tck_gfql_ref }}
+          TCK_GFQL_SHA: ${{ steps.conformance-ref-pair.outputs.tck_gfql_sha }}
+          PYGRAPHISTRY_SHA: ${{ steps.conformance-ref-pair.outputs.pygraphistry_sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
         run: |
           ./bin/ci.sh
 
       - name: CI observability summary
         if: ${{ always() }}
         continue-on-error: true
+        env:
+          TCK_GFQL_REF: ${{ steps.conformance-ref-pair.outputs.tck_gfql_ref }}
+          TCK_GFQL_SHA: ${{ steps.conformance-ref-pair.outputs.tck_gfql_sha }}
+          PYGRAPHISTRY_SHA: ${{ steps.conformance-ref-pair.outputs.pygraphistry_sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
         run: |
           python -m tests.cypher_tck.report
 
