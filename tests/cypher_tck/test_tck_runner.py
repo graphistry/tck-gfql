@@ -63,6 +63,16 @@ _MAP_KEY_ORDER_ROW_EQUIVALENCE_KEYS = {
     "expr-literals7-18",
     "expr-literals8-18",
 }
+_NETWORKX_SMOKE_ALGORITHM_BY_ERROR_KEY = {
+    "firstparty-networkx-closeness-centrality-error-1": "closeness_centrality",
+    "firstparty-networkx-connected-components-error-1": "connected_components",
+    "firstparty-networkx-core-number-error-1": "core_number",
+    "firstparty-networkx-degree-centrality-error-1": "degree_centrality",
+    "firstparty-networkx-eigenvector-centrality-error-1": "eigenvector_centrality",
+    "firstparty-networkx-hits-error-1": "hits",
+    "firstparty-networkx-katz-centrality-error-1": "katz_centrality",
+    "firstparty-networkx-strongly-connected-components-error-1": "strongly_connected_components",
+}
 _NUMERIC_TOKEN_PATTERN = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
 _NUMERIC_STRING_RE = re.compile(rf"^{_NUMERIC_TOKEN_PATTERN}$")
 _NUMERIC_LIST_STRING_RE = re.compile(rf"^\[\s*({_NUMERIC_TOKEN_PATTERN})\s*\]$")
@@ -421,6 +431,61 @@ def test_with_orderby_issue36_keys_are_marked_unordered() -> None:
         scenario = next(s for s in SCENARIOS if s.key == key)
         assert scenario.expected.ordered is False
         assert _rows_ordered(scenario) is False
+
+
+def test_first_party_networkx_smoke_scenarios_are_loaded() -> None:
+    keys = {scenario.key for scenario in SCENARIOS}
+
+    assert {
+        "firstparty-networkx-closeness-centrality-1",
+        "firstparty-networkx-connected-components-1",
+        "firstparty-networkx-core-number-1",
+        "firstparty-networkx-degree-centrality-1",
+        "firstparty-networkx-eigenvector-centrality-1",
+        "firstparty-networkx-hits-1",
+        "firstparty-networkx-hits-write-1",
+        "firstparty-networkx-katz-centrality-1",
+        "firstparty-networkx-strongly-connected-components-1",
+    }.issubset(keys)
+
+
+@pytest.mark.parametrize(
+    ("key", "algorithm"),
+    sorted(_NETWORKX_SMOKE_ALGORITHM_BY_ERROR_KEY.items()),
+)
+def test_first_party_networkx_error_smokes_use_structured_diagnostics(
+    key: str,
+    algorithm: str,
+) -> None:
+    pytest.importorskip("networkx")
+    scenario = next(scenario for scenario in SCENARIOS if scenario.key == key)
+    graph = _build_graph(scenario.graph)
+
+    with pytest.raises(GFQLValidationError) as exc_info:
+        graph.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+
+    assert exc_info.value.code == "unsupported-cypher-query"
+    assert exc_info.value.context["field"] == "call.args"
+    assert exc_info.value.context["value"] == {"bogus_option": 1}
+    assert f"graphistry.nx.{algorithm}" in str(exc_info.value)
+
+
+def test_first_party_networkx_hits_write_smoke_writes_score_columns() -> None:
+    pytest.importorskip("networkx")
+    scenario = next(
+        scenario
+        for scenario in SCENARIOS
+        if scenario.key == "firstparty-networkx-hits-write-1"
+    )
+    graph = _build_graph(scenario.graph)
+
+    result = graph.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+    nodes = getattr(result, "_nodes", None)
+
+    assert nodes is not None
+    assert {"hubs", "authorities"}.issubset(set(nodes.columns))
+    assert not nodes["hubs"].isna().any()
+    assert not nodes["authorities"].isna().any()
 
 
 def test_numeric_row_equivalence_is_allowlisted_for_float_formatting() -> None:
@@ -1129,9 +1194,20 @@ def test_direct_cypher_promotion_snapshot_matches_status_tags() -> None:
     status_promoted_keys = {
         scenario.key
         for scenario in SCENARIOS
-        if scenario.status == "supported" and "cypher-string" in scenario.tags
+        if scenario.status == "supported"
+        and "cypher-string" in scenario.tags
+        and "first-party" not in scenario.tags
+    }
+    first_party_cypher_string_keys = {
+        scenario.key
+        for scenario in SCENARIOS
+        if scenario.status == "supported"
+        and "cypher-string" in scenario.tags
+        and "first-party" in scenario.tags
     }
     assert promotion_snapshot_keys == status_promoted_keys
+    assert first_party_cypher_string_keys
+    assert promotion_snapshot_keys.isdisjoint(first_party_cypher_string_keys)
 
 
 @pytest.mark.parametrize(

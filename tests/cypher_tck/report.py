@@ -570,7 +570,7 @@ def build_report() -> str:
         f"Scenarios represented (ported): {total}",
         f"GFQL translated (non-None): {gfql_defined} ({_percent(gfql_defined, total)})",
         f"Translated + expected pass (supported via translated GFQL): {supported_defined}",
-        f"Promoted via direct Cypher string only (status/tagged): {cypher_string_supported} "
+        f"Direct Cypher string-only scenarios (status/tagged): {cypher_string_supported} "
         f"(rows {cypher_string_supported_rows}, errors {cypher_string_supported_errors})",
         f"GFQL missing: {missing_gfql} ({_percent(missing_gfql, total)})",
         f"Direct Cypher overlap on translated-supported scenarios: {len(direct_cypher_overlap_keys)} / {supported_defined} "
