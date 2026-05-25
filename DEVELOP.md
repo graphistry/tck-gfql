@@ -8,7 +8,7 @@ the local `plans/` clone of the TCK repo for reference (not vendored).
 ## Local Tests
 
 ```bash
-UV_EXCLUDE_NEWER="6 days" uv pip install --python "$(command -v python)" pytest pandas
+UV_EXCLUDE_NEWER="6 days" uv pip install --python "$(command -v python)" pytest pandas networkx
 ./bin/ci.sh
 python3 -m pytest tests/cypher_tck -xvs
 TEST_CUDF=1 python3 -m pytest tests/cypher_tck -xvs

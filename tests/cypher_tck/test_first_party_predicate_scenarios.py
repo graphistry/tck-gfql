@@ -25,7 +25,7 @@ def test_is_not_in_first_party_smoke_inventory() -> None:
         assert scenario.gfql is None
         assert scenario.reason is not None
         assert "pygraphistry#966" in scenario.reason
-        assert scenario.feature_path == "tck/features/firstParty/predicates/IsNotIn1.feature"
+        assert scenario.feature_path == "first_party/features/predicates/IsNotIn1.feature"
         assert scenario.return_alias == "n"
         assert "first-party" in scenario.tags
         assert "predicate" in scenario.tags

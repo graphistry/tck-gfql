@@ -79,7 +79,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas
+          UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas networkx
 
       - name: Run tests
         env:

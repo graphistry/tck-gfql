@@ -13,6 +13,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   scenario coverage for pygraphistry#966 across positive, negative, empty-list,
   None-handling, and mixed-type cases so the predicate can be promoted when it
   lands upstream (tck-gfql#185).
+- **First-party NetworkX local-Cypher smoke scenarios**: Added a narrow
+  `graphistry.nx.*` smoke suite for degree, closeness, eigenvector, Katz,
+  connected-components, strongly-connected-components, core-number, and HITS
+  local-Cypher execution, including structured expected-error cases and a HITS
+  write-path smoke without changing conformance artifact schemas (tck-gfql#183).
 - **Conformance DRY ref-pair summaries**: Standardized CI/nightly conformance
   ref-pair summary fields through `tests.cypher_tck.report`, documenting
   `tck_gfql_ref`, `tck_gfql_sha`, `pygraphistry_ref`, `pygraphistry_sha`, and

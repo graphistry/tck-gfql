@@ -1,6 +1,8 @@
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 
 
+FEATURE_PATH = "first_party/features/predicates/IsNotIn1.feature"
+
 IS_NOT_IN_GRAPH = GraphFixture(
     nodes=[
         {
@@ -46,7 +48,7 @@ COMMON_TAGS = (
 SCENARIOS = [
     Scenario(
         key="firstparty-predicates-isnotin1-1",
-        feature_path="tck/features/firstParty/predicates/IsNotIn1.feature",
+        feature_path=FEATURE_PATH,
         scenario="[1] is_not_in keeps values outside the rejected list",
         cypher="MATCH (n)\nWHERE n.kind NOT IN ['bot']\nRETURN n",
         graph=IS_NOT_IN_GRAPH,
@@ -59,7 +61,7 @@ SCENARIOS = [
     ),
     Scenario(
         key="firstparty-predicates-isnotin1-2",
-        feature_path="tck/features/firstParty/predicates/IsNotIn1.feature",
+        feature_path=FEATURE_PATH,
         scenario="[2] is_not_in filters values inside the rejected list",
         cypher="MATCH (n)\nWHERE n.kind NOT IN ['human', 'admin']\nRETURN n",
         graph=IS_NOT_IN_GRAPH,
@@ -72,7 +74,7 @@ SCENARIOS = [
     ),
     Scenario(
         key="firstparty-predicates-isnotin1-3",
-        feature_path="tck/features/firstParty/predicates/IsNotIn1.feature",
+        feature_path=FEATURE_PATH,
         scenario="[3] is_not_in with an empty list keeps every value",
         cypher="MATCH (n)\nWHERE n.kind NOT IN []\nRETURN n",
         graph=IS_NOT_IN_GRAPH,
@@ -85,7 +87,7 @@ SCENARIOS = [
     ),
     Scenario(
         key="firstparty-predicates-isnotin1-4",
-        feature_path="tck/features/firstParty/predicates/IsNotIn1.feature",
+        feature_path=FEATURE_PATH,
         scenario="[4] is_not_in mirrors is_in None handling",
         cypher="MATCH (n)\nWHERE n.nullable NOT IN [null]\nRETURN n",
         graph=IS_NOT_IN_GRAPH,
@@ -98,7 +100,7 @@ SCENARIOS = [
     ),
     Scenario(
         key="firstparty-predicates-isnotin1-5",
-        feature_path="tck/features/firstParty/predicates/IsNotIn1.feature",
+        feature_path=FEATURE_PATH,
         scenario="[5] is_not_in accepts a mixed scalar list",
         cypher="MATCH (n)\nWHERE n.mixed NOT IN ['one', 2]\nRETURN n",
         graph=IS_NOT_IN_GRAPH,
