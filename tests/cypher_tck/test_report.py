@@ -143,8 +143,8 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Priority candidate lanes:" in report
     assert "Supported-subset correctness / failfast audit" in report
     assert (
-        "Promoted via direct Cypher string only (status/tagged): "
-        "949 (rows 807, errors 142)"
+        "Direct Cypher string-only scenarios (status/tagged): "
+        "966 (rows 816, errors 150)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report

@@ -27,7 +27,7 @@ GFQL queries and validate results.
 ## Setup
 1. Install or editable-link `pygraphistry`:
    ```bash
-   uv pip install --python "$(command -v python)" -e /path/to/pygraphistry
+   uv pip install --python "$(command -v python)" networkx -e /path/to/pygraphistry
    ```
 2. Clone the openCypher TCK locally (gitignored):
    ```bash

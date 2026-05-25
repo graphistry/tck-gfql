@@ -39511,6 +39511,235 @@
     },
     {
       "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-closeness-centrality-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-closeness-centrality-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-connected-components-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-connected-components-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-core-number-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-core-number-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-degree-centrality-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-degree-centrality-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-eigenvector-centrality-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-eigenvector-centrality-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-hits-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-hits-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-hits-write-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-katz-centrality-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-katz-centrality-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-strongly-connected-components-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-networkx-strongly-connected-components-error-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "first-party",
+        "local-cypher",
+        "networkx"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
       "key": "match-where1-10",
       "ownership": "direct-cypher-promotion",
       "support_status": "supported",

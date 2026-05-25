@@ -41,7 +41,11 @@ from tests.cypher_tck.phase_support import (
     PHASE1_EXECUTOR_SUPPORTED_KEYS,
 )
 
-_SCENARIO_ROOT = Path(__file__).resolve().parent / "tck" / "features"
+_SCENARIO_PACKAGE_ROOT = Path(__file__).resolve().parent
+_SCENARIO_ROOTS = (
+    _SCENARIO_PACKAGE_ROOT / "tck" / "features",
+    _SCENARIO_PACKAGE_ROOT / "first_party" / "features",
+)
 SCENARIOS: list[Scenario] = []
 
 _TARGET_TABLE_PREFIXES = (
@@ -880,14 +884,15 @@ def _promote_cypher_string_support(scenario: Scenario) -> Scenario:
         tags=tuple(tags),
     )
 
-for path in sorted(_SCENARIO_ROOT.rglob("*.py"), key=lambda p: p.as_posix()):
-    module_name = "tests.cypher_tck.scenarios." + path.relative_to(Path(__file__).resolve().parent).with_suffix("").as_posix().replace("/", ".")
-    spec = spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        continue
-    module = module_from_spec(spec)
-    spec.loader.exec_module(module)
-    SCENARIOS.extend(getattr(module, "SCENARIOS", []))
+for root in _SCENARIO_ROOTS:
+    for path in sorted(root.rglob("*.py"), key=lambda p: p.as_posix()):
+        module_name = "tests.cypher_tck.scenarios." + path.relative_to(_SCENARIO_PACKAGE_ROOT).with_suffix("").as_posix().replace("/", ".")
+        spec = spec_from_file_location(module_name, path)
+        if spec is None or spec.loader is None:
+            continue
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        SCENARIOS.extend(getattr(module, "SCENARIOS", []))
 
 SCENARIOS = [
     _promote_cypher_string_support(
