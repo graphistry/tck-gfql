@@ -42,6 +42,21 @@ from tests.cypher_tck.typed_schema_support import (
 _HAS_CUDF, _ = check_cudf()
 _TEST_CUDF = os.environ.get("TEST_CUDF", "0") == "1"
 _STRICT_PURE = os.environ.get("TCK_STRICT_PURE", "0") == "1"
+
+
+def _check_polars() -> bool:
+    try:
+        import polars  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+# Validate the native PyGraphistry Polars GFQL engine (pygraphistry #1648/#1649)
+# against the same expected TCK results as pandas. Opt-in via TEST_POLARS=1, like
+# TEST_CUDF for the cuDF engine.
+_HAS_POLARS = _check_polars()
+_TEST_POLARS = os.environ.get("TEST_POLARS", "0") == "1"
 _NUMERIC_ROW_EQUIVALENCE_KEYS = {
     "expr-aggregation3-1",
     "expr-literals5-5",
@@ -1277,6 +1292,12 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
                 _assert_expected_rows(scenario, _rows_from_result(cudf_result))
             else:
                 _assert_expected_graph_result(scenario, cudf_result)
+        if _TEST_POLARS and _HAS_POLARS:
+            polars_result = g.gfql(scenario.cypher, params=scenario.params, engine="polars")
+            if scenario.expected.rows is not None:
+                _assert_expected_rows(scenario, _rows_from_result(polars_result))
+            else:
+                _assert_expected_graph_result(scenario, polars_result)
         return
 
     if _is_cypher_string_supported(scenario):
@@ -1300,6 +1321,16 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
                     ),
                     expected="direct Cypher exception",
                 )
+            if _TEST_POLARS and _HAS_POLARS:
+                _assert_expected_error(
+                    scenario,
+                    lambda: g.gfql(
+                        scenario.cypher,
+                        params=scenario.params,
+                        engine="polars",
+                    ),
+                    expected="direct Cypher exception",
+                )
         else:
             pandas_result = g.gfql(scenario.cypher, params=scenario.params, engine="pandas")
             if scenario.expected.rows is not None:
@@ -1312,6 +1343,12 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
                     _assert_expected_rows(scenario, _rows_from_result(cudf_result))
                 else:
                     _assert_expected_graph_result(scenario, cudf_result)
+            if _TEST_POLARS and _HAS_POLARS:
+                polars_result = g.gfql(scenario.cypher, params=scenario.params, engine="polars")
+                if scenario.expected.rows is not None:
+                    _assert_expected_rows(scenario, _rows_from_result(polars_result))
+                else:
+                    _assert_expected_graph_result(scenario, polars_result)
         return
 
     assert scenario.gfql is not None
@@ -1370,3 +1407,11 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
         if scenario.return_alias:
             cudf_nodes = _alias_nodes(cudf_result._nodes, g._node, scenario.return_alias)
         _assert_ids(scenario.expected, oracle_nodes, oracle_edges, cudf_nodes, cudf_edges)
+
+    if _TEST_POLARS and _HAS_POLARS:
+        polars_result = g.gfql(scenario.gfql, engine="polars")
+        polars_nodes = _ids_from_df(polars_result._nodes, g._node)
+        polars_edges = _ids_from_df(polars_result._edges, g._edge)
+        if scenario.return_alias:
+            polars_nodes = _alias_nodes(polars_result._nodes, g._node, scenario.return_alias)
+        _assert_ids(scenario.expected, oracle_nodes, oracle_edges, polars_nodes, polars_edges)
