@@ -900,6 +900,33 @@ def _ids_from_entity_projection_meta(
     return normalized
 
 
+def _ids_from_flat_entity_columns(result: object, id_attr: str, alias_hint: str | None) -> set:
+    """Node/edge ids from #1650 flat ``{alias}.{internal_id}`` columns.
+
+    The native polars engine does not populate ``_cypher_entity_projection_meta``
+    (only pandas does), but a whole-entity ``RETURN n`` still flattens the internal
+    id column to ``{alias}.{result._node}`` (which holds the original ids). Recover
+    the returned-node ids from there — the graph-result analogue of the display-text
+    reconstruction in :func:`_collapse_structured_returns`."""
+    df = getattr(result, "_nodes" if id_attr == "_node" else "_edges", None)
+    if df is None:
+        return set()
+    id_col = getattr(result, id_attr, None)
+    if id_col is None:
+        return set()
+    pdf = _to_pandas(df)
+    if pdf is None:
+        return set()
+    suffix = f".{id_col}"
+    cols = [str(c) for c in pdf.columns if str(c).endswith(suffix)]
+    if alias_hint is not None:
+        cols = [c for c in cols if c == f"{alias_hint}{suffix}"]
+    ids: set = set()
+    for c in cols:
+        ids.update(v for v in pdf[c].tolist() if v is not None)
+    return ids
+
+
 def _assert_expected_graph_result(scenario: Scenario, result: object) -> None:
     actual_nodes = _ids_from_df(getattr(result, "_nodes", None), scenario.graph.node_id)
     actual_edges = _ids_from_df(getattr(result, "_edges", None), scenario.graph.edge_id)
@@ -908,13 +935,13 @@ def _assert_expected_graph_result(scenario: Scenario, result: object) -> None:
             result,
             table="nodes",
             alias_hint=scenario.return_alias,
-        )
+        ) or _ids_from_flat_entity_columns(result, "_node", scenario.return_alias)
     if scenario.expected.edge_ids is not None and not actual_edges:
         actual_edges = _ids_from_entity_projection_meta(
             result,
             table="edges",
             alias_hint=scenario.return_alias,
-        )
+        ) or _ids_from_flat_entity_columns(result, "_edge", scenario.return_alias)
 
     if scenario.expected.node_ids is not None:
         assert set(scenario.expected.node_ids) == actual_nodes, (
