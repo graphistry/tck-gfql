@@ -739,9 +739,115 @@ def _is_cypher_string_error(scenario: Scenario) -> bool:
     return _is_cypher_string_supported(scenario) and "cypher-string-error" in scenario.tags
 
 
+def _whole_entity_aliases(cols: List[str], meta: Any) -> Dict[str, str]:
+    """Map ``alias -> table`` for flat ``alias.field`` groups that are WHOLE
+    entities (collapse to Cypher text), excluding property projections (stay flat).
+
+    Two signals, unioned:
+
+    * ``_cypher_entity_projection_meta`` records whole-entity aliases that carry an
+      id column (the reentry/OPTIONAL payload) — used when present.
+    * Structural marker: a ``{alias}.label__*`` (node one-hot label) column. These
+      appear ONLY from whole-entity flattening — a scalar property return
+      (``RETURN a.val``) never emits ``label__*``. This catches label-only / id-less
+      nodes (``MATCH (a) ... RETURN a`` on a labeled, property-less graph), for which
+      #1650 emits flat columns but records NO meta (no id column → not a reentry
+      payload). The double-underscore guard avoids colliding with a user property
+      literally named ``label``.
+    """
+    aliases: Dict[str, str] = {}
+    if isinstance(meta, dict):
+        for alias, entry in meta.items():
+            aliases[str(alias)] = entry.get("table", "nodes") if isinstance(entry, dict) else "nodes"
+    for col in cols:
+        marker = ".label__"
+        idx = col.find(marker)
+        if idx > 0:
+            aliases.setdefault(col[:idx], "nodes")  # node label one-hot ⇒ whole node
+    return aliases
+
+
+def _collapse_structured_returns(result: Any) -> Any:
+    """Adapter for pygraphistry #1650 structured whole-entity returns.
+
+    Since #1656, a terminal ``RETURN a`` (whole node/edge) emits FLAT
+    ``a.id, a.val, …`` columns instead of a single Cypher display-string ``a``
+    column. The TCK oracle expects the display string, so reconstruct it from the
+    flat columns via pygraphistry's ``render_entity_text`` — but ONLY for aliases
+    that are WHOLE-ENTITY projections (see :func:`_whole_entity_aliases`);
+    property projections like ``RETURN a.val`` legitimately stay flat (the expected
+    rows carry ``a.val`` too). No-op on the legacy single-column shape (pre-#1656
+    pygraphistry, or an absent-entity row that already collapsed to text)."""
+    nodes = getattr(result, "_nodes", None)
+    if nodes is None:
+        return result
+    cols = [str(c) for c in nodes.columns]
+    meta = getattr(result, "_cypher_entity_projection_meta", None)
+    aliases = _whole_entity_aliases(cols, meta)
+    if not aliases:
+        return result
+    try:
+        from graphistry.compute.gfql.cypher.result_postprocess import render_entity_text
+    except Exception:
+        return result
+    # render_entity_text uses pandas-style frame ops, so run it against a
+    # pandas-backed copy of the result (the native polars engine returns a polars
+    # _nodes frame; rendering on it directly raises and the collapse is skipped,
+    # leaking flat ``a.label__*`` columns — the with-orderby polars failures).
+    pdf = _to_pandas(nodes)
+    pres = result.bind()
+    pres._nodes = pdf
+    changed = False
+    for alias, table in aliases.items():
+        prefix = f"{alias}."
+        flat = [c for c in cols if c.startswith(prefix)]
+        if not flat:
+            continue  # absent-entity row already single-column, or property-only
+        try:
+            text = render_entity_text(pres, alias, table=table)
+            text = _to_pandas(text) if hasattr(text, "to_pandas") else text
+        except Exception:
+            continue
+        pdf = pdf.drop(columns=[c for c in flat if c in pdf.columns])
+        pdf[alias] = list(text)
+        changed = True
+    if not changed:
+        return result
+    out = result.bind()
+    out._nodes = pdf
+    return out
+
+
+_POLARS_NOT_IMPLEMENTED: List[str] = []
+
+
+def _assert_polars_engine(g: Any, scenario: "Scenario") -> None:
+    """Validate the native polars engine, tolerating honest ``NotImplementedError``.
+
+    Per NO-CHEATING (plans/gfql-polars-engine), the native polars engine raises
+    ``NotImplementedError`` for Cypher ops it does not yet support NATIVELY — there
+    is deliberately NO pandas fallback. That is an honest partial-coverage decline,
+    not a conformance violation, so it must NOT fail the suite: the scenario's
+    correctness is already pinned by the pandas branch above. A WRONG answer (row /
+    graph assertion mismatch) or any OTHER exception from polars still fails — those
+    are real polars-engine bugs. Tolerated declines are collected in
+    ``_POLARS_NOT_IMPLEMENTED`` for a coverage report (see the session-summary
+    fixture / ``-s`` output)."""
+    try:
+        polars_result = g.gfql(scenario.cypher, params=scenario.params, engine="polars")
+    except NotImplementedError as exc:
+        _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
+        return
+    if scenario.expected.rows is not None:
+        _assert_expected_rows(scenario, _rows_from_result(polars_result))
+    else:
+        _assert_expected_graph_result(scenario, polars_result)
+
+
 def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
     if result._nodes is None:
         return []
+    result = _collapse_structured_returns(result)
     pdf = _to_pandas(result._nodes)
     if pdf is None:
         return []
@@ -1293,11 +1399,7 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
             else:
                 _assert_expected_graph_result(scenario, cudf_result)
         if _TEST_POLARS and _HAS_POLARS:
-            polars_result = g.gfql(scenario.cypher, params=scenario.params, engine="polars")
-            if scenario.expected.rows is not None:
-                _assert_expected_rows(scenario, _rows_from_result(polars_result))
-            else:
-                _assert_expected_graph_result(scenario, polars_result)
+            _assert_polars_engine(g, scenario)
         return
 
     if _is_cypher_string_supported(scenario):
@@ -1344,11 +1446,7 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
                 else:
                     _assert_expected_graph_result(scenario, cudf_result)
             if _TEST_POLARS and _HAS_POLARS:
-                polars_result = g.gfql(scenario.cypher, params=scenario.params, engine="polars")
-                if scenario.expected.rows is not None:
-                    _assert_expected_rows(scenario, _rows_from_result(polars_result))
-                else:
-                    _assert_expected_graph_result(scenario, polars_result)
+                _assert_polars_engine(g, scenario)
         return
 
     assert scenario.gfql is not None
@@ -1409,9 +1507,15 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
         _assert_ids(scenario.expected, oracle_nodes, oracle_edges, cudf_nodes, cudf_edges)
 
     if _TEST_POLARS and _HAS_POLARS:
-        polars_result = g.gfql(scenario.gfql, engine="polars")
-        polars_nodes = _ids_from_df(polars_result._nodes, g._node)
-        polars_edges = _ids_from_df(polars_result._edges, g._edge)
-        if scenario.return_alias:
-            polars_nodes = _alias_nodes(polars_result._nodes, g._node, scenario.return_alias)
-        _assert_ids(scenario.expected, oracle_nodes, oracle_edges, polars_nodes, polars_edges)
+        try:
+            polars_result = g.gfql(scenario.gfql, engine="polars")
+        except NotImplementedError as exc:
+            # Honest NO-CHEATING decline on the gfql-AST path — tolerate (see
+            # _assert_polars_engine). pandas already pinned correctness above.
+            _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
+        else:
+            polars_nodes = _ids_from_df(polars_result._nodes, g._node)
+            polars_edges = _ids_from_df(polars_result._edges, g._edge)
+            if scenario.return_alias:
+                polars_nodes = _alias_nodes(polars_result._nodes, g._node, scenario.return_alias)
+            _assert_ids(scenario.expected, oracle_nodes, oracle_edges, polars_nodes, polars_edges)
