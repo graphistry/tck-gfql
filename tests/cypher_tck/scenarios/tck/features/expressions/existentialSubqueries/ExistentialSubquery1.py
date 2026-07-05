@@ -41,7 +41,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason='Expression evaluation is not supported',
+        reason='WHERE-position EXISTS {} runs since pygraphistry#1679; whole-entity RETURN rendering differs from expected rows (tracked wrong-rows xfail)',
         tags=('expr', 'existentialSubqueries', 'meta-xfail', 'xfail'),
     ),
 

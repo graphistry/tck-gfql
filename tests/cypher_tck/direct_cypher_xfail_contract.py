@@ -38,6 +38,9 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # pygraphistry#1490 shifts one counting-subgraph use case into wrong-row
 # execution; keep it tracked as branch-paired drift until promoted/reconciled.
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
+    # pygraphistry#1679: EXISTS {} WHERE-position parses+runs; this scenario's
+    # whole-entity RETURN rendering differs from the expected rows (tracked debt).
+    "expr-existentialsubquery1-1",
     # tck-gfql#119 fixes Scenario Outline placeholder substitution for these
     # comparison cases; direct Cypher now executes but returns rows that do not
     # match the TCK oracle while the scenarios remain expression-lane xfails.
@@ -185,8 +188,11 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with2-1",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # Empty after tck-gfql#142: all tracked success_matches_expected xfails
-    # are represented in the direct-Cypher row support snapshot.
+    # (Was empty after tck-gfql#142.) WHERE-position EXISTS { } subqueries are
+    # supported since pygraphistry#1679 (viz-filter L1): this no-inner-WHERE
+    # scenario now returns the expected rows; tracked here until the next
+    # direct-Cypher row-support snapshot regen promotes it.
+    "expr-existentialsubquery1-3",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
