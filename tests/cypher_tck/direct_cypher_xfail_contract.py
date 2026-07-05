@@ -64,6 +64,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison2-5-1",
     "expr-comparison2-5-2",
     "expr-comparison2-5-3",
+    "expr-existentialsubquery1-3",
     "expr-comparison2-5-4",
     "expr-comparison2-6-1",
     "expr-comparison2-6-2",
@@ -188,11 +189,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with2-1",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # (Was empty after tck-gfql#142.) WHERE-position EXISTS { } subqueries are
-    # supported since pygraphistry#1679 (viz-filter L1): this no-inner-WHERE
-    # scenario now returns the expected rows; tracked here until the next
-    # direct-Cypher row-support snapshot regen promotes it.
-    "expr-existentialsubquery1-3",
+    # Empty after tck-gfql#142: all tracked success_matches_expected xfails
+    # are represented in the direct-Cypher row support snapshot.
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

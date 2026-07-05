@@ -1966,6 +1966,9 @@ DIRECT_CYPHER_OVERLAP_KEYS = {
 }
 
 DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
+    # pygraphistry#1679: WHERE-position EXISTS {} — rows match expected
+    # (surgical promotion; container sweep is env-noisy for firstparty keys)
+    "expr-existentialsubquery1-3",
     "expr-aggregation2-7",
     "expr-aggregation2-8",
     "expr-aggregation3-1",
