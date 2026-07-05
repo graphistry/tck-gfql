@@ -5963,6 +5963,10 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_wrong_rows",
+        "reason": "direct_cypher_nonvalidation:success_wrong_rows"
+      },
       "implementation_status": "not_yet_implemented",
       "key": "expr-existentialsubquery1-1",
       "ownership": "expression-long-tail",
@@ -5991,6 +5995,10 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
       "implementation_status": "not_yet_implemented",
       "key": "expr-existentialsubquery1-3",
       "ownership": "expression-long-tail",
