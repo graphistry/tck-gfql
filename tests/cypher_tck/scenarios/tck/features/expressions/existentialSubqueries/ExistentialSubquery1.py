@@ -40,9 +40,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'existentialSubqueries', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'existentialSubqueries', 'meta-xfail', 'cypher-string', 'cypher-string-pure'),
     ),
 
     Scenario(
@@ -87,9 +86,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'existentialSubqueries', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'existentialSubqueries', 'meta-xfail', 'cypher-string', 'cypher-string-pure'),
     ),
 
     Scenario(

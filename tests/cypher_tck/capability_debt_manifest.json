@@ -5963,17 +5963,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-existentialsubquery1-1",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
+        "cypher-string-pure",
         "existentialSubqueries",
         "expr",
-        "meta-xfail",
-        "xfail"
+        "meta-xfail"
       ]
     },
     {
@@ -5991,17 +5990,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-existentialsubquery1-3",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
+        "cypher-string-pure",
         "existentialSubqueries",
         "expr",
-        "meta-xfail",
-        "xfail"
+        "meta-xfail"
       ]
     },
     {

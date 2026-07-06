@@ -2039,6 +2039,8 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-conditional2-1-7",
     "expr-conditional2-1-8",
     "expr-conditional2-1-9",
+    "expr-existentialsubquery1-1",
+    "expr-existentialsubquery1-3",
     "expr-graph3-5",
     "expr-graph3-6",
     "expr-graph3-7",
