@@ -72,6 +72,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison3-6",
     "expr-comparison3-7",
     "expr-comparison3-8",
+    "expr-existentialsubquery1-1",
+    "expr-existentialsubquery1-3",
     "expr-list1-3",
     "expr-list1-4",
     "expr-list1-5",

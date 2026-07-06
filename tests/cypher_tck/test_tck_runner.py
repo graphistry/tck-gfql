@@ -163,6 +163,37 @@ def _is_null(value: Any) -> bool:
     return False
 
 
+# pygraphistry renders entity-text property maps with a space after the key
+# colon (``(:A {prop: 1})`` — its pervasive, internally-consistent convention),
+# while the openCypher TCK oracle uses none (``(:A {prop:1})``). The spacing is
+# not semantically meaningful, so canonicalize the property-key separator (only
+# right after ``{`` or ``,`` where the token is a bare identifier key).
+_ENTITY_TEXT_PROP_KEY_RE = re.compile(r"(?<=[{,])\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*")
+# Single-quoted string VALUE (with ``\'`` escapes) — normalization must skip
+# these so a value like ``'x, y: z'`` is never mangled by the key-colon regex
+# (its ``,``/``:`` are not property-map separators).
+_ENTITY_TEXT_QUOTED_RE = re.compile(r"'(?:[^'\\]|\\.)*'")
+# Edge entity-text ``[alias:TYPE {...}]`` / ``[:TYPE {...}]`` — distinguished
+# from a list literal (``[1, 2]``) by the leading (optional ident then) ``:``.
+# The alias is a Cypher variable (letter/underscore first, may contain digits),
+# or empty for a type-only edge; a list literal never starts ``[<ident>?:``.
+_EDGE_ENTITY_TEXT_RE = re.compile(r"^\[(?:[A-Za-z_][A-Za-z0-9_]*)?:")
+
+
+def _normalize_entity_text_property_spacing(value: str) -> str:
+    # Apply the key-colon collapse only OUTSIDE single-quoted string values;
+    # property keys (and their preceding ``{``/``,``) are always unquoted, so
+    # each quoted region can be passed through verbatim.
+    out: list[str] = []
+    last = 0
+    for match in _ENTITY_TEXT_QUOTED_RE.finditer(value):
+        out.append(_ENTITY_TEXT_PROP_KEY_RE.sub(r"\1:", value[last:match.start()]))
+        out.append(match.group(0))
+        last = match.end()
+    out.append(_ENTITY_TEXT_PROP_KEY_RE.sub(r"\1:", value[last:]))
+    return "".join(out)
+
+
 def _normalize_row_value(value: Any, *, quote_keyword_strings: bool = False) -> Any:
     if hasattr(value, "item") and not isinstance(value, (str, bytes, list, tuple, dict)):
         try:
@@ -177,7 +208,12 @@ def _normalize_row_value(value: Any, *, quote_keyword_strings: bool = False) -> 
     if isinstance(value, str):
         if value.startswith(_NUMERIC_ROW_VALUE_PREFIX):
             return value
-        if value.startswith(("(", "[", "{", "<")):
+        if value.startswith("(") or _EDGE_ENTITY_TEXT_RE.match(value):
+            # Node ``(:A {prop: 1})`` / edge ``[r:T {w: 1}]`` entity-text only —
+            # NOT map ``{k: 1}`` / list ``[1, 2]`` literal row values, whose
+            # spacing is significant to their own oracles.
+            return _normalize_entity_text_property_spacing(value)
+        if value.startswith(("[", "{", "<")):
             return value
         if value.startswith("'") and value.endswith("'") and len(value) > 1:
             return value
