@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pygraphistry_ref:
+        description: "pygraphistry ref (branch/tag/sha)"
+        required: false
+        default: ""
+      pygraphistry_repo:
+        description: "pygraphistry repo URL"
+        required: false
+        default: "https://github.com/graphistry/pygraphistry.git"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      # Keep runtime pins centralized so CI/nightly stay in lockstep.
+      PYTHON_VERSION: "3.12"
+      UV_VERSION: "0.11.3"
+      UV_EXCLUDE_NEWER: "6 days"
+    steps:
+      - name: Checkout
+        # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
+        uses: actions/checkout@v6
+
+      - name: Resolve pygraphistry ref
+        id: pygraphistry
+        env:
+          PYGRAPHISTRY_REF_INPUT: ${{ github.event.inputs.pygraphistry_ref || '' }}
+          PYGRAPHISTRY_REPO_INPUT: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
+        run: |
+          pygraphistry_repo="${PYGRAPHISTRY_REPO_INPUT}"
+          pygraphistry_ref="${PYGRAPHISTRY_REF_INPUT}"
+          candidate_ref="master"
+
+          if [[ "${{ github.event_name }}" == "pull_request" && -n "${{ github.head_ref }}" ]]; then
+            candidate_ref="${{ github.head_ref }}"
+          elif [[ -n "${{ github.ref_name }}" ]]; then
+            candidate_ref="${{ github.ref_name }}"
+          fi
+
+          if [[ -z "${pygraphistry_ref}" ]]; then
+            pygraphistry_ref="master"
+            if git ls-remote --exit-code --heads "${pygraphistry_repo}" "${candidate_ref}" >/dev/null 2>&1; then
+              pygraphistry_ref="${candidate_ref}"
+            fi
+          fi
+
+          echo "repo=${pygraphistry_repo}" >> "$GITHUB_OUTPUT"
+          echo "ref=${pygraphistry_ref}" >> "$GITHUB_OUTPUT"
+          echo "Using pygraphistry ref: ${pygraphistry_ref}"
+
+      - name: Checkout pygraphistry
+        id: checkout-pygraphistry
+        run: |
+          git clone --depth 1 "${{ steps.pygraphistry.outputs.repo }}" pygraphistry
+          cd pygraphistry
+          git fetch --depth 1 origin "${{ steps.pygraphistry.outputs.ref }}"
+          git checkout FETCH_HEAD
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        # Keep aligned with nightly.yml via job env pin.
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup uv (pinned)
+        # Keep aligned with nightly.yml via job env pin.
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas networkx
+
+      - name: Run tests
+        env:
+          PYGRAPHISTRY_INSTALL: "1"
+          PYGRAPHISTRY_PATH: pygraphistry
+          PYGRAPHISTRY_REF: ${{ steps.pygraphistry.outputs.ref }}
+          PYGRAPHISTRY_SHA: ${{ steps.checkout-pygraphistry.outputs.sha }}
+          TCK_GFQL_REF: ${{ github.head_ref || github.ref_name || github.sha }}
+          TCK_GFQL_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
+        run: |
+          echo "Using pygraphistry ref: ${{ steps.pygraphistry.outputs.ref }}"
+          ./bin/ci.sh
+
+      - name: CI observability summary
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          PYGRAPHISTRY_REF: ${{ steps.pygraphistry.outputs.ref }}
+          PYGRAPHISTRY_SHA: ${{ steps.checkout-pygraphistry.outputs.sha }}
+          TCK_GFQL_REF: ${{ github.head_ref || github.ref_name || github.sha }}
+          TCK_GFQL_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
+        run: |
+          python -m tests.cypher_tck.report

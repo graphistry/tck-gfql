@@ -1,0 +1,243 @@
+name: PR Conformance Summary
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to comment on; leave empty to generate artifacts only"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      coverage_delta_should_comment: ${{ steps.coverage-delta-scope.outputs.should_comment }}
+    env:
+      PYTHON_VERSION: "3.12"
+      UV_VERSION: "0.11.3"
+      UV_EXCLUDE_NEWER: "6 days"
+      SUMMARY_ARTIFACT_NAME: unified-conformance-summary
+      COVERAGE_DELTA_ARTIFACT_NAME: coverage-gap-pr-delta
+    steps:
+      - name: Checkout PR head
+        # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
+        uses: actions/checkout@v6
+        with:
+          path: head
+
+      - name: Checkout base
+        # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: base-tck-gfql
+
+      - name: Resolve pygraphistry ref
+        id: pygraphistry
+        working-directory: head
+        env:
+          PYGRAPHISTRY_REPO_INPUT: https://github.com/graphistry/pygraphistry.git
+        run: |
+          pygraphistry_repo="${PYGRAPHISTRY_REPO_INPUT}"
+          base_ref="master"
+          candidate_ref="master"
+
+          if [[ "${{ github.event_name }}" == "pull_request" && -n "${{ github.head_ref }}" ]]; then
+            candidate_ref="${{ github.head_ref }}"
+          elif [[ -n "${{ github.ref_name }}" ]]; then
+            candidate_ref="${{ github.ref_name }}"
+          fi
+
+          pygraphistry_ref="${base_ref}"
+          if git ls-remote --exit-code --heads "${pygraphistry_repo}" "${candidate_ref}" >/dev/null 2>&1; then
+            pygraphistry_ref="${candidate_ref}"
+          fi
+
+          echo "repo=${pygraphistry_repo}" >> "$GITHUB_OUTPUT"
+          echo "ref=${pygraphistry_ref}" >> "$GITHUB_OUTPUT"
+          echo "base_ref=${base_ref}" >> "$GITHUB_OUTPUT"
+          echo "Using pygraphistry ref: ${pygraphistry_ref}"
+
+      - name: Checkout pygraphistry head and merge-base
+        run: |
+          mkdir -p head/build/pr-conformance-summary
+          git clone "${{ steps.pygraphistry.outputs.repo }}" pygraphistry-head
+          cd pygraphistry-head
+          git fetch origin "${{ steps.pygraphistry.outputs.base_ref }}"
+          git fetch origin "${{ steps.pygraphistry.outputs.ref }}"
+          git checkout FETCH_HEAD
+          merge_base="$(git merge-base "origin/${{ steps.pygraphistry.outputs.base_ref }}" HEAD)"
+          echo "${merge_base}" > ../head/build/pr-conformance-summary/pygraphistry-merge-base.txt
+          git diff --name-only "${merge_base}"...HEAD > ../head/build/pr-conformance-summary/pygraphistry-changed-files.txt
+          git worktree add ../pygraphistry-base "${merge_base}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup uv (pinned)
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas networkx coverage
+          uv pip install --python "$(command -v python)" -e pygraphistry-head
+
+      - name: Generate unified conformance summary
+        working-directory: head
+        env:
+          PYGRAPHISTRY_REF: ${{ steps.pygraphistry.outputs.ref }}
+          PYTHONPATH: ${{ github.workspace }}/pygraphistry-head:${{ github.workspace }}/head
+        run: |
+          python -m tests.cypher_tck.pr_conformance_comment \
+            --base-dir "${{ github.workspace }}/base-tck-gfql" \
+            --head-dir "${{ github.workspace }}/head" \
+            --output-dir build/pr-conformance-summary \
+            --pygraphistry-path "${{ github.workspace }}/pygraphistry-head" \
+            --base-label "${{ github.base_ref || 'main' }}" \
+            --head-label "${{ github.head_ref || github.sha }}" \
+            --json-artifact-name "${SUMMARY_ARTIFACT_NAME}"
+
+      - name: Check coverage-gap delta scope
+        id: coverage-delta-scope
+        working-directory: head
+        run: |
+          merge_base="$(cat build/pr-conformance-summary/pygraphistry-merge-base.txt)"
+          python -m tests.cypher_tck.coverage_gap_pr_delta \
+            --changed-files build/pr-conformance-summary/pygraphistry-changed-files.txt \
+            --json-output build/pr-conformance-summary/coverage-gap-pr-delta.json \
+            --markdown-output build/pr-conformance-summary/coverage-gap-pr-delta.md \
+            --comment-markdown build/pr-conformance-summary/coverage-gap-pr-delta-comment.md \
+            --base-label "pygraphistry merge-base ${merge_base}" \
+            --head-label "${{ steps.pygraphistry.outputs.ref }}" \
+            --json-artifact-name "${COVERAGE_DELTA_ARTIFACT_NAME}" \
+            --allow-suppressed-without-reports \
+            --preflight-only \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Generate coverage-gap delta artifacts
+        if: ${{ steps.coverage-delta-scope.outputs.should_comment == 'true' }}
+        working-directory: head
+        env:
+          PYTHONPATH: ${{ github.workspace }}/pygraphistry-head:${{ github.workspace }}/head
+        run: |
+          merge_base="$(cat build/pr-conformance-summary/pygraphistry-merge-base.txt)"
+          python -m tests.cypher_tck.coverage_gap_report \
+            --checkout-dir "${{ github.workspace }}/head" \
+            --pygraphistry-path "${{ github.workspace }}/pygraphistry-base" \
+            --coverage-data build/pr-conformance-summary/.coverage.pygraphistry-base \
+            --json-output build/pr-conformance-summary/base-coverage-gap-report.json \
+            --markdown-output build/pr-conformance-summary/base-coverage-gap-report.md
+          python -m tests.cypher_tck.coverage_gap_report \
+            --checkout-dir "${{ github.workspace }}/head" \
+            --pygraphistry-path "${{ github.workspace }}/pygraphistry-head" \
+            --coverage-data build/pr-conformance-summary/.coverage.pygraphistry-head \
+            --json-output build/pr-conformance-summary/head-coverage-gap-report.json \
+            --markdown-output build/pr-conformance-summary/head-coverage-gap-report.md
+          python -m tests.cypher_tck.coverage_gap_pr_delta \
+            --base-report-json build/pr-conformance-summary/base-coverage-gap-report.json \
+            --head-report-json build/pr-conformance-summary/head-coverage-gap-report.json \
+            --changed-files build/pr-conformance-summary/pygraphistry-changed-files.txt \
+            --json-output build/pr-conformance-summary/coverage-gap-pr-delta.json \
+            --markdown-output build/pr-conformance-summary/coverage-gap-pr-delta.md \
+            --comment-markdown build/pr-conformance-summary/coverage-gap-pr-delta-comment.md \
+            --base-label "pygraphistry merge-base ${merge_base}" \
+            --head-label "${{ steps.pygraphistry.outputs.ref }}" \
+            --json-artifact-name "${COVERAGE_DELTA_ARTIFACT_NAME}"
+
+      - name: Upload unified conformance artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.SUMMARY_ARTIFACT_NAME }}
+          path: |
+            head/build/pr-conformance-summary/unified-conformance-summary.json
+            head/build/pr-conformance-summary/unified-conformance-summary.md
+            head/build/pr-conformance-summary/direct-cypher-snapshot-delta.json
+            head/build/pr-conformance-summary/direct-cypher-snapshot-delta.md
+            head/build/pr-conformance-summary/unified-conformance-pr-comment.md
+          if-no-files-found: error
+
+      - name: Upload coverage-gap delta artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.COVERAGE_DELTA_ARTIFACT_NAME }}
+          path: |
+            head/build/pr-conformance-summary/pygraphistry-changed-files.txt
+            head/build/pr-conformance-summary/pygraphistry-merge-base.txt
+            head/build/pr-conformance-summary/base-coverage-gap-report.json
+            head/build/pr-conformance-summary/base-coverage-gap-report.md
+            head/build/pr-conformance-summary/head-coverage-gap-report.json
+            head/build/pr-conformance-summary/head-coverage-gap-report.md
+            head/build/pr-conformance-summary/coverage-gap-pr-delta.json
+            head/build/pr-conformance-summary/coverage-gap-pr-delta.md
+            head/build/pr-conformance-summary/coverage-gap-pr-delta-comment.md
+          if-no-files-found: error
+
+  comment:
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: read
+    env:
+      SUMMARY_ARTIFACT_NAME: unified-conformance-summary
+      COVERAGE_DELTA_ARTIFACT_NAME: coverage-gap-pr-delta
+      COMMENT_MARKER: "<!-- tck-gfql-unified-conformance-summary -->"
+      COVERAGE_DELTA_COMMENT_MARKER: "<!-- tck-gfql-coverage-gap-pr-delta -->"
+    steps:
+      - name: Download unified conformance artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.SUMMARY_ARTIFACT_NAME }}
+          path: pr-conformance-summary
+
+      - name: Find existing summary comment
+        id: find-comment
+        uses: peter-evans/find-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: ${{ env.COMMENT_MARKER }}
+
+      - name: Create or update summary comment
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body-path: pr-conformance-summary/unified-conformance-pr-comment.md
+
+      - name: Download coverage-gap delta artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.COVERAGE_DELTA_ARTIFACT_NAME }}
+          path: coverage-gap-pr-delta
+
+      - name: Find existing coverage-gap delta comment
+        id: find-coverage-delta-comment
+        uses: peter-evans/find-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: ${{ env.COVERAGE_DELTA_COMMENT_MARKER }}
+
+      - name: Create or update coverage-gap delta comment
+        if: ${{ needs.generate.outputs.coverage_delta_should_comment == 'true' || steps.find-coverage-delta-comment.outputs.comment-id != '' }}
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-coverage-delta-comment.outputs.comment-id }}
+          edit-mode: replace
+          body-path: coverage-gap-pr-delta/coverage-gap-pr-delta-comment.md

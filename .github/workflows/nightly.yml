@@ -1,0 +1,129 @@
+name: Nightly Master Conformance
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      pygraphistry_ref:
+        description: "pygraphistry ref (branch/tag/sha)"
+        required: false
+        default: "master"
+      pygraphistry_repo:
+        description: "pygraphistry repo URL"
+        required: false
+        default: "https://github.com/graphistry/pygraphistry.git"
+      dry_run:
+        description: "Skip badge update/push"
+        required: false
+        default: "true"
+  pull_request:
+    paths:
+      - .github/workflows/nightly.yml
+      - badges/**
+
+permissions:
+  contents: write
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    env:
+      # Keep runtime pins centralized so CI/nightly stay in lockstep.
+      PYTHON_VERSION: "3.12"
+      UV_VERSION: "0.11.3"
+      UV_EXCLUDE_NEWER: "6 days"
+      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
+      PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
+      PYGRAPHISTRY_INSTALL: "1"
+    steps:
+      - name: Checkout
+        # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
+        uses: actions/checkout@v6
+
+      - name: Resolve conformance ref pair
+        id: conformance-ref-pair
+        env:
+          TCK_GFQL_REF_INPUT: ${{ github.head_ref || github.ref_name || 'main' }}
+          TCK_GFQL_SHA_INPUT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          pygraphistry_sha=""
+          if [[ "${PYGRAPHISTRY_REF}" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            pygraphistry_sha="${PYGRAPHISTRY_REF}"
+          else
+            pygraphistry_sha="$(
+              git ls-remote --exit-code "${PYGRAPHISTRY_REPO}" \
+                "${PYGRAPHISTRY_REF}" \
+                "refs/heads/${PYGRAPHISTRY_REF}" \
+                "refs/tags/${PYGRAPHISTRY_REF}" \
+                | awk 'NR == 1 {print $1}'
+            )"
+          fi
+          if [[ -z "${pygraphistry_sha}" ]]; then
+            echo "Failed to resolve sha for pygraphistry ref: ${PYGRAPHISTRY_REF}" >&2
+            exit 1
+          fi
+
+          echo "tck_gfql_ref=${TCK_GFQL_REF_INPUT}" >> "$GITHUB_OUTPUT"
+          echo "tck_gfql_sha=${TCK_GFQL_SHA_INPUT}" >> "$GITHUB_OUTPUT"
+          echo "pygraphistry_ref=${PYGRAPHISTRY_REF}" >> "$GITHUB_OUTPUT"
+          echo "pygraphistry_sha=${pygraphistry_sha}" >> "$GITHUB_OUTPUT"
+          echo "Resolved conformance ref pair: tck-gfql ${TCK_GFQL_REF_INPUT}@${TCK_GFQL_SHA_INPUT}, pygraphistry ${PYGRAPHISTRY_REF}@${pygraphistry_sha}"
+
+      - name: Set up Python
+        # Keep aligned with ci.yml via job env pin.
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup uv (pinned)
+        # Keep aligned with ci.yml via job env pin.
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER}" uv pip install --python "$(command -v python)" pytest pandas networkx
+
+      - name: Run tests
+        env:
+          TCK_GFQL_REF: ${{ steps.conformance-ref-pair.outputs.tck_gfql_ref }}
+          TCK_GFQL_SHA: ${{ steps.conformance-ref-pair.outputs.tck_gfql_sha }}
+          PYGRAPHISTRY_SHA: ${{ steps.conformance-ref-pair.outputs.pygraphistry_sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
+        run: |
+          ./bin/ci.sh
+
+      - name: CI observability summary
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          TCK_GFQL_REF: ${{ steps.conformance-ref-pair.outputs.tck_gfql_ref }}
+          TCK_GFQL_SHA: ${{ steps.conformance-ref-pair.outputs.tck_gfql_sha }}
+          PYGRAPHISTRY_SHA: ${{ steps.conformance-ref-pair.outputs.pygraphistry_sha }}
+          EXECUTION_PROFILE: "cpu-pandas"
+        run: |
+          python -m tests.cypher_tck.report
+
+      - name: Update pygraphistry badge
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
+        run: |
+          version="$(python -c 'import graphistry; print(getattr(graphistry, \"__version__\", \"unknown\"))')"
+          mkdir -p badges
+          printf '{"schemaVersion":1,"label":"pygraphistry","message":"%s @ %s","color":"blue"}\n' \
+            "${PYGRAPHISTRY_REF}" "${version}" > badges/pygraphistry-version.json
+
+      - name: Commit badge
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
+        run: |
+          if git diff --quiet -- badges/pygraphistry-version.json; then
+            echo "Badge is up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add badges/pygraphistry-version.json
+          git commit -m "chore: update pygraphistry badge"
+          git push
