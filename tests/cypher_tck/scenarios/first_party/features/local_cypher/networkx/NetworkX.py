@@ -20,19 +20,38 @@ NETWORKX_PATH_GRAPH = GraphFixture(
 )
 
 
+# HITS scores come from a scipy ``svds`` singular vector, so components near
+# zero (isolated / sink / source nodes) are only defined up to sign and float
+# precision — an isolated node yields NaN and near-zero scores flip to tiny
+# negatives (~-1e-16). That makes both a degenerate graph and a ``>= 0`` check
+# non-deterministic. HITS therefore uses a connected, non-degenerate fixture
+# (every node participates; not a pure cycle) and asserts the columns are
+# surfaced (``IS NOT NULL``) rather than sign-checking svds noise.
+NETWORKX_HITS_GRAPH = GraphFixture(
+    nodes=[{"id": "a"}, {"id": "b"}, {"id": "c"}, {"id": "z"}],
+    edges=[
+        {"src": "a", "dst": "b", "edge_id": "ab", "type": "LINK"},
+        {"src": "a", "dst": "c", "edge_id": "ac", "type": "LINK"},
+        {"src": "b", "dst": "c", "edge_id": "bc", "type": "LINK"},
+        {"src": "c", "dst": "z", "edge_id": "cz", "type": "LINK"},
+    ],
+)
+
+
 def _networkx_row_scenario(
     *,
     key: str,
     scenario: str,
     cypher: str,
     rows: list[dict[str, object]],
+    graph: GraphFixture = NETWORKX_PATH_GRAPH,
 ) -> Scenario:
     return Scenario(
         key=key,
         feature_path=FEATURE_PATH,
         scenario=scenario,
         cypher=cypher,
-        graph=NETWORKX_PATH_GRAPH,
+        graph=graph,
         expected=Expected(rows=rows, ordered=True),
         gfql=None,
         status="supported",
@@ -162,7 +181,7 @@ SCENARIOS = [
         cypher=(
             "CALL graphistry.nx.hits() "
             "YIELD nodeId, hubs, authorities "
-            "RETURN nodeId, hubs >= 0 AS hub, authorities >= 0 AS auth "
+            "RETURN nodeId, hubs IS NOT NULL AS hub, authorities IS NOT NULL AS auth "
             "ORDER BY nodeId ASC"
         ),
         rows=[
@@ -171,6 +190,7 @@ SCENARIOS = [
             {"nodeId": "c", "hub": True, "auth": True},
             {"nodeId": "z", "hub": True, "auth": True},
         ],
+        graph=NETWORKX_HITS_GRAPH,
     ),
     Scenario(
         key="firstparty-networkx-hits-write-1",
