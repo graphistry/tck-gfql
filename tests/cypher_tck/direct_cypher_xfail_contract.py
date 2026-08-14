@@ -171,6 +171,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-orderby3-2-6",
     "match-where1-10",
     "match-where3-3",
+    "match-where6-2",
     "match3-1",
     "match3-5",
     "match3-7",
@@ -179,6 +180,9 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match5-26",
     "match5-8",
     "match7-24",
+    "match7-29",
+    "match7-30",
+    "match7-31",
     "usecase-countingsubgraphmatches1-5",
     "usecase-countingsubgraphmatches1-6",
     "usecase-countingsubgraphmatches1-7",
@@ -187,12 +191,6 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with2-1",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # pygraphistry #1891-regression fix (optional-arm WHERE null-fill + label
-    # rendering): these OPTIONAL MATCH shapes now execute with correct rows.
-    "match-where6-2",
-    "match7-29",
-    "match7-30",
-    "match7-31",
     # Empty after tck-gfql#142: all tracked success_matches_expected xfails
     # are represented in the direct-Cypher row support snapshot.
 )

@@ -67,9 +67,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics, label predicates in WHERE, and null row comparisons are not supported",
-        tags=("match-where", "optional-match", "label-predicate", "null", "xfail"),
+        status="supported",
+        tags=("match-where", "optional-match", "label-predicate", "null", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(

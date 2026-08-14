@@ -525,9 +525,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics, aggregations, and IS NULL projections are not supported",
-        tags=("match", "optional-match", "aggregation", "is-null", "xfail"),
+        status="supported",
+        tags=("match", "optional-match", "aggregation", "is-null", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(
@@ -542,9 +541,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics, aggregations, and IS NULL projections are not supported",
-        tags=("match", "optional-match", "aggregation", "is-null", "xfail"),
+        status="supported",
+        tags=("match", "optional-match", "aggregation", "is-null", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(
@@ -559,8 +557,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="OPTIONAL MATCH semantics, aggregations, and IS NULL projections are not supported",
-        tags=("match", "optional-match", "aggregation", "is-null", "xfail"),
+        status="supported",
+        tags=("match", "optional-match", "aggregation", "is-null", "cypher-string", "cypher-string-pure"),
     ),
 ]

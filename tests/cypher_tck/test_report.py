@@ -87,7 +87,7 @@ def test_classify_primary_xfail_family_maps_representative_keys() -> None:
         == "grouped-match-aggregates"
     )
     assert (
-        classify_primary_xfail_family(_scenario("match7-29"))
+        classify_primary_xfail_family(_scenario("match7-27"))
         == "optional-match-null-extension"
     )
     assert (
@@ -114,7 +114,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
     assert by_lane["row-pipeline-read-forms"] == 145
-    assert by_lane["optional-match-null-extension"] == 61
+    assert by_lane["optional-match-null-extension"] == 57
     assert by_lane["grouped-match-aggregates"] == 25
     assert by_lane["expression-long-tail"] == 77
 
@@ -144,7 +144,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "977 (rows 822, errors 155)"
+        "981 (rows 826, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
