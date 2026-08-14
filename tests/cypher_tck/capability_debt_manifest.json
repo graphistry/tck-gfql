@@ -40290,6 +40290,10 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
       "implementation_status": "not_yet_implemented",
       "key": "match-where6-2",
       "ownership": "optional-match-null-extension",
@@ -41947,6 +41951,10 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
       "implementation_status": "not_yet_implemented",
       "key": "match7-29",
       "ownership": "optional-match-null-extension",
@@ -41973,6 +41981,10 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
       "implementation_status": "not_yet_implemented",
       "key": "match7-30",
       "ownership": "optional-match-null-extension",
@@ -41987,6 +41999,10 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
       "implementation_status": "not_yet_implemented",
       "key": "match7-31",
       "ownership": "optional-match-null-extension",
