@@ -1291,7 +1291,8 @@ def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
     "key",
     [
         "usecase-countingsubgraphmatches1-1",
-        "usecase-countingsubgraphmatches1-2",
+        # 1-2 promoted (pygraphistry #1903 trail semantics: the undirected
+        # self-loop now binds once, so count(*) = 1 matches the oracle).
         "usecase-countingsubgraphmatches1-3",
         "usecase-countingsubgraphmatches1-4",
     ],

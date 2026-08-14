@@ -41092,27 +41092,27 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match5-14",
-      "ownership": "other-read-gaps",
-      "reason": "Variable-length relationship matching and row projections are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "match",
-        "variable-length",
-        "xfail"
+        "variable-length"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match5-15",
-      "ownership": "other-read-gaps",
-      "reason": "Variable-length relationship matching and row projections are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "match",
-        "variable-length",
-        "xfail"
+        "variable-length"
       ]
     },
     {
@@ -46267,20 +46267,15 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_wrong_rows",
-        "reason": "direct_cypher_nonvalidation:success_wrong_rows"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "usecase-countingsubgraphmatches1-2",
-      "ownership": "other-read-gaps",
-      "reason": "UseCases suite is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "countingSubgraphMatches",
-        "meta-xfail",
-        "usecase",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "usecase"
       ]
     },
     {

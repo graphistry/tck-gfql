@@ -43,7 +43,6 @@ DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
     # match the TCK oracle while the scenarios remain expression-lane xfails.
     "expr-comparison2-6-3",
     "expr-comparison2-6-4",
-    "usecase-countingsubgraphmatches1-2",
 )
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
@@ -172,6 +171,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match-where1-10",
     "match-where3-3",
     "match-where6-2",
+    "match5-14",
+    "match5-15",
     "match3-1",
     "match3-5",
     "match3-7",
@@ -183,6 +184,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match7-29",
     "match7-30",
     "match7-31",
+    "usecase-countingsubgraphmatches1-2",
     "usecase-countingsubgraphmatches1-5",
     "usecase-countingsubgraphmatches1-6",
     "usecase-countingsubgraphmatches1-7",

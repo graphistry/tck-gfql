@@ -144,7 +144,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "981 (rows 826, errors 155)"
+        "984 (rows 829, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -166,9 +166,11 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "- success_wrong_rows:" in report
     assert "expr-comparison2-6-3 (expressions/comparison)" in report
     assert "expr-comparison2-6-4 (expressions/comparison)" in report
+    # usecase-countingsubgraphmatches1-2 was promoted (pygraphistry #1903
+    # trail semantics) and no longer appears as wrong-row debt.
     assert (
         "usecase-countingsubgraphmatches1-2 (useCases/countingSubgraphMatches)"
-    ) in report
+    ) not in report
     # with2-1 was promoted (tck-gfql#115); the current wrong-row bucket is
     # limited to branch-paired pygraphistry#1490 drift.
     assert "match5-8 (clauses/match)" not in report
@@ -187,7 +189,6 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
     assert samples["success_wrong_rows"] == [
         "expr-comparison2-6-3 (expressions/comparison)",
         "expr-comparison2-6-4 (expressions/comparison)",
-        "... 1 more",
     ]
     assert "unexpected_success_expected_error" not in samples
 
