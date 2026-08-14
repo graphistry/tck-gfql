@@ -563,16 +563,18 @@ def test_optional_null_tranche1_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in OPTIONAL_NULL_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS
-        for forbidden_tag in OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            OPTIONAL_NULL_TRANCHE1_EXPECTED_STATUS,
+            OPTIONAL_NULL_TRANCHE1_FORBIDDEN_TAGS,
+        )
 
 
 def test_optional_null_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in OPTIONAL_NULL_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "optional-match-null-extension"
+        _assert_family_or_direct_promoted(scenario, "optional-match-null-extension")
 
 
 def test_optional_null_tranche2_keys_exist() -> None:

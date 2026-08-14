@@ -40290,21 +40290,17 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_matches_expected",
-        "reason": "direct_cypher_nonvalidation:success_matches_expected"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match-where6-2",
-      "ownership": "optional-match-null-extension",
-      "reason": "OPTIONAL MATCH semantics, label predicates in WHERE, and null row comparisons are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "label-predicate",
         "match-where",
         "null",
-        "optional-match",
-        "xfail"
+        "optional-match"
       ]
     },
     {
@@ -41951,21 +41947,17 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_matches_expected",
-        "reason": "direct_cypher_nonvalidation:success_matches_expected"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match7-29",
-      "ownership": "optional-match-null-extension",
-      "reason": "OPTIONAL MATCH semantics, aggregations, and IS NULL projections are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "is-null",
         "match",
-        "optional-match",
-        "xfail"
+        "optional-match"
       ]
     },
     {
@@ -41981,39 +41973,31 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_matches_expected",
-        "reason": "direct_cypher_nonvalidation:success_matches_expected"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match7-30",
-      "ownership": "optional-match-null-extension",
-      "reason": "OPTIONAL MATCH semantics, aggregations, and IS NULL projections are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "is-null",
         "match",
-        "optional-match",
-        "xfail"
+        "optional-match"
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_matches_expected",
-        "reason": "direct_cypher_nonvalidation:success_matches_expected"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match7-31",
-      "ownership": "optional-match-null-extension",
-      "reason": "OPTIONAL MATCH semantics, aggregations, and IS NULL projections are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "is-null",
         "match",
-        "optional-match",
-        "xfail"
+        "optional-match"
       ]
     },
     {
