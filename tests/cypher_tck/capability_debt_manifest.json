@@ -5605,39 +5605,31 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_wrong_rows",
-        "reason": "direct_cypher_nonvalidation:success_wrong_rows"
-      },
       "implementation_status": "translated",
       "key": "expr-comparison2-6-3",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "comparison",
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_wrong_rows",
-        "reason": "direct_cypher_nonvalidation:success_wrong_rows"
-      },
       "implementation_status": "translated",
       "key": "expr-comparison2-6-4",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "comparison",
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {

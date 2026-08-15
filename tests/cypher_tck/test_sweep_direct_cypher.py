@@ -124,7 +124,8 @@ def test_build_report_includes_direct_cypher_metrics() -> None:
 def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
     monkeypatch,
 ) -> None:
-    target_keys = {"expr-comparison2-6-3", "expr-comparison2-6-4"}
+    # Any two still-xfail scenarios; 2-6-3/2-6-4 were promoted by pygraphistry#1915.
+    target_keys = {"expr-comparison1-1", "expr-comparison1-2"}
     scenarios = [
         scenario
         for scenario in SCENARIOS
@@ -139,8 +140,8 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
         sweep_direct_cypher,
         "DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY",
         {
-            "expr-comparison2-6-3": "unexpected_success_expected_error",
-            "expr-comparison2-6-4": "success_wrong_rows",
+            "expr-comparison1-1": "unexpected_success_expected_error",
+            "expr-comparison1-2": "success_wrong_rows",
         },
     )
 
@@ -148,16 +149,16 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
 
     assert details == [
         (
-            "expr-comparison2-6-3",
+            "expr-comparison1-1",
             "unexpected_success_expected_error",
             False,
-            "detail for expr-comparison2-6-3",
+            "detail for expr-comparison1-1",
         ),
         (
-            "expr-comparison2-6-4",
+            "expr-comparison1-2",
             "success_wrong_rows",
             False,
-            "detail for expr-comparison2-6-4",
+            "detail for expr-comparison1-2",
         ),
     ]
 

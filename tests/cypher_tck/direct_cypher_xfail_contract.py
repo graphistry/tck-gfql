@@ -37,13 +37,7 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # WITH-pipelined join returns the expected row, so with2-1 is promoted.
 # pygraphistry#1490 shifts one counting-subgraph use case into wrong-row
 # execution; keep it tracked as branch-paired drift until promoted/reconciled.
-DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    # tck-gfql#119 fixes Scenario Outline placeholder substitution for these
-    # comparison cases; direct Cypher now executes but returns rows that do not
-    # match the TCK oracle while the scenarios remain expression-lane xfails.
-    "expr-comparison2-6-3",
-    "expr-comparison2-6-4",
-)
+DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
@@ -63,6 +57,12 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison2-5-4",
     "expr-comparison2-6-1",
     "expr-comparison2-6-2",
+    # pygraphistry#1915 B-1: the mixed-type comparison handler swallowed a
+    # per-element TypeError into False, so `'1.0' < 1.0` answered false where
+    # openCypher says an incomparable comparison is NULL. Now null -> both
+    # scenarios match their oracle.
+    "expr-comparison2-6-3",
+    "expr-comparison2-6-4",
     "expr-comparison3-1",
     "expr-comparison3-2",
     "expr-comparison3-3",

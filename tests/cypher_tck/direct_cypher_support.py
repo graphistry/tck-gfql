@@ -2017,6 +2017,8 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-comparison2-5-4",
     "expr-comparison2-6-1",
     "expr-comparison2-6-2",
+    "expr-comparison2-6-3",
+    "expr-comparison2-6-4",
     "expr-comparison3-1",
     "expr-comparison3-2",
     "expr-comparison3-3",
