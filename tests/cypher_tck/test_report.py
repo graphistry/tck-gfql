@@ -116,7 +116,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     assert by_lane["row-pipeline-read-forms"] == 145
     assert by_lane["optional-match-null-extension"] == 57
     assert by_lane["grouped-match-aggregates"] == 25
-    assert by_lane["expression-long-tail"] == 77
+    assert by_lane["expression-long-tail"] == 75
 
 
 def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
@@ -144,7 +144,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "981 (rows 826, errors 155)"
+        "986 (rows 831, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -163,14 +163,11 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "expr-comparison2-6-2 (expressions/comparison)" not in report
     assert "expr-graph3-5 (expressions/graph)" not in report
     assert "expr-quantifier7-3-1 (expressions/quantifier)" not in report
-    assert "- success_wrong_rows:" in report
-    assert "expr-comparison2-6-3 (expressions/comparison)" in report
-    assert "expr-comparison2-6-4 (expressions/comparison)" in report
-    assert (
-        "usecase-countingsubgraphmatches1-2 (useCases/countingSubgraphMatches)"
-    ) in report
-    # with2-1 was promoted (tck-gfql#115); the current wrong-row bucket is
-    # limited to branch-paired pygraphistry#1490 drift.
+    # the last wrong-row keys (expr-comparison2-6-3/-4,
+    # usecase-countingsubgraphmatches1-2) were promoted with the pygraphistry
+    # 2026-08 stack; the non-validation debt buckets are now empty.
+    assert "- success_wrong_rows:" not in report
+    assert "expr-comparison2-6-3 (expressions/comparison)" not in report
     assert "match5-8 (clauses/match)" not in report
     assert "with5-2 (clauses/with)" not in report
     assert "with2-1 (clauses/with)" not in report
@@ -183,13 +180,7 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
         SCENARIOS, per_outcome=2
     )
 
-    assert "success_matches_expected" not in samples
-    assert samples["success_wrong_rows"] == [
-        "expr-comparison2-6-3 (expressions/comparison)",
-        "expr-comparison2-6-4 (expressions/comparison)",
-        "... 1 more",
-    ]
-    assert "unexpected_success_expected_error" not in samples
+    assert samples == {}
 
 
 def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None:

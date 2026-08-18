@@ -124,7 +124,7 @@ def test_build_report_includes_direct_cypher_metrics() -> None:
 def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
     monkeypatch,
 ) -> None:
-    target_keys = {"expr-comparison2-6-3", "usecase-countingsubgraphmatches1-2"}
+    target_keys = {"expr-quantifier11-3-4", "usecase-countingsubgraphmatches1-1"}
     scenarios = [
         scenario
         for scenario in SCENARIOS
@@ -139,8 +139,8 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
         sweep_direct_cypher,
         "DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY",
         {
-            "expr-comparison2-6-3": "unexpected_success_expected_error",
-            "usecase-countingsubgraphmatches1-2": "success_wrong_rows",
+            "expr-quantifier11-3-4": "unexpected_success_expected_error",
+            "usecase-countingsubgraphmatches1-1": "success_wrong_rows",
         },
     )
 
@@ -148,16 +148,16 @@ def test_compute_direct_cypher_nonvalidation_details_are_sorted_and_focused(
 
     assert details == [
         (
-            "expr-comparison2-6-3",
+            "expr-quantifier11-3-4",
             "unexpected_success_expected_error",
             False,
-            "detail for expr-comparison2-6-3",
+            "detail for expr-quantifier11-3-4",
         ),
         (
-            "usecase-countingsubgraphmatches1-2",
+            "usecase-countingsubgraphmatches1-1",
             "success_wrong_rows",
             False,
-            "detail for usecase-countingsubgraphmatches1-2",
+            "detail for usecase-countingsubgraphmatches1-1",
         ),
     ]
 

@@ -291,9 +291,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="Variable-length relationship matching and row projections are not supported",
-        tags=("match", "variable-length", "xfail"),
+        status="supported",
+        tags=("match", "variable-length", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(
@@ -313,9 +312,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="Variable-length relationship matching and row projections are not supported",
-        tags=("match", "variable-length", "xfail"),
+        status="supported",
+        tags=("match", "variable-length", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(

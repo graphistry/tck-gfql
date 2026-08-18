@@ -59,9 +59,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='UseCases suite is not supported',
-        tags=('usecase', 'countingSubgraphMatches', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('usecase', 'countingSubgraphMatches', 'cypher-string', 'cypher-string-pure'),
     ),
 
     Scenario(

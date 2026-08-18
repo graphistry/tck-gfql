@@ -1291,7 +1291,6 @@ def test_quantifier11_placeholder_case_is_not_phase_promoted() -> None:
     "key",
     [
         "usecase-countingsubgraphmatches1-1",
-        "usecase-countingsubgraphmatches1-2",
         "usecase-countingsubgraphmatches1-3",
         "usecase-countingsubgraphmatches1-4",
     ],

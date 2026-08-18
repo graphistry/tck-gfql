@@ -352,9 +352,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'comparison', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'comparison', 'cypher-string', 'cypher-string-pure'),
     ),
 
     Scenario(
@@ -369,8 +368,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'comparison', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'comparison', 'cypher-string', 'cypher-string-pure'),
     ),
 ]
