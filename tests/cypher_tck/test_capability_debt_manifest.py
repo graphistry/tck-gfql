@@ -126,11 +126,11 @@ def test_default_capability_debt_manifest_validates_against_report_artifact() ->
     summary = manifest_module.validate_manifest(_manifest(), artifact=_artifact())
 
     assert summary.scenario_count == len(SCENARIOS)
-    assert summary.status_counts == {"skip": 5, "supported": 2958, "xfail": 695}
+    assert summary.status_counts == {"skip": 5, "supported": 2963, "xfail": 690}
     assert summary.implementation_counts == {
-        "direct_cypher_only": 270,
-        "not_yet_implemented": 450,
-        "translated": 2938,
+        "direct_cypher_only": 275,
+        "not_yet_implemented": 447,
+        "translated": 2936,
     }
     assert summary.direct_cypher_debt_count == len(
         DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY
@@ -213,6 +213,8 @@ def test_manifest_rejects_undocumented_current_scenario() -> None:
 
 
 def test_manifest_rejects_direct_cypher_debt_mismatch() -> None:
+    if not DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY:
+        pytest.skip("no direct-cypher non-validation debt remains to mismatch")
     manifest = deepcopy(_manifest())
     debt_key = next(iter(DIRECT_CYPHER_NONVALIDATION_XFAIL_OUTCOME_BY_KEY))
     _entry_by_key(manifest, debt_key).pop("direct_cypher_debt")

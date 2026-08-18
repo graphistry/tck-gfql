@@ -35,16 +35,7 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # stringified the `a.id` property reference and conflated the Cypher `id`
 # property with the node-identity column; with an explicit fixture the
 # WITH-pipelined join returns the expected row, so with2-1 is promoted.
-# pygraphistry#1490 shifts one counting-subgraph use case into wrong-row
-# execution; keep it tracked as branch-paired drift until promoted/reconciled.
-DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    # tck-gfql#119 fixes Scenario Outline placeholder substitution for these
-    # comparison cases; direct Cypher now executes but returns rows that do not
-    # match the TCK oracle while the scenarios remain expression-lane xfails.
-    "expr-comparison2-6-3",
-    "expr-comparison2-6-4",
-    "usecase-countingsubgraphmatches1-2",
-)
+DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
@@ -52,6 +43,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     # These keys now match their expected row oracle via the direct-Cypher row
     # support snapshot and are no longer tracked as xfail non-validation debt.
     "expr-aggregation3-1",
+    "expr-comparison2-6-3",
+    "expr-comparison2-6-4",
     "expr-comparison1-6-5",
     "expr-comparison1-7-12",
     "expr-comparison1-7-13",
@@ -189,6 +182,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "usecase-countingsubgraphmatches1-9",
     "with-where3-3",
     "with2-1",
+    "usecase-countingsubgraphmatches1-2",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     # Empty after tck-gfql#142: all tracked success_matches_expected xfails
