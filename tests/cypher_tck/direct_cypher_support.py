@@ -2587,6 +2587,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "match3-8",
     "match4-2",
     "match4-3",
+    "match4-4",
     "match5-1",
     "match5-10",
     "match5-16",

@@ -40945,15 +40945,15 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match4-4",
-      "ownership": "other-read-gaps",
-      "reason": "Variable-length relationship matching and UNWIND-based setup are not supported in the harness",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "match",
-        "variable-length",
-        "xfail"
+        "variable-length"
       ]
     },
     {

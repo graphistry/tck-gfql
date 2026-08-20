@@ -102,16 +102,50 @@ SCENARIOS = [
         feature_path="tck/features/clauses/match/Match4.feature",
         scenario="[4] Matching longer variable length paths",
         cypher="MATCH (n {var: 'start'})-[:T*]->(m {var: 'end'})\nRETURN m",
-        graph=GraphFixture(nodes=[], edges=[]),
+        # Upstream builds this chain with `UNWIND range(1, 20)` + `collect`; the
+        # setup is deterministic, so it is expanded here as the explicit
+        # 22-node / 21-edge `start -> 1..20 -> end` path it denotes.
+        graph=graph_fixture_from_create(
+            """
+            CREATE (a {var: 'start'}), (b {var: 'end'}),
+                   (n1 {var: 1}), (n2 {var: 2}), (n3 {var: 3}),
+                   (n4 {var: 4}), (n5 {var: 5}), (n6 {var: 6}),
+                   (n7 {var: 7}), (n8 {var: 8}), (n9 {var: 9}),
+                   (n10 {var: 10}), (n11 {var: 11}), (n12 {var: 12}),
+                   (n13 {var: 13}), (n14 {var: 14}), (n15 {var: 15}),
+                   (n16 {var: 16}), (n17 {var: 17}), (n18 {var: 18}),
+                   (n19 {var: 19}), (n20 {var: 20})
+            CREATE (a)-[:T]->(n1),
+                   (n1)-[:T]->(n2),
+                   (n2)-[:T]->(n3),
+                   (n3)-[:T]->(n4),
+                   (n4)-[:T]->(n5),
+                   (n5)-[:T]->(n6),
+                   (n6)-[:T]->(n7),
+                   (n7)-[:T]->(n8),
+                   (n8)-[:T]->(n9),
+                   (n9)-[:T]->(n10),
+                   (n10)-[:T]->(n11),
+                   (n11)-[:T]->(n12),
+                   (n12)-[:T]->(n13),
+                   (n13)-[:T]->(n14),
+                   (n14)-[:T]->(n15),
+                   (n15)-[:T]->(n16),
+                   (n16)-[:T]->(n17),
+                   (n17)-[:T]->(n18),
+                   (n18)-[:T]->(n19),
+                   (n19)-[:T]->(n20),
+                   (n20)-[:T]->(b)
+            """
+        ),
         expected=Expected(
             rows=[
                 {"m": "({var: 'end'})"},
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="Variable-length relationship matching and UNWIND-based setup are not supported in the harness",
-        tags=("match", "variable-length", "xfail"),
+        status="supported",
+        tags=("match", "variable-length", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(

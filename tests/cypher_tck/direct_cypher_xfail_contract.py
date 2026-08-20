@@ -35,6 +35,11 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # stringified the `a.id` property reference and conflated the Cypher `id`
 # property with the node-identity column; with an explicit fixture the
 # WITH-pipelined join returns the expected row, so with2-1 is promoted.
+# match4-4 is the same story: pygraphistry #1916 stops masking it behind an
+# absent-property validation error, exposing a ported fixture that was an empty
+# graph against a one-row oracle.  Expanding the upstream `UNWIND range(1, 20)`
+# setup into its explicit 22-node chain makes the engine return the expected row,
+# so match4-4 is promoted rather than recorded as wrong-row debt.
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
@@ -169,6 +174,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "match3-5",
     "match3-7",
     "match4-3",
+    "match4-4",
     "match5-25",
     "match5-26",
     "match5-8",

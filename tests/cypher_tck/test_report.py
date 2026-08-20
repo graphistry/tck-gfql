@@ -144,7 +144,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "986 (rows 831, errors 155)"
+        "987 (rows 832, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report

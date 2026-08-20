@@ -58,9 +58,10 @@ translation guidelines.
   relationship properties, but does not parse variable-length relationships or
   advanced Cypher constructs (MATCH/DELETE/UNWIND or computed property
   expressions) in setup scripts.
-- **Affected scenarios**: `match4-4`, `match5-25`, `match5-26`, `match5-27`,
+- **Affected scenarios**: `match5-25`, `match5-26`, `match5-27`,
   `match5-28`, `match5-29`, plus any scenario whose setup includes complex
-  patterns.
+  patterns. (`match4-4` was here until its `UNWIND range(1, 20)` setup was
+  expanded into the explicit chain it denotes — the workaround below.)
 - **Workaround**: Manually craft fixtures or extend parser incrementally.
 - **Next steps**: Support variable-length relationships and additional pattern
   forms as needed by the next wave of scenarios.
