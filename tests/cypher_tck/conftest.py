@@ -38,6 +38,9 @@ def _gfql_routes_off():
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:  # noqa: ANN001
+    routes = os.environ.get("GFQL_ROUTES_OFF", "").strip()
+    if routes:
+        terminalreporter.write_sep("-", f"GFQL routes declined for this session: {routes}")
     # The runner module may be imported under a bare name (no package __init__),
     # so locate whichever loaded module instance actually carries the collector
     # rather than importing by a guessed dotted path (which yields a fresh, empty
