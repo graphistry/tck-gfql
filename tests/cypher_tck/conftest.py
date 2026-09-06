@@ -8,7 +8,33 @@ the count at session end so polars coverage is transparent rather than silent.
 """
 from __future__ import annotations
 
+import os
 import sys
+
+import pytest
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _gfql_routes_off():
+    """``GFQL_ROUTES_OFF=<route,...>`` replays the whole TCK with the named pygraphistry hot
+    paths declined, so conformance is measured on the general path the routes normally mask
+    (``bin/routes-off.sh``). The switch is pygraphistry's own test-side route switch; a run
+    that cannot apply it must fail rather than report a ledger for the wrong configuration."""
+    raw = os.environ.get("GFQL_ROUTES_OFF", "")
+    routes = [r.strip() for r in raw.split(",") if r.strip()]
+    if not routes:
+        yield
+        return
+    try:
+        from graphistry.tests.compute.gfql.routes.switch import routes_off
+    except ImportError as exc:  # pragma: no cover - configuration error
+        raise RuntimeError(
+            "GFQL_ROUTES_OFF is set but the pygraphistry checkout on PYTHONPATH has no "
+            "graphistry.tests.compute.gfql.routes.switch (needs pygraphistry >= the "
+            "chain-specializations layout)"
+        ) from exc
+    with routes_off(routes):
+        yield
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:  # noqa: ANN001
