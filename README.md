@@ -68,3 +68,13 @@ Dependency freshness policy:
 ## License
 This repository is licensed under the Apache License 2.0. See [LICENSE](LICENSE)
 and [NOTICE](NOTICE) for details and upstream attribution.
+
+
+## Per-route conformance ledger
+
+`bin/routes-off.sh` replays the TCK once per pygraphistry hot path with that path declined
+(`GFQL_ROUTES_OFF`, pygraphistry's test-side route switch) and diffs each run against the
+baseline (`tests/cypher_tck/route_ledger.py`): scenarios the route was masking (pass at
+baseline, fail with it off) and scenarios only the route answers (fail or expected-fail at
+baseline, pass with it off). It is a ledger, not a gate: it always exits 0. Modes:
+`MODES="native-fast cypher-fast" OUT=build/routes-off ./bin/routes-off.sh`.
