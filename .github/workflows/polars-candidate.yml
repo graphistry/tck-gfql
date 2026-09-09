@@ -1,0 +1,41 @@
+name: Polars candidate conformance
+on:
+  workflow_dispatch:
+    inputs:
+      pygraphistry_ref:
+        description: Published pygraphistry candidate commit SHA
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        routes: ['', 'native-fast,polars-seeded,polars-plain,index-hop,indexed-kernel,cypher-fast']
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: graphistry/pygraphistry
+          ref: ${{ inputs.pygraphistry_ref }}
+          path: pygraphistry
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.11.3'
+      - name: Install dependencies
+        run: uv pip install --system pytest pandas networkx polars -e ./pygraphistry
+      - name: Require native Polars conformance
+        env:
+          TEST_POLARS: '1'
+          PYGRAPHISTRY_PATH: pygraphistry
+          PYTHONPATH: pygraphistry
+          GFQL_ROUTES_OFF: ${{ matrix.routes }}
+        run: |
+          git -C pygraphistry rev-parse HEAD
+          ./bin/ci.sh

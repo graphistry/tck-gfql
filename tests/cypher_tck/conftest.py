@@ -8,10 +8,21 @@ the count at session end so polars coverage is transparent rather than silent.
 """
 from __future__ import annotations
 
+import importlib
 import os
 import sys
 
 import pytest
+
+
+def pytest_configure(config):
+    if os.environ.get("TEST_POLARS", "0") == "1":
+        try:
+            importlib.import_module("polars")
+        except Exception as exc:
+            raise pytest.UsageError(
+                "TEST_POLARS=1 requires an importable polars installation"
+            ) from exc
 
 
 @pytest.fixture(autouse=True, scope="session")
