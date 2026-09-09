@@ -3,6 +3,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from typing import Any, Callable, Dict, Iterable, List, Sequence
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -195,6 +196,8 @@ def _normalize_entity_text_property_spacing(value: str) -> str:
 
 
 def _normalize_row_value(value: Any, *, quote_keyword_strings: bool = False) -> Any:
+    if isinstance(value, np.ndarray):
+        value = value.tolist()
     if hasattr(value, "item") and not isinstance(value, (str, bytes, list, tuple, dict)):
         try:
             value = value.item()
@@ -259,6 +262,8 @@ def _normalize_numeric_row_value(value: Any) -> Any:
 
 
 def _normalize_numeric_container_row_value(value: Any) -> Any:
+    if isinstance(value, np.ndarray):
+        value = value.tolist()
     if isinstance(value, (list, tuple)):
         return [_normalize_numeric_container_row_value(v) for v in value]
     if isinstance(value, dict):
@@ -795,11 +800,11 @@ def _whole_entity_aliases(cols: List[str], meta: Any) -> Dict[str, str]:
     if isinstance(meta, dict):
         for alias, entry in meta.items():
             aliases[str(alias)] = entry.get("table", "nodes") if isinstance(entry, dict) else "nodes"
-    for col in cols:
+    for column in cols:
         marker = ".label__"
-        idx = col.find(marker)
+        idx = column.find(marker)
         if idx > 0:
-            aliases.setdefault(col[:idx], "nodes")  # node label one-hot ⇒ whole node
+            aliases.setdefault(column[:idx], "nodes")  # node label one-hot ⇒ whole node
     return aliases
 
 
@@ -884,6 +889,8 @@ def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
     if result._nodes is None:
         return []
     result = _collapse_structured_returns(result)
+    if hasattr(result._nodes, "to_dicts"):
+        return result._nodes.to_dicts()
     pdf = _to_pandas(result._nodes)
     if pdf is None:
         return []
