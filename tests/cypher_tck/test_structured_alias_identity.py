@@ -7,6 +7,7 @@ import pytest
 import graphistry
 from graphistry.compute import e_forward, n, rows, select
 from graphistry.tests.compute.gfql.routes.switch import ROUTES, routes_off
+from tests.cypher_tck.comparator import compare_rows
 
 
 @pytest.mark.parametrize("backend", ["pandas", "polars", "cudf"])
@@ -39,4 +40,9 @@ def test_structured_and_cypher_alias_properties_follow_entity_keys(backend, sele
                 actual = result.to_dicts()
             else:
                 actual = (result.to_pandas() if backend == "cudf" else result).to_dict("records")
-            assert actual == expected_rows
+            comparison = compare_rows(
+                scenario_key=f"alias-identity/{backend}/{selected}/{disable_routes}",
+                expected_rows=expected_rows, actual_rows=actual,
+                columns=("v",), ordered=True, nulls_equal=True,
+            )
+            assert comparison.matched, comparison.diagnostic
