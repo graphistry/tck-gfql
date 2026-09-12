@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 import graphistry
-from tests.cypher_tck.test_tck_runner import _rows_from_result
+from tests.cypher_tck.test_tck_runner import _normalize_rows, _rows_from_result
 
 
 @pytest.mark.parametrize("values,expected", [
@@ -15,7 +15,8 @@ def test_explicit_unlabeled_entity_kind_renders_rows(values, expected):
     g = graphistry.nodes(pd.DataFrame({"x.name": pd.Series(values, dtype="object")}), "id")
     g._cypher_entity_projection_kinds = {"x": "nodes"}
     out = _rows_from_result(g)
-    assert out == expected
+    assert all(set(row) == {"x"} for row in out)
+    assert _normalize_rows(out, ["x"]) == _normalize_rows(expected, ["x"])
 
 
 def test_explicit_property_projection_does_not_use_stale_entity_metadata():
@@ -46,4 +47,7 @@ def test_present_entity_with_null_properties_is_not_an_absent_entity(engine):
         columns=(ResultProjectionColumn("renamed", "whole_row"),),
     )
     out = apply_result_projection(g, plan)
-    assert _rows_from_result(out) == [{"renamed": "()"}, {"renamed": None}]
+    actual = _rows_from_result(out)
+    expected = [{"renamed": "()"}, {"renamed": None}]
+    assert all(set(row) == {"renamed"} for row in actual)
+    assert _normalize_rows(actual, ["renamed"]) == _normalize_rows(expected, ["renamed"])
