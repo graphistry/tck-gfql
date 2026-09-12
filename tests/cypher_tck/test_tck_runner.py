@@ -824,7 +824,8 @@ def _collapse_structured_returns(result: Any) -> Any:
         return result
     cols = [str(c) for c in nodes.columns]
     meta = getattr(result, "_cypher_entity_projection_meta", None)
-    aliases = _whole_entity_aliases(cols, meta)
+    kinds = getattr(result, "_cypher_entity_projection_kinds", None)
+    aliases = kinds if isinstance(kinds, dict) else _whole_entity_aliases(cols, meta)
     if not aliases:
         return result
     try:
