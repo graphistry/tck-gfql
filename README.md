@@ -85,13 +85,13 @@ Set `TEST_POLARS=1` to check native Polars results against the TCK expectations.
 An unavailable or broken Polars installation fails validation when this flag is set.
 
 ```bash
-TEST_POLARS=1 PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry ./bin/ci.sh
-TEST_POLARS=1 PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_PATH=/path/to/pygraphistry \
-  GFQL_ROUTES_OFF=native-fast,polars-seeded,polars-plain,index-hop,indexed-kernel,cypher-fast \
-  ./bin/ci.sh
+python bin/polars_candidate.py --product /path/to/pygraphistry --mode normal
+python bin/polars_candidate.py --product /path/to/pygraphistry --mode all-off
 ```
 
-The second command checks general execution with the listed fast routes disabled.
+The runner requires installed product dependencies, verifies imports come from the selected
+checkout, and sets `TEST_POLARS=1`. The second command disables every route in that
+checkout's route registry; newly registered routes are included automatically.
 Both commands must pass for the release candidate. The **Polars candidate conformance**
 Actions workflow runs both for an explicitly selected published PyGraphistry ref.
 Native operations that raise `NotImplementedError` remain reported declines; this does
