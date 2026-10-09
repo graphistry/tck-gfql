@@ -117,7 +117,7 @@ jobs:
           python -m tests.cypher_tck.report
 
       - name: Update pygraphistry badge
-        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
         run: |
           version="$(python -c 'import graphistry; print(getattr(graphistry, "__version__", "unknown"))')"
           mkdir -p badges
@@ -126,7 +126,13 @@ jobs:
 
       - name: Commit badge
         if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
+            echo "Badge publishing is limited to the default branch."
+            exit 0
+          fi
           if git diff --quiet -- badges/pygraphistry-version.json; then
             echo "Badge is up to date."
             exit 0
