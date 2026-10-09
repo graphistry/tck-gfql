@@ -6,6 +6,10 @@ The changelog format is based on [Keep a Changelog](https://keepachangelog.com/e
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and all breaking changes are explictly noted here.
 
 ## [Development]
+
+### Fixed
+- Keep the resolved PyGraphistry checkout available for nightly reports and badge updates.
+- Publish nightly badge commits only on the default branch; validate badges on pull requests.
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
