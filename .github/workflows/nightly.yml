@@ -36,6 +36,8 @@ jobs:
       PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
       PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
       PYGRAPHISTRY_INSTALL: "1"
+      PYGRAPHISTRY_PATH: pygraphistry
+      PYTHONPATH: pygraphistry
     steps:
       - name: Checkout
         # Node24-era major; guarded by tests/cypher_tck/test_workflow_action_versions.py.
@@ -70,6 +72,14 @@ jobs:
           echo "pygraphistry_sha=${pygraphistry_sha}" >> "$GITHUB_OUTPUT"
           echo "Resolved conformance ref pair: tck-gfql ${TCK_GFQL_REF_INPUT}@${TCK_GFQL_SHA_INPUT}, pygraphistry ${PYGRAPHISTRY_REF}@${pygraphistry_sha}"
 
+      - name: Checkout pygraphistry
+        env:
+          PYGRAPHISTRY_SHA: ${{ steps.conformance-ref-pair.outputs.pygraphistry_sha }}
+        run: |
+          git clone --depth 1 "${PYGRAPHISTRY_REPO}" pygraphistry
+          git -C pygraphistry fetch --depth 1 origin "${PYGRAPHISTRY_SHA}"
+          git -C pygraphistry checkout --detach FETCH_HEAD
+
       - name: Set up Python
         # Keep aligned with ci.yml via job env pin.
         uses: actions/setup-python@v6
@@ -98,7 +108,6 @@ jobs:
 
       - name: CI observability summary
         if: ${{ always() }}
-        continue-on-error: true
         env:
           TCK_GFQL_REF: ${{ steps.conformance-ref-pair.outputs.tck_gfql_ref }}
           TCK_GFQL_SHA: ${{ steps.conformance-ref-pair.outputs.tck_gfql_sha }}
@@ -110,7 +119,7 @@ jobs:
       - name: Update pygraphistry badge
         if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != 'true') }}
         run: |
-          version="$(python -c 'import graphistry; print(getattr(graphistry, \"__version__\", \"unknown\"))')"
+          version="$(python -c 'import graphistry; print(getattr(graphistry, "__version__", "unknown"))')"
           mkdir -p badges
           printf '{"schemaVersion":1,"label":"pygraphistry","message":"%s @ %s","color":"blue"}\n' \
             "${PYGRAPHISTRY_REF}" "${version}" > badges/pygraphistry-version.json
