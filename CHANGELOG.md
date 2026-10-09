@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 - Keep the resolved PyGraphistry checkout available for nightly reports and badge updates.
 - Publish nightly badge commits only on the default branch; validate badges on pull requests.
+- Send scheduled nightly failures to Slack when `SLACK_WEBHOOK_URL` is configured.
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
