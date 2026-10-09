@@ -142,22 +142,3 @@ jobs:
           git add badges/pygraphistry-version.json
           git commit -m "chore: update pygraphistry badge"
           git push
-
-  notify-slack:
-    needs: nightly
-    if: ${{ always() && github.event_name == 'schedule' && needs.nightly.result == 'failure' }}
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
-      - name: Alert Slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          if [[ -z "${SLACK_WEBHOOK_URL}" ]]; then
-            echo "::warning::Set SLACK_WEBHOOK_URL to enable nightly failure alerts."
-            exit 0
-          fi
-          payload="$(python3 -c 'import json, os; print(json.dumps({"text": "GFQL nightly failed: " + os.environ["RUN_URL"]}))')"
-          curl --fail --silent --show-error --max-time 15 \
-            -H 'Content-Type: application/json' --data "${payload}" "${SLACK_WEBHOOK_URL}"

@@ -4,9 +4,7 @@ import json
 import os
 import subprocess
 import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from threading import Thread
 
 import pytest
 
@@ -19,12 +17,7 @@ def _step_script(name: str) -> str:
         if title == name:
             _, marker, script = body.partition("        run: |\n")
             assert marker
-            lines: list[str] = []
-            for line in script.splitlines():
-                if line and not line.startswith("          "):
-                    break
-                lines.append(line[10:])
-            return "\n".join(lines)
+            return "\n".join(line[10:] for line in script.splitlines() if line)
     raise AssertionError(f"Missing workflow step: {name}")
 
 
@@ -127,54 +120,3 @@ def test_nightly_badge_pushes_only_changed_default_branch(
     assert _git(remote, "rev-parse", f"refs/heads/{branch}") == after
     assert _git(checkout, "show", "HEAD:badges/pygraphistry-version.json") == (
         badge.read_text().strip() if publishes and changed else original.strip())
-
-
-@pytest.mark.parametrize("configured,curl_exit", [(True, 0), (True, 22), (False, 0)])
-def test_nightly_slack_failure_delivery(
-    tmp_path: Path, configured: bool, curl_exit: int,
-) -> None:
-    notification = WORKFLOW.read_text().split("  notify-slack:\n", 1)[1]
-    assert "needs: nightly" in notification
-    assert "if: ${{ always() && github.event_name == 'schedule' && needs.nightly.result == 'failure' }}" in notification
-    assert "permissions: {}" in notification
-    assert "SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}" in notification
-    requests: list[tuple[str, str, bytes]] = []
-
-    class Handler(BaseHTTPRequestHandler):
-        def do_POST(self) -> None:
-            requests.append((self.path, self.headers["Content-Type"],
-                             self.rfile.read(int(self.headers["Content-Length"]))))
-            self.send_response(403 if curl_exit else 200)
-            self.end_headers()
-            self.wfile.write(b"invalid_payload" if curl_exit else b"ok")
-
-        def log_message(self, format: str, *args: object) -> None:
-            pass
-
-    run_url = "https://github.com/graphistry/tck-gfql/actions/runs/123"
-    with HTTPServer(("127.0.0.1", 0), Handler) as server:
-        worker = Thread(target=server.serve_forever, daemon=True)
-        worker.start()
-        webhook = f"http://127.0.0.1:{server.server_port}/alerts" if configured else ""
-        env = {**os.environ, "SLACK_WEBHOOK_URL": webhook, "RUN_URL": run_url,
-               "NO_PROXY": "127.0.0.1", "no_proxy": "127.0.0.1"}
-        try:
-            result = subprocess.run(["bash", "-e", "-c", _step_script("Alert Slack")],
-                                    cwd=tmp_path, env=env, capture_output=True, text=True,
-                                    check=False, timeout=20)
-        finally:
-            server.shutdown()
-            worker.join(timeout=2)
-    assert result.returncode == curl_exit
-    if not configured:
-        assert requests == []
-        assert result.stdout.startswith("::warning::")
-        return
-    assert len(requests) == 1
-    path, content_type, payload = requests[0]
-    assert path == "/alerts"
-    assert content_type == "application/json"
-    assert json.loads(payload) == {
-        "text": "GFQL nightly failed: " + run_url,
-    }
-    assert webhook not in result.stdout + result.stderr

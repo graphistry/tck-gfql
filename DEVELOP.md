@@ -38,11 +38,15 @@ Notes:
 GitHub Actions runs the suite on PRs. See `.github/workflows`.
 `nightly.yml` runs on schedule and updates the pygraphistry badge.
 
-To send scheduled nightly failures to Slack, create an incoming webhook for
-`#alerts` and save its URL as the repository Actions secret `SLACK_WEBHOOK_URL`.
-Each alert links to the failed run. Pull requests, successful runs and cancelled
-runs do not send alerts. A missing secret produces a setup warning; the failed
-nightly remains failed.
+To receive scheduled nightly results in Slack, run this command in the target
+channel using the GitHub app:
+
+```text
+/github subscribe graphistry/tck-gfql workflows:{name:"Nightly Master Conformance" event:"schedule" branch:"main"}
+```
+
+The app reports starts and completion results, including failures and successes.
+No repository webhook secret is required.
 
 `pr-conformance-summary.yml` runs on PRs to generate the unified conformance
 summary from the PR checkout against the base `main` checkout. It uploads the
