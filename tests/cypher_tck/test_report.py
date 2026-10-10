@@ -79,10 +79,6 @@ def _dummy_scenario(
 
 def test_classify_primary_xfail_family_maps_representative_keys() -> None:
     assert (
-        classify_primary_xfail_family(_scenario("return6-12"))
-        == "grouped-match-aggregates"
-    )
-    assert (
         classify_primary_xfail_family(_scenario("with-skip-limit1-2"))
         == "grouped-match-aggregates"
     )
@@ -115,7 +111,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
 
     assert by_lane["row-pipeline-read-forms"] == 145
     assert by_lane["optional-match-null-extension"] == 57
-    assert by_lane["grouped-match-aggregates"] == 25
+    assert by_lane["grouped-match-aggregates"] == 24
     assert by_lane["expression-long-tail"] == 75
 
 
@@ -132,7 +128,7 @@ def test_priority_lane_summaries_include_tracker_refs_and_samples() -> None:
         grouped.definition.tracker_url
         == "https://github.com/graphistry/tck-gfql/issues/45"
     )
-    assert "return6-12" in grouped.sample_keys
+    assert "with-skip-limit1-2" in grouped.sample_keys
     assert grouped.signal.startswith("read-only relationship aggregate xfails:")
 
 
@@ -144,7 +140,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "987 (rows 832, errors 155)"
+        "988 (rows 833, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
