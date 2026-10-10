@@ -58,7 +58,6 @@ PRIMARY_FAMILY_DEFINITIONS: Tuple[PriorityLaneDefinition, ...] = (
         tracker_url="https://github.com/graphistry/tck-gfql/issues/45",
         rationale="Grouped counts and rollups over matched neighbors are common read-only analytics.",
         curated_sample_keys=(
-            "return6-12",
             "with-skip-limit1-2",
             "with-skip-limit2-4",
             "with7-2",
