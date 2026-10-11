@@ -2610,6 +2610,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "match7-24",
     "match7-28",
     "match7-29",
+    "return6-12",
     "usecase-countingsubgraphmatches1-2",
     "match7-30",
     "match7-31",

@@ -44999,14 +44999,14 @@
     {
       "implementation_status": "translated",
       "key": "return6-12",
-      "ownership": "grouped-match-aggregates",
-      "reason": "Aggregations and RETURN projections are not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "return",
-        "target-table-ops",
-        "xfail"
+        "target-table-ops"
       ]
     },
     {

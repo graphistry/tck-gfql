@@ -153,6 +153,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-typeconversion4-4",
     "expr-typeconversion4-5",
     "return-orderby2-6",
+    "return6-12",
     "with-orderby1-31-1",
     "with-orderby1-31-2",
     "with-orderby1-31-3",

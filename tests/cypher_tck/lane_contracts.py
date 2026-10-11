@@ -314,8 +314,9 @@ ROW_PIPELINE_TRANCHE14_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 
 
 # Issue #45 tranche-1: grouped aggregates over expanded MATCH.
+# return6-12 promoted via the direct-Cypher path once pygraphistry aggregated
+# relationship-pattern rows per path (pygraphistry#2174).
 GROUPED_MATCH_AGG_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
-    "return6-12",
     "with-skip-limit1-2",
     "with-skip-limit2-4",
     "with7-2",

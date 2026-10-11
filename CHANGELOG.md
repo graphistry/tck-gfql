@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Development]
 
+### Changed
+- **Return6 [12] promoted**: `MATCH (a:L)-[rel]->(b) RETURN a, count(*)` matches its expected rows through direct Cypher once pygraphistry aggregates relationship-pattern rows per path (pygraphistry#2174). xfail count 689 to 688; grouped-aggregate lane samples and pinned report counts updated.
+
 ### Fixed
 - Keep the resolved PyGraphistry checkout available for nightly reports and badge updates.
 - Publish nightly badge commits only on the default branch; validate badges on pull requests.
