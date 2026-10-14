@@ -1,0 +1,21 @@
+name: Nightly Conformance Failure Dispatch
+
+on:
+  workflow_run:
+    workflows: [Nightly Master Conformance]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted dispatch code
+        uses: actions/checkout@v6
+      - name: Dispatch an alert only for a failed scheduled run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python bin/nightly_failure_dispatch.py
