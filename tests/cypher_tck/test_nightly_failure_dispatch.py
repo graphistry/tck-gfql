@@ -9,6 +9,7 @@ import pytest
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "bin/nightly_failure_dispatch.py"
+ALERT_WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/nightly-failure-alert.yml"
 spec = importlib.util.spec_from_file_location("nightly_failure_dispatch", SCRIPT)
 assert spec is not None and spec.loader is not None
 module = importlib.util.module_from_spec(spec)
@@ -27,6 +28,12 @@ def nightly_event(conclusion: str) -> dict:
             "html_url": "https://github.com/graphistry/tck-gfql/actions/runs/38521912723",
         }
     }
+
+
+def test_alert_workflow_has_stable_name_for_slack_filter() -> None:
+    workflow = ALERT_WORKFLOW.read_text(encoding="utf-8")
+    assert workflow.startswith("name: Nightly Conformance Failed\n")
+    assert "run-name:" not in workflow
 
 
 @pytest.mark.parametrize("conclusion", ["failure", "timed_out"])
