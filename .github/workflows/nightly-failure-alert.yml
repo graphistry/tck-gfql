@@ -1,0 +1,23 @@
+name: Nightly Conformance Failed
+run-name: Nightly conformance ${{ github.event.client_payload.conclusion }} (source run #${{ github.event.client_payload.run_number }})
+
+on:
+  repository_dispatch:
+    types: [nightly_conformance_failed]
+
+permissions: {}
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_RUN_URL: ${{ github.event.client_payload.run_url }}
+      SOURCE_RUN_NUMBER: ${{ github.event.client_payload.run_number }}
+      SOURCE_CONCLUSION: ${{ github.event.client_payload.conclusion }}
+    steps:
+      - name: Link to failed nightly run
+        run: |
+          echo "Nightly Master Conformance #${SOURCE_RUN_NUMBER}: ${SOURCE_CONCLUSION}"
+          echo "Source run: ${SOURCE_RUN_URL}"
+          echo "### Nightly conformance ${SOURCE_CONCLUSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Open source run #${SOURCE_RUN_NUMBER}](${SOURCE_RUN_URL})" >> "$GITHUB_STEP_SUMMARY"
