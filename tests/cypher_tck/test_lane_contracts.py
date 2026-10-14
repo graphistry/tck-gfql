@@ -339,16 +339,18 @@ def test_row_pipeline_tranche9_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE9_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == ROW_PIPELINE_TRANCHE9_EXPECTED_STATUS
-        for forbidden_tag in ROW_PIPELINE_TRANCHE9_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario,
+            ROW_PIPELINE_TRANCHE9_EXPECTED_STATUS,
+            ROW_PIPELINE_TRANCHE9_FORBIDDEN_TAGS,
+        )
 
 
 def test_row_pipeline_tranche9_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in ROW_PIPELINE_TRANCHE9_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "row-pipeline-read-forms"
+        _assert_family_or_direct_promoted(scenario, "row-pipeline-read-forms")
 
 
 def test_row_pipeline_tranche10_keys_exist() -> None:
