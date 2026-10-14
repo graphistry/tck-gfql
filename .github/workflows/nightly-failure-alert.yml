@@ -1,5 +1,4 @@
 name: Nightly Conformance Failed
-run-name: Nightly conformance ${{ github.event.client_payload.conclusion }} (source run #${{ github.event.client_payload.run_number }})
 
 on:
   repository_dispatch:
