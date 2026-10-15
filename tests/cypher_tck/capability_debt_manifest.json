@@ -11660,85 +11660,85 @@
     {
       "implementation_status": "translated",
       "key": "expr-map1-5-1",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-map1-5-2",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-map1-5-3",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-map1-5-4",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-map1-5-5",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-map1-5-6",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {

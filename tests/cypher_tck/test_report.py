@@ -109,7 +109,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     summaries = build_primary_family_summaries(SCENARIOS)
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
-    assert by_lane["row-pipeline-read-forms"] == 145
+    assert by_lane["row-pipeline-read-forms"] == 139
     assert by_lane["optional-match-null-extension"] == 57
     assert by_lane["grouped-match-aggregates"] == 24
     assert by_lane["expression-long-tail"] == 75
@@ -140,7 +140,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "988 (rows 833, errors 155)"
+        "994 (rows 839, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
