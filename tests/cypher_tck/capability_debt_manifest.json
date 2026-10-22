@@ -39725,6 +39725,62 @@
       ]
     },
     {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-predicates-backslash1-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "backslash",
+        "cypher-string",
+        "cypher-string-pure",
+        "direct",
+        "first-party",
+        "predicate"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-predicates-backslash1-2",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "backslash",
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "not",
+        "predicate"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-predicates-backslash1-3",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "backslash",
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "or",
+        "predicate"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-predicates-backslash1-4",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "backslash",
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "not-or",
+        "predicate"
+      ]
+    },
+    {
       "implementation_status": "not_yet_implemented",
       "key": "firstparty-predicates-isnotin1-1",
       "ownership": "skipped",
