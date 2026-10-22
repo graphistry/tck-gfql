@@ -98,7 +98,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'literal': '\'a\\\\\\\\bcn5t\\\'"\\\\\\\\//\\\\\\\\"\\\'\''}
+            {'literal': "a\\bcn5t'\"\\//\\\"'"}
             ],
         ),
         gfql=None,
