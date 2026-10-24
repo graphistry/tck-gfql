@@ -109,7 +109,7 @@ def test_primary_family_counts_stable_for_priority_lanes() -> None:
     summaries = build_primary_family_summaries(SCENARIOS)
     by_lane = {summary.definition.lane_id: summary.xfail_count for summary in summaries}
 
-    assert by_lane["row-pipeline-read-forms"] == 139
+    assert by_lane["row-pipeline-read-forms"] == 138
     assert by_lane["optional-match-null-extension"] == 57
     assert by_lane["grouped-match-aggregates"] == 24
     assert by_lane["expression-long-tail"] == 75
