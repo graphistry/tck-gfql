@@ -2554,6 +2554,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-temporal9-5-48",
     "expr-typeconversion2-3",
     "expr-typeconversion2-4",
+    "expr-typeconversion2-5",
     "expr-typeconversion2-6",
     "expr-typeconversion2-7",
     "expr-typeconversion3-1",

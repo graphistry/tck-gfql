@@ -302,7 +302,6 @@ ROW_PIPELINE_TRANCHE14_KEYS: Final[tuple[str, ...]] = (
     "expr-quantifier4-8",
     "expr-string10-8",
     "expr-string4-1",
-    "expr-typeconversion2-5",
     "expr-typeconversion3-4",
 )
 
