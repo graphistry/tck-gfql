@@ -153,6 +153,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-temporal7-5-1",
     "expr-temporal7-5-2",
     "expr-temporal7-6-8",
+    "expr-typeconversion2-5",
     "expr-typeconversion2-6",
     "expr-typeconversion4-2",
     "expr-typeconversion4-3",
