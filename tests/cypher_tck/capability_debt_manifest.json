@@ -39001,17 +39001,15 @@
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-typeconversion2-5",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
-        "meta-xfail",
-        "target-expr-dsl",
-        "typeConversion",
-        "xfail"
+        "typeConversion"
       ]
     },
     {

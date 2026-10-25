@@ -102,9 +102,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'typeConversion', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('cypher-string', 'cypher-string-pure', 'expr', 'typeConversion'),
     ),
 
     Scenario(
