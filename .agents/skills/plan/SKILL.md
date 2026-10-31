@@ -53,6 +53,7 @@ Only use this file-based plan template when:
 - **ONE TASK AT A TIME** - Never jump ahead
 - **NO ASSUMPTIONS** - The plan is the only truth
 - **NO OFFROADING** - If it's not in the plan, don't do it
+- **SUBAGENT-SAFE FILENAMES**: subagent-written Markdown filenames must not start with `report`, `summary`, `findings`, or `analysis`, in any directory and case-insensitively (anthropics/claude-code#44657). Prefer role-prefixed names such as `dimension-report.md`, `issues-<slug>.md`, `canvas-<slug>-<dimension>.md`, `adversarial-report.md`, or `agent-findings.md`; keep safe role-final names such as `wave-report.md` and `final-report.md`.
 
 ### Step Execution Protocol
 **BEFORE EVERY SINGLE ACTION:**
@@ -121,10 +122,6 @@ gh pr checks [PR] --watch
 - FAILED: Failed, needs retry
 - SKIPPED: Not needed
 - BLOCKED: Can't proceed
-
-## Subagent-Safe Filenames
-
-Subagent-written Markdown filenames must not start with `report`, `summary`, `findings`, or `analysis`, in any directory and case-insensitively (anthropics/claude-code#44657). Prefer role-prefixed names such as `dimension-report.md`, `issues-<slug>.md`, `canvas-<slug>-<dimension>.md`, `adversarial-report.md`, or `agent-findings.md`; keep safe role-final names such as `wave-report.md` and `final-report.md`.
 
 ## LIVE PLAN
 
