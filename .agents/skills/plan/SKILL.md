@@ -122,6 +122,10 @@ gh pr checks [PR] --watch
 - SKIPPED: Not needed
 - BLOCKED: Can't proceed
 
+## Subagent-Safe Filenames
+
+Subagent-written Markdown filenames must not start with `report`, `summary`, `findings`, or `analysis`, in any directory and case-insensitively (anthropics/claude-code#44657). Prefer role-prefixed names such as `dimension-report.md`, `issues-<slug>.md`, `canvas-<slug>-<dimension>.md`, `adversarial-report.md`, or `agent-findings.md`; keep safe role-final names such as `wave-report.md` and `final-report.md`.
+
 ## LIVE PLAN
 
 ### Steps
