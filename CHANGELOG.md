@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->
 
 ### Added
+- **Carried-scalar first-party conformance**: Cover two scalar groups through a convergent second MATCH, partial edge rejection, and empty results for pygraphistry#2252.
 - **First-party typed-schema smoke scenarios**: Added experimental-surface
   conformance coverage for pygraphistry#1457 across `NodeType`, `EdgeType`,
   `GraphSchema`, `EdgeTopology`, `bind(schema=...)`, schema-bound

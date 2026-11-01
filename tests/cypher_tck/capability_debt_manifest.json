@@ -39495,6 +39495,51 @@
     },
     {
       "implementation_status": "direct_cypher_only",
+      "key": "firstparty-clauses-with-scalarcarry1-1",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "positive",
+        "pygraphistry-2252",
+        "scalar-carry",
+        "with-reentry"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-clauses-with-scalarcarry1-2",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "first-party",
+        "partial-rejection",
+        "pygraphistry-2252",
+        "scalar-carry",
+        "with-reentry"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
+      "key": "firstparty-clauses-with-scalarcarry1-3",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
+      "tags": [
+        "cypher-string",
+        "cypher-string-pure",
+        "empty",
+        "first-party",
+        "pygraphistry-2252",
+        "scalar-carry",
+        "with-reentry"
+      ]
+    },
+    {
+      "implementation_status": "direct_cypher_only",
       "key": "firstparty-networkx-closeness-centrality-1",
       "ownership": "direct-cypher-promotion",
       "support_status": "supported",
