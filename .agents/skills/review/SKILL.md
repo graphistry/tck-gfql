@@ -2,7 +2,7 @@
 name: review
 description: |
   Input — a PR number / branch (default: current branch's PR).
-  Output — findings.md under plans/<task>/ + optional inline PR comments.
+  Output — issues-report.md under plans/<task>/ + optional inline PR comments.
   Result — multi-wave review converged across spec, correctness, tests, security,
   credentials, quality, DRY, concurrency, performance, architecture, operability,
   repo conventions. Each wave independently converges before the next begins.
@@ -487,13 +487,13 @@ Different dimensions can ALSO run in parallel (one subagent per (dimension, file
 Each (dimension, file) subagent writes:
 
 ```
-plans/<task>/waves/wave-<N>/<dimension>/findings-<file-slug>.md
+plans/<task>/waves/wave-<N>/<dimension>/issues-<file-slug>.md
 ```
 
 Then the orchestrator aggregates per dimension:
 
 ```
-plans/<task>/waves/wave-<N>/<dimension>/report.md  — roll-up of all file findings for that dimension
+plans/<task>/waves/wave-<N>/<dimension>/<dimension>-report.md  — roll-up of all file findings for that dimension
 ```
 
 ### Dimensions reference table
@@ -672,7 +672,7 @@ For every source file edited in the PR, check whether a corresponding test file 
 
 #### Concurrency / parallelism dimension
 
-Start by canvasing: read the existing spec docs and relevant code to map the current concurrency model (thread model, async patterns, shared mutable state, synchronization primitives). Record this as the baseline in `findings-<slug>-concurrency-canvas.md` before writing any bug findings.
+Start by canvasing: read the existing spec docs and relevant code to map the current concurrency model (thread model, async patterns, shared mutable state, synchronization primitives). Record this as the baseline in `canvas-<slug>-concurrency.md` before writing any bug findings.
 
 Then check for:
 
@@ -724,7 +724,7 @@ Severity: almost always `SUGGESTION` unless the pattern is demonstrably on the c
 
 #### Architecture dimension
 
-Start by canvasing: read the spec docs (ARCHITECTURE.md, README.md in changed paths, PR description) and the primary changed files to understand the intended design — service topology, data flows, state ownership, failure model. Record this as the baseline in `findings-<slug>-architecture-canvas.md` before writing any findings.
+Start by canvasing: read the spec docs (ARCHITECTURE.md, README.md in changed paths, PR description) and the primary changed files to understand the intended design — service topology, data flows, state ownership, failure model. Record this as the baseline in `canvas-<slug>-architecture.md` before writing any findings.
 
 Then check for:
 
@@ -769,7 +769,7 @@ Severity guidance: flag as IMPORTANT when a missing abstraction means a future s
 
 Start by canvasing: read the spec docs and 2–3 sibling services to understand the repo's
 established observability stack (OTel setup, logger instance, log level conventions). Record
-this baseline in `findings-<slug>-operability-canvas.md` before writing any findings.
+this baseline in `canvas-<slug>-operability.md` before writing any findings.
 
 Then check for:
 
@@ -814,7 +814,7 @@ Flag as SUGGESTION if level choice is merely inconsistent with siblings.
 
 #### Repo conventions & reuse dimension
 
-Start by canvasing: look at 2–3 sibling services or modules in the same repo to establish the repo's conventions for the file types being changed. Record the baseline patterns in `findings-<slug>-conventions-canvas.md` before writing any findings.
+Start by canvasing: look at 2–3 sibling services or modules in the same repo to establish the repo's conventions for the file types being changed. Record the baseline patterns in `canvas-<slug>-conventions.md` before writing any findings.
 
 Specifically look at:
 - **File length** — repo convention is ~500 LOC per file. Flag any file in the diff that exceeds this, whether newly added or grown by the PR. Suggest natural split points (e.g., extract a class, a route group, a utility module). Files significantly over 500 LOC are SUGGESTION; files approaching 1000 LOC with no clear split point are IMPORTANT.
@@ -839,7 +839,7 @@ Specifically look at:
 
 ### Per-file finding format
 
-See "Dimensions — independent runs + parallel-within" above for parallelism rules. Each (dimension, file) subagent produces `plans/<task>/waves/wave-<N>/<dimension>/findings-<filepath-slug>.md`:
+See "Dimensions — independent runs + parallel-within" above for parallelism rules. Each (dimension, file) subagent produces `plans/<task>/waves/wave-<N>/<dimension>/issues-<filepath-slug>.md`:
 
 ```markdown
 ## <file>
@@ -870,7 +870,7 @@ See "Dimensions — independent runs + parallel-within" above for parallelism ru
 After all files in a dimension are done, orchestrator rolls them up to:
 
 ```
-plans/<task>/waves/wave-<N>/<dimension>/report.md
+plans/<task>/waves/wave-<N>/<dimension>/<dimension>-report.md
 ```
 
 ### Adversarial Pressure Test — parallel, one subagent per finding
@@ -918,7 +918,7 @@ Format:
 After all per-finding files are written, orchestrator aggregates:
 
 ```
-plans/<task>/waves/wave-<N>/adversarial/report.md
+plans/<task>/waves/wave-<N>/adversarial/adversarial-report.md
 ```
 
 The aggregate counts:
@@ -935,7 +935,7 @@ When `fixes=inline`, run a consolidation mini-phase before applying fixes if eit
 - `FIX_NOW` findings count in the wave is `>= 5`, or
 - `FIX_NOW` findings span `>= 3` files.
 
-Write `plans/<task>/waves/wave-<N>/consolidation/report.md` containing:
+Write `plans/<task>/waves/wave-<N>/consolidation-report.md` containing:
 - deduplicated `FIX_NOW` set
 - grouped root-cause clusters
 - execution order (highest risk first)
