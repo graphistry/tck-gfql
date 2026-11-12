@@ -285,7 +285,7 @@ for _index, _scenario in enumerate(SCENARIOS):
         edges=[], node_id="__fixture_id__", node_columns=("__fixture_id__",),
     )
     _tags = tuple(tag for tag in _scenario.tags if tag != "xfail") + (
-        "cypher-string", "cypher-string-pure", "mutation", "mutation-no-return",
+        "cypher-string", "cypher-string-pure", "mutation",
     )
     SCENARIOS[_index] = replace(
         _scenario, status="supported", reason=None, tags=_tags,

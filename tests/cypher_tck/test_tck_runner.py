@@ -899,6 +899,12 @@ def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
     return pdf.to_dict("records")
 
 
+def _returned_rows_for_mutation(scenario: Scenario, result: Any) -> List[Dict[str, Any]]:
+    if "mutation-no-return" in scenario.tags:
+        return []
+    return _rows_from_result(result)
+
+
 def _ids_from_entity_projection_meta(
     result: object,
     *,
@@ -1485,7 +1491,7 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
             engines.append("polars")
         for engine in engines:
             result = execute_and_assert_mutation(g, scenario, engine=engine)
-            rows = [] if "mutation-no-return" in scenario.tags else _rows_from_result(result)
+            rows = _returned_rows_for_mutation(scenario, result)
             _assert_expected_rows(scenario, rows)
         return
 

@@ -10,6 +10,11 @@ from tests.cypher_tck.mutation_oracle import (
     CallerMutation, EffectMismatch, ExistingIdentityMismatch, PoststateMismatch,
     assert_post_graph, effects_between, execute_and_assert_mutation, fixture_state,
 )
+from tests.cypher_tck.test_tck_runner import (
+    _assert_expected_rows,
+    _returned_rows_for_mutation,
+    _rows_from_result,
+)
 
 
 def _scenario() -> Scenario:
@@ -109,3 +114,58 @@ def test_existing_node_labels_cannot_be_permuted_between_physical_ids(monkeypatc
     monkeypatch.setattr(source, "gfql", lambda *args, **kwargs: after)
     with pytest.raises(PoststateMismatch):
         execute_and_assert_mutation(source, item, engine="pandas")
+
+
+def _returned_graph() -> object:
+    return _graph([{"id": "n0"}])
+
+
+def test_returned_rows_are_compared_after_mutation_oracle() -> None:
+    source = _graph([])
+    source.gfql = lambda *args, **kwargs: _returned_graph()
+    scenario = replace(
+        _scenario(),
+        tags=("mutation",),
+        expected=replace(
+            _scenario().expected,
+            rows=[{"id": "n0"}],
+            post_graph=GraphFixture(nodes=[{"id": "n0"}], edges=[]),
+        ),
+    )
+    result = execute_and_assert_mutation(source, scenario, engine="pandas")
+
+    assert _rows_from_result(result) == [{"id": "n0"}]
+    assert _returned_rows_for_mutation(scenario, result) == [{"id": "n0"}]
+
+
+def test_wrong_returned_rows_fail_even_with_correct_poststate_and_effects() -> None:
+    source = _graph([])
+    source.gfql = lambda *args, **kwargs: _returned_graph()
+    scenario = replace(
+        _scenario(),
+        tags=("mutation",),
+        expected=replace(
+            _scenario().expected,
+            rows=[],
+            post_graph=GraphFixture(nodes=[{"id": "n0"}], edges=[]),
+        ),
+    )
+
+    result = execute_and_assert_mutation(source, scenario, engine="pandas")
+    with pytest.raises(AssertionError):
+        _assert_expected_rows(scenario, _returned_rows_for_mutation(scenario, result))
+
+
+def test_genuine_mutation_no_return_normalizes_to_empty_rows() -> None:
+    source = _graph([])
+    source.gfql = lambda *args, **kwargs: _returned_graph()
+    scenario = replace(
+        _scenario(),
+        expected=replace(
+            _scenario().expected,
+            post_graph=GraphFixture(nodes=[{"id": "n0"}], edges=[]),
+        ),
+    )
+
+    result = execute_and_assert_mutation(source, scenario, engine="pandas")
+    assert _returned_rows_for_mutation(scenario, result) == []
