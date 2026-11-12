@@ -6,6 +6,7 @@ import pytest
 
 from tests.cypher_tck.models import Expected, GraphFixture, MutationEffects, Scenario
 from tests.cypher_tck.mutation_oracle import (
+    CallerMutation, EffectMismatch, PoststateMismatch,
     assert_post_graph, effects_between, execute_and_assert_mutation, fixture_state,
 )
 
@@ -31,7 +32,7 @@ def _graph(nodes: list) -> SimpleNamespace:
 def test_no_op_cannot_pass_empty_rows() -> None:
     source = _graph([])
     source.gfql = lambda *args, **kwargs: source
-    with pytest.raises(AssertionError, match="poststate"):
+    with pytest.raises(PoststateMismatch):
         execute_and_assert_mutation(source, _scenario(), engine="pandas")
 
 
@@ -41,7 +42,7 @@ def test_input_mutation_is_independently_rejected() -> None:
         source._nodes = pd.DataFrame({"id": [0]})
         return source
     source.gfql = mutate
-    with pytest.raises(AssertionError, match="caller"):
+    with pytest.raises(CallerMutation):
         execute_and_assert_mutation(source, _scenario(), engine="pandas")
 
 
@@ -56,7 +57,7 @@ def test_effect_oracle_rejects_wrong_counts() -> None:
         post_graph=GraphFixture(nodes=[{"__fixture_id__": 0, "id": 0}], edges=[], node_id="__fixture_id__"),
         effects=MutationEffects(nodes_created=2),
     ))
-    with pytest.raises(AssertionError, match="side effects"):
+    with pytest.raises(EffectMismatch):
         execute_and_assert_mutation(source, scenario, engine="pandas")
 
 
@@ -67,7 +68,7 @@ def test_complete_graph_compares_parallel_edges_direction_and_properties() -> No
     ])
     assert_post_graph(fixture_state(fixture), fixture)
     for edges in [fixture.edges[:1], [dict(edge, src=edge["dst"], dst=edge["src"]) for edge in fixture.edges]]:
-        with pytest.raises(AssertionError, match="poststate"):
+        with pytest.raises(PoststateMismatch):
             assert_post_graph(fixture_state(replace(fixture, edges=edges)), fixture)
 
 

@@ -14,6 +14,18 @@ import pandas as pd
 from tests.cypher_tck.models import GraphFixture, MutationEffects, Scenario
 
 
+
+class PoststateMismatch(AssertionError):
+    pass
+
+
+class CallerMutation(AssertionError):
+    pass
+
+
+class EffectMismatch(AssertionError):
+    pass
+
 def _records(frame: Any) -> list[dict]:
     if frame is None:
         return []
@@ -129,7 +141,8 @@ def assert_post_graph(actual: GraphState, expected: GraphFixture) -> None:
         actual.graph, target, node_match=lambda left, right: left == right,
         edge_match=edge_match,
     )
-    assert matcher.is_isomorphic(), "Mutation full graph poststate differs from the independent fixture"
+    if not matcher.is_isomorphic():
+        raise PoststateMismatch("Mutation full graph poststate differs from the independent fixture")
 
 
 def effects_between(before: GraphState, after: GraphState) -> MutationEffects:
@@ -150,8 +163,10 @@ def execute_and_assert_mutation(source: Any, scenario: Scenario, *, engine: str)
     immutable = snapshot_input(source)
     before = graph_state(source)
     result = source.gfql(scenario.cypher, params=scenario.params, engine=engine)
-    assert snapshot_input(source) == immutable, "Mutation changed the caller frames or bindings"
+    if snapshot_input(source) != immutable:
+        raise CallerMutation("Mutation changed the caller frames or bindings")
     after = graph_state(result.gfql_graph)
     assert_post_graph(after, scenario.expected.post_graph)
-    assert effects_between(before, after) == scenario.expected.effects, "Mutation side effects differ from the original TCK oracle"
+    if effects_between(before, after) != scenario.expected.effects:
+        raise EffectMismatch("Mutation side effects differ from the original TCK oracle")
     return result
