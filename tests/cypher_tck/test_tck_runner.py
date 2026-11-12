@@ -905,6 +905,31 @@ def _returned_rows_for_mutation(scenario: Scenario, result: Any) -> List[Dict[st
     return _rows_from_result(result)
 
 
+def _classify_xfail_mutation_oracle(
+    graph: Any, scenario: Scenario, engine: str
+) -> str:
+    """Classify whether an xfail mutation scenario still has row debt.
+
+    ``execute_and_assert_mutation`` already proves graph/effects. A row
+    assertion failure confirms the historical debt; a passing assertion means
+    the xfail is stale. Polars capability declines remain separately deferred.
+    """
+    from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
+
+    try:
+        result = execute_and_assert_mutation(graph, scenario, engine=engine)
+        rows = _returned_rows_for_mutation(scenario, result)
+        _assert_expected_rows(scenario, rows)
+    except NotImplementedError as exc:
+        if engine != "polars":
+            raise
+        _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
+        return "deferred"
+    except AssertionError:
+        return "debt"
+    return "stale"
+
+
 def _ids_from_entity_projection_meta(
     result: object,
     *,
@@ -1485,12 +1510,12 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
         if _TEST_POLARS and _HAS_POLARS:
             engines.append("polars")
         for engine in engines:
-            try:
-                execute_and_assert_mutation(g, scenario, engine=engine)
-            except NotImplementedError as exc:
-                _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
-                if engine != "polars":
-                    raise
+            classification = _classify_xfail_mutation_oracle(g, scenario, engine)
+            if classification == "stale":
+                pytest.fail(
+                    f"{scenario.key}: mutation scenario passed expected rows; "
+                    "row debt is stale"
+                )
         pytest.xfail(scenario.reason or "mutation passes but projected rows are unsupported")
     if scenario.status == "skip":
         pytest.skip(scenario.reason or "skipped")

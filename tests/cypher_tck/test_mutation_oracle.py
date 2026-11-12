@@ -10,8 +10,10 @@ from tests.cypher_tck.mutation_oracle import (
     CallerMutation, EffectMismatch, ExistingIdentityMismatch, PoststateMismatch,
     assert_post_graph, effects_between, execute_and_assert_mutation, fixture_state,
 )
+from tests.cypher_tck import test_tck_runner
 from tests.cypher_tck.test_tck_runner import (
     _assert_expected_rows,
+    _classify_xfail_mutation_oracle,
     _returned_rows_for_mutation,
     _rows_from_result,
 )
@@ -138,6 +140,38 @@ def test_returned_rows_are_compared_after_mutation_oracle() -> None:
     assert _returned_rows_for_mutation(scenario, result) == [{"id": "n0"}]
 
 
+def test_xfail_classifier_confirms_real_row_debt() -> None:
+    source = _graph([])
+    source.gfql = lambda *args, **kwargs: _returned_graph()
+    scenario = replace(
+        _scenario(),
+        tags=("mutation",),
+        expected=replace(
+            _scenario().expected,
+            rows=[{"id": "wrong"}],
+            post_graph=GraphFixture(nodes=[{"id": "n0"}], edges=[]),
+        ),
+    )
+
+    assert _classify_xfail_mutation_oracle(source, scenario, "pandas") == "debt"
+
+
+def test_xfail_classifier_fails_stale_row_debt() -> None:
+    source = _graph([])
+    source.gfql = lambda *args, **kwargs: _returned_graph()
+    scenario = replace(
+        _scenario(),
+        tags=("mutation",),
+        expected=replace(
+            _scenario().expected,
+            rows=[{"id": "n0"}],
+            post_graph=GraphFixture(nodes=[{"id": "n0"}], edges=[]),
+        ),
+    )
+
+    assert _classify_xfail_mutation_oracle(source, scenario, "pandas") == "stale"
+
+
 def test_wrong_returned_rows_fail_even_with_correct_poststate_and_effects() -> None:
     source = _graph([])
     source.gfql = lambda *args, **kwargs: _returned_graph()
@@ -169,3 +203,41 @@ def test_genuine_mutation_no_return_normalizes_to_empty_rows() -> None:
 
     result = execute_and_assert_mutation(source, scenario, engine="pandas")
     assert _returned_rows_for_mutation(scenario, result) == []
+
+
+def test_xfail_runner_fails_before_masking_stale_row_debt(
+    monkeypatch,
+) -> None:
+    scenario = replace(
+        _scenario(),
+        status="xfail",
+        reason="historical row debt",
+        tags=("mutation",),
+        expected=replace(
+            _scenario().expected,
+            rows=[{"id": "n0"}],
+            post_graph=GraphFixture(nodes=[{"id": "n0"}], edges=[]),
+        ),
+    )
+    fail_calls = []
+
+    def fail(message):
+        fail_calls.append(message)
+        raise RuntimeError(message)
+
+    monkeypatch.setattr(
+        "tests.cypher_tck.test_tck_runner._classify_xfail_mutation_oracle",
+        lambda *args: "stale",
+    )
+    monkeypatch.setattr("pytest.fail", fail)
+    monkeypatch.setattr(
+        "pytest.xfail",
+        lambda reason: fail_calls.append(("xfail", reason)),
+    )
+
+    with pytest.raises(RuntimeError):
+        test_tck_runner.test_cypher_tck_scenario(scenario)
+
+    assert fail_calls == [
+        "test-mutation: mutation scenario passed expected rows; row debt is stale"
+    ]
