@@ -107,3 +107,23 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   error payloads when a report artifact includes `direct_cypher_cases`. Entries
   without the block remain valid against artifacts that do not carry case-level
   actual error payloads.
+
+### Mutation poststate and effects
+
+A mutation scenario supplies `Expected.post_graph` and `Expected.effects`
+(`MutationEffects`) alongside its RETURN rows. The direct-Cypher runner checks
+complete node/relationship properties, labels, direction and parallel edges up
+to physical identity renaming, compares the original side-effect counters, and
+checks the caller's frames and bindings remain unchanged. No-return scenarios
+use the `mutation-no-return` tag; their empty rows cannot bypass graph/effect
+assertions. The mutation lane requires successful native execution on each
+requested engine and does not accept a capability decline as conformance.
+
+Use a separate physical fixture key, such as `node_id="__fixture_id__"`, when a
+poststate contains a user property named `id`. Null properties are absent from
+poststate/effects. The original openCypher `+labels` counter counts distinct
+label names, so creating two nodes with the same label adds one label.
+`Create1` positive scenarios 1–12 carry explicit poststates/effects from original
+source `59edf2e1c17b845bf97c334ed06b2eb780950c13`; later CREATE and other write
+operators remain separate conformance work. No-op, wrong-effect, caller-mutation,
+parallel-edge and direction controls exercise the oracle itself.
