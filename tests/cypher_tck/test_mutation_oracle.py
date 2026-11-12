@@ -172,6 +172,37 @@ def test_xfail_classifier_fails_stale_row_debt() -> None:
     assert _classify_xfail_mutation_oracle(source, scenario, "pandas") == "stale"
 
 
+@pytest.mark.parametrize(
+    "error",
+    [
+        PoststateMismatch,
+        EffectMismatch,
+        CallerMutation,
+        ExistingIdentityMismatch,
+    ],
+)
+def test_xfail_consumer_does_not_mask_mutation_assertions(
+    monkeypatch, error
+) -> None:
+    scenario = replace(
+        _scenario(),
+        status="xfail",
+        reason="historical row debt",
+        tags=("mutation", "mutation-no-return"),
+    )
+    monkeypatch.setattr(
+        "tests.cypher_tck.mutation_oracle.execute_and_assert_mutation",
+        lambda *args, **kwargs: raise_error(error("mutation oracle rejected no-op")),
+    )
+
+    with pytest.raises(error):
+        test_tck_runner.test_cypher_tck_scenario(scenario)
+
+
+def raise_error(error):
+    raise error
+
+
 def test_wrong_returned_rows_fail_even_with_correct_poststate_and_effects() -> None:
     source = _graph([])
     source.gfql = lambda *args, **kwargs: _returned_graph()

@@ -910,21 +910,24 @@ def _classify_xfail_mutation_oracle(
 ) -> str:
     """Classify whether an xfail mutation scenario still has row debt.
 
-    ``execute_and_assert_mutation`` already proves graph/effects. A row
-    assertion failure confirms the historical debt; a passing assertion means
-    the xfail is stale. Polars capability declines remain separately deferred.
+    ``execute_and_assert_mutation`` must prove graph/effects before row debt
+    can be inferred. A row assertion failure confirms the historical debt; a
+    passing assertion means the xfail is stale. Polars capability declines
+    remain separately deferred.
     """
     from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
 
     try:
         result = execute_and_assert_mutation(graph, scenario, engine=engine)
-        rows = _returned_rows_for_mutation(scenario, result)
-        _assert_expected_rows(scenario, rows)
     except NotImplementedError as exc:
         if engine != "polars":
             raise
         _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
         return "deferred"
+
+    rows = _returned_rows_for_mutation(scenario, result)
+    try:
+        _assert_expected_rows(scenario, rows)
     except AssertionError:
         return "debt"
     return "stale"
