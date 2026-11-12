@@ -41,17 +41,6 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # setup into its explicit 22-node chain makes the engine return the expected row,
 # so match4-4 is promoted rather than recorded as wrong-row debt.
 DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
-    # Standalone relationship CREATE now executes, but the TCK Create2 row
-    # oracle still assumes the standalone-node contract.  Track the remaining
-    # relationship-row modeling debt while preserving the expected error/
-    # success boundary independently of the pygraphistry PR.
-    "create2-1",
-    "create2-2",
-    "create2-4",
-    "create2-7",
-    "create2-8",
-    "create2-13",
-    "create2-15",
 )
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = (
