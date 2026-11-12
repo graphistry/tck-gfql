@@ -6,6 +6,7 @@ from tests.cypher_tck.gap_priority import (
 )
 from tests.cypher_tck.direct_cypher_support import (
     DIRECT_CYPHER_PROMOTION_ERROR_KEYS,
+    DIRECT_CYPHER_PROMOTION_ROW_KEYS,
 )
 from tests.cypher_tck.direct_cypher_xfail_contract import (
     DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS,
@@ -123,6 +124,7 @@ def _scenario_map():
 # any of these as allowably "supported" rather than a regression.
 _DIRECT_CYPHER_PROMOTED_KEYS = (
     set(DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS)
+    | set(DIRECT_CYPHER_PROMOTION_ROW_KEYS)
     | set(DIRECT_CYPHER_PROMOTION_ERROR_KEYS)
 )
 

@@ -30,7 +30,7 @@ from tests.cypher_tck.direct_cypher_support import (
 )
 from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
-from tests.cypher_tck.mutation_oracle import requires_mutation_oracle
+from tests.cypher_tck.mutation_oracle import requires_mutation_oracle, snapshot_input
 from tests.cypher_tck.parse_cypher import _parse_literal
 from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -1191,6 +1191,14 @@ _ISSUE142_PROMOTED_ERROR_KEYS = (
     "expr-typeconversion4-10-2",
 )
 
+_CREATE_DECORATED_REPEATED_ALIAS_ERROR_KEYS = (
+    "create1-15",
+    "create1-16",
+    "create1-17",
+    "create1-18",
+    "create1-19",
+)
+
 
 @pytest.mark.parametrize("key", _PARAM_BINDING_CLUSTER3_KEYS)
 def test_issue120_parameter_binding_cluster_has_explicit_params(key: str) -> None:
@@ -1276,6 +1284,26 @@ def test_issue142_refreshed_xfail_error_promotions_raise_direct_cypher(
         _build_graph(scenario.graph).gfql(
             scenario.cypher, params=scenario.params, engine="pandas"
         )
+
+
+@pytest.mark.parametrize("key", _CREATE_DECORATED_REPEATED_ALIAS_ERROR_KEYS)
+def test_create_decorated_repeated_alias_promotions_raise_validation_without_writes(
+    key: str,
+) -> None:
+    scenario = next(scenario for scenario in SCENARIOS if scenario.key == key)
+    graph = _build_graph(scenario.graph)
+    immutable = snapshot_input(graph)
+
+    assert scenario.status == "supported"
+    assert "cypher-string" in scenario.tags
+    assert "cypher-string-error" in scenario.tags
+    assert key in DIRECT_CYPHER_PROMOTION_ERROR_KEYS
+    assert scenario.expected.rows is None
+
+    with pytest.raises(GFQLValidationError, match="variable is already bound"):
+        graph.gfql(scenario.cypher, params=scenario.params, engine="pandas")
+
+    assert snapshot_input(graph) == immutable
 
 
 def test_valid_range_scenario_is_not_promoted_as_an_error() -> None:

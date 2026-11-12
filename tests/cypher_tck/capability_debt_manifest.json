@@ -649,35 +649,29 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "unexpected_success_expected_error",
-        "reason": "direct_cypher_nonvalidation:unexpected_success_expected_error"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-15",
-      "ownership": "write-clauses",
-      "reason": "Compile-time validation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "syntax-error",
-        "xfail"
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "syntax-error"
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "unexpected_success_expected_error",
-        "reason": "direct_cypher_nonvalidation:unexpected_success_expected_error"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-16",
-      "ownership": "write-clauses",
-      "reason": "Compile-time validation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "syntax-error",
-        "xfail"
+        "cypher-string",
+        "cypher-string-error",
+        "cypher-string-pure",
+        "syntax-error"
       ]
     },
     {

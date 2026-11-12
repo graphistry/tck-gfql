@@ -95,7 +95,7 @@ def test_classify_primary_xfail_family_maps_representative_keys() -> None:
         == "expression-long-tail"
     )
     assert _scenario("create1-1").status == "supported"
-    assert classify_primary_xfail_family(_scenario("create2-1")) == "write-clauses"
+    assert classify_primary_xfail_family(_scenario("delete1-1")) == "write-clauses"
     assert classify_primary_xfail_family(_scenario("call1-1")) == "procedures-and-call"
 
 
@@ -141,7 +141,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "1014 (rows 859, errors 155)"
+        "1023 (rows 868, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
