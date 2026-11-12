@@ -1447,7 +1447,7 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
 
     g = _build_graph(scenario.graph)
 
-    if scenario.expected.post_graph is not None:
+    if scenario.expected.post_graph is not None or scenario.expected.effects is not None:
         from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
         engines = ["pandas"]
         if _TEST_CUDF and _HAS_CUDF:

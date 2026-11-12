@@ -6,7 +6,7 @@ renaming for poststate, while effect deltas preserve identity within an executio
 """
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 import networkx as nx
 import pandas as pd
@@ -24,6 +24,10 @@ class CallerMutation(AssertionError):
 
 
 class EffectMismatch(AssertionError):
+    pass
+
+
+class ExistingIdentityMismatch(AssertionError):
     pass
 
 def _records(frame: Any) -> list[dict]:
@@ -133,17 +137,32 @@ def _state(nodes: list[dict], edges: list[dict], node_id: str, src: str, dst: st
     return GraphState(graph, properties, edge_properties, all_labels, edge_ids)
 
 
-def assert_post_graph(actual: GraphState, expected: GraphFixture) -> None:
+def assert_post_graph(actual: GraphState, expected: GraphFixture, *, before: Optional[GraphState] = None) -> None:
+    actual_graph = actual.graph.copy()
     target = fixture_state(expected).graph
+    if before is not None:
+        for graph in (actual_graph, target):
+            for identity, attributes in graph.nodes(data=True):
+                attributes["existing_identity"] = _value(identity) if identity in before.graph else None
+            for _, _, identity, attributes in graph.edges(keys=True, data=True):
+                attributes["existing_identity"] = _value(identity) if identity in before.edge_ids else None
     def edge_match(left: dict, right: dict) -> bool:
         return Counter(_value(value) for value in left.values()) == Counter(_value(value) for value in right.values())
     matcher = nx.algorithms.isomorphism.MultiDiGraphMatcher(
-        actual.graph, target, node_match=lambda left, right: left == right,
+        actual_graph, target, node_match=lambda left, right: left == right,
         edge_match=edge_match,
     )
     if not matcher.is_isomorphic():
         raise PoststateMismatch("Mutation full graph poststate differs from the independent fixture")
 
+
+
+def assert_retained_relationship_endpoints(before: GraphState, after: GraphState) -> None:
+    original = {identity: (source, destination) for source, destination, identity in before.graph.edges(keys=True)}
+    current = {identity: (source, destination) for source, destination, identity in after.graph.edges(keys=True)}
+    for identity in original.keys() & current.keys():
+        if original[identity] != current[identity]:
+            raise ExistingIdentityMismatch("Mutation rewired an existing relationship identity")
 
 def effects_between(before: GraphState, after: GraphState) -> MutationEffects:
     before_nodes, after_nodes = set(before.graph), set(after.graph)
@@ -166,7 +185,8 @@ def execute_and_assert_mutation(source: Any, scenario: Scenario, *, engine: str)
     if snapshot_input(source) != immutable:
         raise CallerMutation("Mutation changed the caller frames or bindings")
     after = graph_state(result.gfql_graph)
-    assert_post_graph(after, scenario.expected.post_graph)
+    assert_retained_relationship_endpoints(before, after)
+    assert_post_graph(after, scenario.expected.post_graph, before=before)
     if effects_between(before, after) != scenario.expected.effects:
         raise EffectMismatch("Mutation side effects differ from the original TCK oracle")
     return result

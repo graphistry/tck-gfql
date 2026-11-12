@@ -14,6 +14,7 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
     DirectCypherXfailOutcome,
 )
 from tests.cypher_tck.models import Scenario
+from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
 from tests.cypher_tck.scenarios import SCENARIOS
 from tests.cypher_tck.sweep_promotions import (
     _expects_error_scenario as _expects_translated_error_scenario,
@@ -131,7 +132,10 @@ def _run_direct_cypher_scenario(scenario: Scenario) -> Tuple[bool, str]:
     expects_error = _expects_direct_cypher_error_scenario(scenario)
 
     try:
-        result = graph.gfql(scenario.cypher, params=scenario.params)
+        if scenario.expected.post_graph is not None or scenario.expected.effects is not None:
+            result = execute_and_assert_mutation(graph, scenario, engine="pandas")
+        else:
+            result = graph.gfql(scenario.cypher, params=scenario.params)
     except Exception as exc:  # noqa: BLE001 - report exact blocker class/message
         if expects_error:
             return True, ""
@@ -142,7 +146,8 @@ def _run_direct_cypher_scenario(scenario: Scenario) -> Tuple[bool, str]:
 
     try:
         if scenario.expected.rows is not None:
-            _assert_expected_rows(scenario, _rows_from_result(result))
+            rows = [] if "mutation-no-return" in scenario.tags else _rows_from_result(result)
+            _assert_expected_rows(scenario, rows)
         else:
             _compare_graph_result(scenario, result)
     except Exception as exc:  # noqa: BLE001 - report exact blocker class/message

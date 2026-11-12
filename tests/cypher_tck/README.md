@@ -112,12 +112,16 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
 
 A mutation scenario supplies `Expected.post_graph` and `Expected.effects`
 (`MutationEffects`) alongside its RETURN rows. The direct-Cypher runner checks
-complete node/relationship properties, labels, direction and parallel edges up
-to physical identity renaming, compares the original side-effect counters, and
+complete node/relationship properties, labels, direction and parallel edges with existing node/relationship identities anchored and only fresh physical IDs
+normalized, compares the original side-effect counters, and
 checks the caller's frames and bindings remain unchanged. No-return scenarios
 use the `mutation-no-return` tag; their empty rows cannot bypass graph/effect
 assertions. The mutation lane requires successful native execution on each
 requested engine and does not accept a capability decline as conformance.
+
+Retained relationship IDs must keep their original endpoints. Poststate fixtures
+retain existing physical IDs; fresh IDs may use arbitrary noncolliding names. The
+runner and direct-Cypher promotion sweep use the same mutation oracle.
 
 Use a separate physical fixture key, such as `node_id="__fixture_id__"`, when a
 poststate contains a user property named `id`. Null properties are absent from

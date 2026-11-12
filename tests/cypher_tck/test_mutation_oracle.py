@@ -1,3 +1,4 @@
+import graphistry
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -6,7 +7,7 @@ import pytest
 
 from tests.cypher_tck.models import Expected, GraphFixture, MutationEffects, Scenario
 from tests.cypher_tck.mutation_oracle import (
-    CallerMutation, EffectMismatch, PoststateMismatch,
+    CallerMutation, EffectMismatch, ExistingIdentityMismatch, PoststateMismatch,
     assert_post_graph, effects_between, execute_and_assert_mutation, fixture_state,
 )
 
@@ -76,3 +77,35 @@ def test_label_effects_count_distinct_names_not_memberships() -> None:
     before = fixture_state(GraphFixture(nodes=[], edges=[]))
     after = fixture_state(GraphFixture(nodes=[{"id": 1, "labels": ["L"]}, {"id": 2, "labels": ["L"]}], edges=[]))
     assert effects_between(before, after) == MutationEffects(nodes_created=2, labels_added=1)
+
+
+def seeded_graph(reverse):
+    source=graphistry.nodes(pd.DataFrame({"id":["a","b"]}),"id").edges(pd.DataFrame({"src":["a"],"dst":["b"],"edge_id":["r"],"type":["R"]}),"src","dst",edge="edge_id")
+    after=graphistry.nodes(pd.DataFrame({"id":["a","b","actual_fresh"]}),"id").edges(pd.DataFrame({"src":["b" if reverse else "a"],"dst":["a" if reverse else "b"],"edge_id":["r"],"type":["R"]}),"src","dst",edge="edge_id")
+    before_fixture=GraphFixture(nodes=[{"id":"a"},{"id":"b"}],edges=[{"src":"a","dst":"b","edge_id":"r","type":"R"}])
+    post_fixture=GraphFixture(nodes=[{"id":"a"},{"id":"b"},{"id":"expected_fresh"}],edges=before_fixture.edges)
+    item=Scenario(key="seeded-create",feature_path="test",scenario="retained endpoints",cypher="CREATE ()",graph=before_fixture,expected=Expected(rows=[],post_graph=post_fixture,effects=MutationEffects(nodes_created=1)),gfql=None,tags=("mutation-no-return",))
+    return source,after,item
+
+def test_retained_edge_cannot_be_rewired_by_existing_identity_permutation(monkeypatch):
+    source,after,item=seeded_graph(True)
+    monkeypatch.setattr(source,"gfql",lambda *args,**kwargs:after)
+    with pytest.raises(ExistingIdentityMismatch):
+        execute_and_assert_mutation(source,item,engine="pandas")
+
+def test_fresh_identity_renaming_remains_valid_with_existing_anchors(monkeypatch):
+    source,after,item=seeded_graph(False)
+    monkeypatch.setattr(source,"gfql",lambda *args,**kwargs:after)
+    result=execute_and_assert_mutation(source,item,engine="pandas")
+    assert result is after
+
+
+def test_existing_node_labels_cannot_be_permuted_between_physical_ids(monkeypatch):
+    source = graphistry.nodes(pd.DataFrame({"id": ["a", "b"], "label__A": [True, False], "label__B": [False, True]}), "id")
+    after = graphistry.nodes(pd.DataFrame({"id": ["a", "b", "actual_fresh"], "label__A": [False, True, False], "label__B": [True, False, False]}), "id")
+    pre = GraphFixture(nodes=[{"id": "a", "labels": ["A"]}, {"id": "b", "labels": ["B"]}], edges=[])
+    post = GraphFixture(nodes=[*pre.nodes, {"id": "expected_fresh"}], edges=[])
+    item = Scenario(key="existing-node-anchor", feature_path="test", scenario="physical node anchors", cypher="CREATE ()", graph=pre, expected=Expected(rows=[], post_graph=post, effects=MutationEffects(nodes_created=1)), gfql=None)
+    monkeypatch.setattr(source, "gfql", lambda *args, **kwargs: after)
+    with pytest.raises(PoststateMismatch):
+        execute_and_assert_mutation(source, item, engine="pandas")

@@ -1,3 +1,6 @@
+from dataclasses import replace
+import pytest
+from tests.cypher_tck.models import MutationEffects
 from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_ERROR_KEYS
 from tests.cypher_tck.report import build_report
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -190,3 +193,26 @@ def test_direct_cypher_sweep_keeps_promoted_error_scenarios_in_error_bucket() ->
     _, _, promotion_error_keys, _, _ = _compute_direct_cypher_sets(scenarios)
 
     assert set(promotion_error_keys) == range_error_keys
+
+
+def _mutation_scenario(key):
+    return next(item for item in SCENARIOS if item.key == key)
+
+@pytest.mark.parametrize("key",["create1-1","create1-8"])
+def test_actual_promoted_sweep_handles_mutation_result_contract(key):
+    passed,detail=sweep_direct_cypher._run_direct_cypher_scenario(_mutation_scenario(key))
+    assert passed,detail
+
+def test_return_sweep_must_check_original_side_effects():
+    item=_mutation_scenario("create1-8")
+    wrong=replace(item,expected=replace(item.expected,effects=MutationEffects(nodes_created=2)))
+    passed,detail=sweep_direct_cypher._run_direct_cypher_scenario(wrong)
+    assert not passed
+
+def test_no_return_sweep_cannot_accept_a_no_op(monkeypatch):
+    item=_mutation_scenario("create1-1")
+    graph=sweep_direct_cypher._build_graph(item.graph)
+    monkeypatch.setattr(graph,"gfql",lambda *args,**kwargs:graph)
+    monkeypatch.setattr(sweep,"_build_graph",lambda fixture:graph)
+    passed,detail=sweep_direct_cypher._run_direct_cypher_scenario(item)
+    assert not passed
