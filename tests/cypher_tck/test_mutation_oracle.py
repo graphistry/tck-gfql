@@ -61,7 +61,7 @@ def test_effect_oracle_rejects_wrong_counts() -> None:
 
 
 def test_complete_graph_compares_parallel_edges_direction_and_properties() -> None:
-    fixture = GraphFixture(nodes=[{"id": "a"}, {"id": "b"}], edges=[
+    fixture = GraphFixture(nodes=[{"id": "a", "labels": ["A"]}, {"id": "b", "labels": ["B"]}], edges=[
         {"src": "a", "dst": "b", "edge_id": 0, "type": "R", "weight": 2},
         {"src": "a", "dst": "b", "edge_id": 1, "type": "R", "weight": 3},
     ])
