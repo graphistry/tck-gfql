@@ -2823,8 +2823,6 @@ DIRECT_CYPHER_PROMOTION_ERROR_KEYS = {
     "call5-7",
     "create1-13",
     "create1-14",
-    "create1-15",
-    "create1-16",
     "create1-17",
     "create1-18",
     "create1-19",
