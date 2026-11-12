@@ -57,9 +57,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string'),
     ),
 
     Scenario(
@@ -75,9 +75,9 @@ SCENARIOS = [
         ),
         params={"idx": "name"},
         gfql=None,
-        status="xfail",
-        reason='Parameter binding is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'params', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string', 'params'),
     ),
 ]
 

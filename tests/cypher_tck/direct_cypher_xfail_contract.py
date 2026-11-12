@@ -200,10 +200,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "usecase-countingsubgraphmatches1-2",
     "create6-1",
     "create6-2",
-)
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # These mutations execute correctly, but projected row assertions remain
-    # unsupported across engines.  Keep them xfail while proving side effects.
+    # Supported by pygraphistry #2315 paired-source validation; the stale
+    # expression-xfail projection debt no longer exists.
     "expr-graph3-1",
     "expr-graph3-2",
     "expr-graph3-3",
@@ -211,6 +209,7 @@ DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
     "expr-graph7-2",
     "expr-graph7-3",
 )
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
 )

@@ -1988,6 +1988,13 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "create6-1",
     "create6-2",
 
+    "expr-graph3-1",
+    "expr-graph3-2",
+    "expr-graph3-3",
+    "expr-graph3-4",
+    "expr-graph7-2",
+    "expr-graph7-3",
+
     "expr-aggregation2-7",
     "expr-aggregation2-8",
     "expr-aggregation3-1",

@@ -36,9 +36,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string'),
     ),
 
     Scenario(
@@ -53,9 +53,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string'),
     ),
 
     Scenario(
@@ -70,9 +70,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string'),
     ),
 
     Scenario(
@@ -87,9 +87,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string'),
     ),
 
     Scenario(
