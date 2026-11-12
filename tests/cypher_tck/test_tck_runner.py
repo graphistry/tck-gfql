@@ -30,6 +30,7 @@ from tests.cypher_tck.direct_cypher_support import (
 )
 from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from tests.cypher_tck.mutation_oracle import requires_mutation_oracle
 from tests.cypher_tck.parse_cypher import _parse_literal
 from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -1447,7 +1448,7 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
 
     g = _build_graph(scenario.graph)
 
-    if scenario.expected.post_graph is not None or scenario.expected.effects is not None:
+    if requires_mutation_oracle(scenario):
         from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
         engines = ["pandas"]
         if _TEST_CUDF and _HAS_CUDF:

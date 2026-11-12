@@ -1,6 +1,6 @@
 from dataclasses import replace
 import pytest
-from tests.cypher_tck.models import MutationEffects
+from tests.cypher_tck.models import Expected, GraphFixture, Scenario
 from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_PROMOTION_ERROR_KEYS
 from tests.cypher_tck.report import build_report
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -205,7 +205,7 @@ def test_actual_promoted_sweep_handles_mutation_result_contract(key):
 
 def test_return_sweep_must_check_original_side_effects():
     item=_mutation_scenario("create1-8")
-    wrong=replace(item,expected=replace(item.expected,effects=MutationEffects(nodes_created=2)))
+    wrong=replace(item,expected=replace(item.expected,effects=replace(item.expected.effects,nodes_created=2)))
     passed,detail=sweep_direct_cypher._run_direct_cypher_scenario(wrong)
     assert not passed
 
@@ -213,6 +213,15 @@ def test_no_return_sweep_cannot_accept_a_no_op(monkeypatch):
     item=_mutation_scenario("create1-1")
     graph=sweep_direct_cypher._build_graph(item.graph)
     monkeypatch.setattr(graph,"gfql",lambda *args,**kwargs:graph)
-    monkeypatch.setattr(sweep,"_build_graph",lambda fixture:graph)
+    monkeypatch.setattr(sweep_direct_cypher,"_build_graph",lambda fixture:graph)
     passed,detail=sweep_direct_cypher._run_direct_cypher_scenario(item)
+    assert not passed
+
+
+def test_malformed_mutation_tag_cannot_discard_real_return_rows(monkeypatch):
+    item = Scenario(key="tag-only", feature_path="test", scenario="incomplete mutation expectations", cypher="RETURN 1 AS x", graph=GraphFixture(nodes=[], edges=[]), expected=Expected(rows=[]), gfql=None, tags=("mutation-no-return",))
+    def reject_execution(fixture):
+        pytest.fail("Incomplete mutation expectations reached execution")
+    monkeypatch.setattr(sweep_direct_cypher, "_build_graph", reject_execution)
+    passed, detail = sweep_direct_cypher._run_direct_cypher_scenario(item)
     assert not passed

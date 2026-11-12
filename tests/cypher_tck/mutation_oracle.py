@@ -176,6 +176,13 @@ def effects_between(before: GraphState, after: GraphState) -> MutationEffects:
     )
 
 
+
+def requires_mutation_oracle(scenario: Scenario) -> bool:
+    return (
+        scenario.expected.post_graph is not None or scenario.expected.effects is not None
+        or "mutation" in scenario.tags or "mutation-no-return" in scenario.tags
+    )
+
 def execute_and_assert_mutation(source: Any, scenario: Scenario, *, engine: str) -> Any:
     assert scenario.expected.post_graph is not None, "Mutation requires a full poststate oracle"
     assert scenario.expected.effects is not None, "Mutation requires the original side-effect oracle"
