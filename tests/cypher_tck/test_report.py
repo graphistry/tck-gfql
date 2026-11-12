@@ -94,7 +94,7 @@ def test_classify_primary_xfail_family_maps_representative_keys() -> None:
         classify_primary_xfail_family(_scenario("expr-aggregation6-1-1"))
         == "expression-long-tail"
     )
-    assert classify_primary_xfail_family(_scenario("create1-1")) is None
+    assert _scenario("create1-1").status == "supported"
     assert classify_primary_xfail_family(_scenario("create2-1")) == "write-clauses"
     assert classify_primary_xfail_family(_scenario("call1-1")) == "procedures-and-call"
 
