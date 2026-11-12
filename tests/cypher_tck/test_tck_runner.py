@@ -1447,6 +1447,19 @@ def test_cypher_tck_scenario(scenario: Scenario) -> None:
 
     g = _build_graph(scenario.graph)
 
+    if scenario.expected.post_graph is not None:
+        from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
+        engines = ["pandas"]
+        if _TEST_CUDF and _HAS_CUDF:
+            engines.append("cudf")
+        if _TEST_POLARS and _HAS_POLARS:
+            engines.append("polars")
+        for engine in engines:
+            result = execute_and_assert_mutation(g, scenario, engine=engine)
+            rows = [] if "mutation-no-return" in scenario.tags else _rows_from_result(result)
+            _assert_expected_rows(scenario, rows)
+        return
+
     if is_typed_schema_scenario(scenario):
         g = bind_schema_for_scenario(g, scenario)
         if _is_cypher_string_error(scenario):
