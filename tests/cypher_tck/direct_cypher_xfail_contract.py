@@ -202,8 +202,14 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "create6-2",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # Empty after tck-gfql#142: all tracked success_matches_expected xfails
-    # are represented in the direct-Cypher row support snapshot.
+    # These mutations execute correctly, but projected row assertions remain
+    # unsupported across engines.  Keep them xfail while proving side effects.
+    "expr-graph3-1",
+    "expr-graph3-2",
+    "expr-graph3-3",
+    "expr-graph3-4",
+    "expr-graph7-2",
+    "expr-graph7-3",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,

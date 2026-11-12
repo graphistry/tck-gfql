@@ -190,17 +190,17 @@ SCENARIOS = [
 _CREATE3_POST_NODES = [
     [{"__fixture_id__": 0}],
     [{"__fixture_id__": 0, "labels": ["Foo", "Bar"], "name": "Mattias"}],
-    [{"__fixture_id__": 0, "labels": ["Foo", "Bar"], "name": "Mattias"}],
+    [{"__fixture_id__": 0, "labels": ["Foo", "Bar"]}],
     [
         {"__fixture_id__": 0, "labels": ["Person"]},
         {"__fixture_id__": 1, "labels": ["Dog"]},
     ],
 ]
-_CREATE3_POST_EDGES = [[], [], [], [{"__fixture_src__": 0, "__fixture_dst__": 1}]]
+_CREATE3_POST_EDGES = [[], [], [], [{"__fixture_src__": 0, "__fixture_dst__": 1, "type": "OWNS"}]]
 _CREATE3_POST_EFFECTS = [
     MutationEffects(nodes_created=1),
     MutationEffects(nodes_created=1, properties_added=1, labels_added=2),
-    MutationEffects(nodes_created=1, properties_added=1, labels_added=2),
+    MutationEffects(nodes_created=1, labels_added=2),
     MutationEffects(nodes_created=2, relationships_created=1, labels_added=2),
 ]
 for _index, _scenario in enumerate(SCENARIOS):

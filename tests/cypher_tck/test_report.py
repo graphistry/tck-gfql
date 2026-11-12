@@ -41,7 +41,7 @@ def test_match5_8_promotion_bookkeeping_is_resolved() -> None:
         artifact["expected_error_counts"]["direct_cypher_nonvalidation_by_outcome"].get(
             "success_matches_expected", 0
         )
-        == 0
+        == 6
     )
     assert manifest_entry == {
         "key": "match5-8",
@@ -141,7 +141,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "1029 (rows 874, errors 155)"
+        "1023 (rows 868, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -155,14 +155,17 @@ def test_build_report_includes_gap_priority_sections() -> None:
         in report
     )
     assert "Direct local Cypher non-validation triage samples:" in report
-    assert "- success_matches_expected:" not in report
+    assert "- success_matches_expected:" in report
+    assert "expr-graph3-1 (expressions/graph)" in report
+    assert "expr-graph3-2 (expressions/graph)" in report
+    assert "expr-graph7-3 (expressions/graph)" in report
     assert "expr-comparison2-5-1 (expressions/comparison)" not in report
     assert "expr-comparison2-6-2 (expressions/comparison)" not in report
     assert "expr-graph3-5 (expressions/graph)" not in report
     assert "expr-quantifier7-3-1 (expressions/quantifier)" not in report
-    # the last wrong-row keys (expr-comparison2-6-3/-4,
+    # The wrong-row keys (expr-comparison2-6-3/-4,
     # usecase-countingsubgraphmatches1-2) were promoted with the pygraphistry
-    # 2026-08 stack; the non-validation debt buckets are now empty.
+    # 2026-08 stack; only projected-row mutation debt remains.
     assert "- success_wrong_rows:" not in report
     assert "expr-comparison2-6-3 (expressions/comparison)" not in report
     assert "match5-8 (clauses/match)" not in report
@@ -177,7 +180,13 @@ def test_direct_cypher_nonvalidation_samples_are_stable_and_bounded() -> None:
         SCENARIOS, per_outcome=2
     )
 
-    assert samples == {}
+    assert samples == {
+        "success_matches_expected": [
+            "expr-graph3-1 (expressions/graph)",
+            "expr-graph3-2 (expressions/graph)",
+            "... 4 more",
+        ]
+    }
 
 
 def test_live_direct_cypher_snapshot_sets_filter_stale_keys(monkeypatch) -> None:

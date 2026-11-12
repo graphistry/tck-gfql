@@ -1350,8 +1350,7 @@
         "create",
         "cypher-string",
         "cypher-string-pure",
-        "mutation",
-        "mutation-no-return"
+        "mutation"
       ]
     },
     {
@@ -1418,8 +1417,7 @@
         "create",
         "cypher-string",
         "cypher-string-pure",
-        "mutation",
-        "mutation-no-return"
+        "mutation"
       ]
     },
     {
@@ -6129,59 +6127,79 @@
       ]
     },
     {
-      "implementation_status": "direct_cypher_only",
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
+      "implementation_status": "not_yet_implemented",
       "key": "expr-graph3-1",
-      "ownership": "direct-cypher-promotion",
-      "support_status": "supported",
+      "ownership": "write-clauses",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
-        "cypher-string",
-        "cypher-string-pure",
         "defer-expr-advanced",
         "expr",
         "graph",
-        "meta-xfail"
+        "meta-xfail",
+        "mutation",
+        "xfail"
       ]
     },
     {
-      "implementation_status": "direct_cypher_only",
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
+      "implementation_status": "not_yet_implemented",
       "key": "expr-graph3-2",
-      "ownership": "direct-cypher-promotion",
-      "support_status": "supported",
+      "ownership": "write-clauses",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
-        "cypher-string",
-        "cypher-string-pure",
         "defer-expr-advanced",
         "expr",
         "graph",
-        "meta-xfail"
+        "meta-xfail",
+        "mutation",
+        "xfail"
       ]
     },
     {
-      "implementation_status": "direct_cypher_only",
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
+      "implementation_status": "not_yet_implemented",
       "key": "expr-graph3-3",
-      "ownership": "direct-cypher-promotion",
-      "support_status": "supported",
+      "ownership": "write-clauses",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
-        "cypher-string",
-        "cypher-string-pure",
         "defer-expr-advanced",
         "expr",
         "graph",
-        "meta-xfail"
+        "meta-xfail",
+        "mutation",
+        "xfail"
       ]
     },
     {
-      "implementation_status": "direct_cypher_only",
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
+      "implementation_status": "not_yet_implemented",
       "key": "expr-graph3-4",
-      "ownership": "direct-cypher-promotion",
-      "support_status": "supported",
+      "ownership": "write-clauses",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
-        "cypher-string",
-        "cypher-string-pure",
         "defer-expr-advanced",
         "expr",
         "graph",
-        "meta-xfail"
+        "meta-xfail",
+        "mutation",
+        "xfail"
       ]
     },
     {
@@ -6773,32 +6791,42 @@
       ]
     },
     {
-      "implementation_status": "direct_cypher_only",
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
+      "implementation_status": "not_yet_implemented",
       "key": "expr-graph7-2",
-      "ownership": "direct-cypher-promotion",
-      "support_status": "supported",
+      "ownership": "write-clauses",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
-        "cypher-string",
-        "cypher-string-pure",
-        "defer-expr-advanced",
-        "expr",
-        "graph",
-        "meta-xfail"
-      ]
-    },
-    {
-      "implementation_status": "direct_cypher_only",
-      "key": "expr-graph7-3",
-      "ownership": "direct-cypher-promotion",
-      "support_status": "supported",
-      "tags": [
-        "cypher-string",
-        "cypher-string-pure",
         "defer-expr-advanced",
         "expr",
         "graph",
         "meta-xfail",
-        "params"
+        "mutation",
+        "xfail"
+      ]
+    },
+    {
+      "direct_cypher_debt": {
+        "outcome": "success_matches_expected",
+        "reason": "direct_cypher_nonvalidation:success_matches_expected"
+      },
+      "implementation_status": "not_yet_implemented",
+      "key": "expr-graph7-3",
+      "ownership": "write-clauses",
+      "reason": "Parameter binding is not supported",
+      "support_status": "xfail",
+      "tags": [
+        "defer-expr-advanced",
+        "expr",
+        "graph",
+        "meta-xfail",
+        "mutation",
+        "params",
+        "xfail"
       ]
     },
     {

@@ -1475,6 +1475,23 @@ def _assert_ids(
 
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s.key)
 def test_cypher_tck_scenario(scenario: Scenario) -> None:
+    if scenario.status == "xfail" and requires_mutation_oracle(scenario):
+        from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
+
+        g = _build_graph(scenario.graph)
+        engines = ["pandas"]
+        if _TEST_CUDF and _HAS_CUDF:
+            engines.append("cudf")
+        if _TEST_POLARS and _HAS_POLARS:
+            engines.append("polars")
+        for engine in engines:
+            try:
+                execute_and_assert_mutation(g, scenario, engine=engine)
+            except NotImplementedError as exc:
+                _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
+                if engine != "polars":
+                    raise
+        pytest.xfail(scenario.reason or "mutation passes but projected rows are unsupported")
     if scenario.status == "skip":
         pytest.skip(scenario.reason or "skipped")
     if scenario.status == "xfail":
