@@ -1362,18 +1362,16 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_matches_expected",
-        "reason": "direct_cypher_nonvalidation:success_matches_expected"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create6-1",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
@@ -1432,18 +1430,16 @@
       ]
     },
     {
-      "direct_cypher_debt": {
-        "outcome": "success_matches_expected",
-        "reason": "direct_cypher_nonvalidation:success_matches_expected"
-      },
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create6-2",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {

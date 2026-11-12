@@ -1,6 +1,8 @@
 from graphistry.compute import e_forward, e_undirected, n
 
-from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from dataclasses import replace
+
+from tests.cypher_tck.models import Expected, GraphFixture, MutationEffects, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
 from tests.cypher_tck.scenarios.fixtures import (
@@ -272,3 +274,20 @@ SCENARIOS = [
         tags=('create', 'xfail'),
     ),
 ]
+
+_CREATE6_1_2_POST = [{"labels": ["N"], "num": 42}]
+_CREATE6_1_2_EFFECTS = MutationEffects(nodes_created=1, properties_added=1, labels_added=1)
+for _index, _scenario in enumerate(SCENARIOS):
+    if _scenario.key not in {"create6-1", "create6-2"}:
+        continue
+    _post = GraphFixture(
+        nodes=[{"__fixture_id__": 0, **node} for node in _CREATE6_1_2_POST],
+        edges=[], node_id="__fixture_id__", node_columns=("__fixture_id__",),
+    )
+    _tags = tuple(tag for tag in _scenario.tags if tag != "xfail") + (
+        "cypher-string", "cypher-string-pure", "mutation", "mutation-no-return",
+    )
+    SCENARIOS[_index] = replace(
+        _scenario, status="supported", reason=None, tags=_tags,
+        expected=replace(_scenario.expected, post_graph=_post, effects=_CREATE6_1_2_EFFECTS),
+    )

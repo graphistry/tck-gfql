@@ -1031,16 +1031,17 @@ def test_write_clauses_tranche1_status_and_tag_contract() -> None:
     scenarios = _scenario_map()
     for key in WRITE_CLAUSES_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert scenario.status == WRITE_CLAUSES_TRANCHE1_EXPECTED_STATUS
-        for forbidden_tag in WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS:
-            assert forbidden_tag not in scenario.tags
+        _assert_status_and_tags(
+            scenario, WRITE_CLAUSES_TRANCHE1_EXPECTED_STATUS,
+            WRITE_CLAUSES_TRANCHE1_FORBIDDEN_TAGS,
+        )
 
 
 def test_write_clauses_tranche1_family_classification_contract() -> None:
     scenarios = _scenario_map()
     for key in WRITE_CLAUSES_TRANCHE1_KEYS:
         scenario = scenarios[key]
-        assert classify_primary_xfail_family(scenario) == "write-clauses"
+        _assert_family_or_direct_promoted(scenario, "write-clauses")
 
 
 def test_write_clauses_lane_has_issue_tracker_wired() -> None:
