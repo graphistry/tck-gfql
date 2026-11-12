@@ -94,7 +94,8 @@ def test_classify_primary_xfail_family_maps_representative_keys() -> None:
         classify_primary_xfail_family(_scenario("expr-aggregation6-1-1"))
         == "expression-long-tail"
     )
-    assert classify_primary_xfail_family(_scenario("create1-1")) == "write-clauses"
+    assert _scenario("create1-1").status == "supported"
+    assert classify_primary_xfail_family(_scenario("delete1-1")) == "write-clauses"
     assert classify_primary_xfail_family(_scenario("call1-1")) == "procedures-and-call"
 
 
@@ -140,7 +141,7 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "Supported-subset correctness / failfast audit" in report
     assert (
         "Direct Cypher string-only scenarios (status/tagged): "
-        "1002 (rows 847, errors 155)"
+        "1029 (rows 874, errors 155)"
     ) in report
     assert "#45" in report
     assert "Representative tracked scenarios:" in report
@@ -159,9 +160,9 @@ def test_build_report_includes_gap_priority_sections() -> None:
     assert "expr-comparison2-6-2 (expressions/comparison)" not in report
     assert "expr-graph3-5 (expressions/graph)" not in report
     assert "expr-quantifier7-3-1 (expressions/quantifier)" not in report
-    # the last wrong-row keys (expr-comparison2-6-3/-4,
+    # The wrong-row keys (expr-comparison2-6-3/-4,
     # usecase-countingsubgraphmatches1-2) were promoted with the pygraphistry
-    # 2026-08 stack; the non-validation debt buckets are now empty.
+    # 2026-08 stack; only projected-row mutation debt remains.
     assert "- success_wrong_rows:" not in report
     assert "expr-comparison2-6-3 (expressions/comparison)" not in report
     assert "match5-8 (clauses/match)" not in report
