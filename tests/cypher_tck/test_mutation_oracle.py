@@ -280,6 +280,7 @@ def test_node_companion_mutation_scope_excludes_relationship_promotions() -> Non
     by_key = {scenario.key: scenario for scenario in SCENARIOS}
     node_keys = {f"create1-{number}" for number in range(1, 13)} | {
         "create6-1", "create6-2", "expr-graph3-1", "expr-graph3-2", "expr-graph3-3",
+        "expr-graph7-2", "expr-graph7-3",
     }
     admitted = {
         scenario.key for scenario in SCENARIOS
@@ -292,6 +293,6 @@ def test_node_companion_mutation_scope_excludes_relationship_promotions() -> Non
         assert expected.post_graph.edges == []
         assert expected.effects.relationships_created == 0
     for key in ("create2-1", "create2-2", "create2-4", "create2-7", "create2-8",
-                "create2-13", "create2-15", "expr-graph3-4", "expr-graph7-2", "expr-graph7-3"):
+                "create2-13", "create2-15", "expr-graph3-4"):
         assert by_key[key].status == "xfail"
         assert by_key[key].expected.post_graph is None

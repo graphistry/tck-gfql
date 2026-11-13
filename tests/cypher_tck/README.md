@@ -135,7 +135,7 @@ parallel-edge and direction controls exercise the oracle itself.
 ### Node CREATE companion scope
 
 This branch pairs with pygraphistry `feat/gfql-create-nodes-parent-20261112`
-(PR #2316). It promotes only Create1-1..12, Create6-1..2, and Graph3-1..3: 17
+(PR #2316). It promotes only Create1-1..12, Create6-1..2, Graph3-1..3, and Graph7-2..3: 19
 node CREATE scenarios with complete graph, original effects, RETURN rows, and
 caller checks. Relationship CREATE remains unsupported and unpassed here; its
 separate companion is `feat/gfql-create-relationships-20261112`. SET has its own

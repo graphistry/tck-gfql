@@ -205,6 +205,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-graph3-1",
     "expr-graph3-2",
     "expr-graph3-3",
+    "expr-graph7-2",
+    "expr-graph7-3",
 )
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (

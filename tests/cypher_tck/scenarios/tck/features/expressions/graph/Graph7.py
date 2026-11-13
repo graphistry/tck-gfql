@@ -1,6 +1,8 @@
 from graphistry.compute import e_forward, e_undirected, n
 
-from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from dataclasses import replace
+
+from tests.cypher_tck.models import Expected, GraphFixture, MutationEffects, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
 from tests.cypher_tck.scenarios.fixtures import (
@@ -55,9 +57,9 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string'),
     ),
 
     Scenario(
@@ -73,8 +75,27 @@ SCENARIOS = [
         ),
         params={"idx": "name"},
         gfql=None,
-        status="xfail",
-        reason='Parameter binding is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'params', 'xfail'),
+        status="supported",
+        reason=None,
+        tags=('expr', 'graph', 'cypher-string', 'params'),
     ),
 ]
+
+_CREATE7_POST = GraphFixture(
+    nodes=[{"__fixture_id__": 0, "name": "Apa"}],
+    edges=[],
+    node_id="__fixture_id__",
+    node_columns=("__fixture_id__",),
+)
+for _index, _scenario in enumerate(SCENARIOS):
+    if _scenario.key not in {"expr-graph7-2", "expr-graph7-3"}:
+        continue
+    SCENARIOS[_index] = replace(
+        _scenario,
+        expected=replace(
+            _scenario.expected,
+            post_graph=_CREATE7_POST,
+            effects=MutationEffects(nodes_created=1, properties_added=1),
+        ),
+        tags=_scenario.tags + ("mutation",),
+    )
