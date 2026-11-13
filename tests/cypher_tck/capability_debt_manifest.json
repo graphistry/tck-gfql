@@ -45420,14 +45420,15 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "set1-1",
-      "ownership": "write-clauses",
-      "reason": "SET clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "set",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "set"
       ]
     },
     {
@@ -45444,25 +45445,27 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "set1-11",
-      "ownership": "write-clauses",
-      "reason": "SET clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "set",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "set"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "set1-2",
-      "ownership": "write-clauses",
-      "reason": "SET clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "set",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "set"
       ]
     },
     {
