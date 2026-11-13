@@ -1966,6 +1966,9 @@ DIRECT_CYPHER_OVERLAP_KEYS = {
 }
 
 DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
+    "set1-1",
+    "set1-2",
+    "set1-11",
     "create1-1",
     "create1-2",
     "create1-3",

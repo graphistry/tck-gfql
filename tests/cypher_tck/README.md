@@ -131,3 +131,16 @@ label names, so creating two nodes with the same label adds one label.
 source `59edf2e1c17b845bf97c334ed06b2eb780950c13`; later CREATE and other write
 operators remain separate conformance work. No-op, wrong-effect, caller-mutation,
 parallel-edge and direction controls exercise the oracle itself.
+
+### SET companion scope
+
+This branch pairs with pygraphistry `feat/gfql-set-nodes-20261113` (PR #2320)
+and builds on the relationship CREATE companion. Set1-1, Set1-2, and Set1-11
+carry original RETURN rows, complete postgraphs with existing identities
+anchored, and original +properties/-properties counters. The changed predicate
+in Set1-1/2 must retain the original matched node and return its new value.
+OPTIONAL null SET, relationship/list/map/id property updates and broader
+matched-row relations remain unsupported and unpassed in this slice;
+[pygraphistry #2321](https://github.com/graphistry/pygraphistry/issues/2321)
+tracks the required native relation work. Legacy CREATE label representation
+support remains [#2322](https://github.com/graphistry/pygraphistry/issues/2322).

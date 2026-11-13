@@ -272,3 +272,32 @@ def test_xfail_runner_fails_before_masking_stale_row_debt(
     assert fail_calls == [
         "test-mutation: mutation scenario passed expected rows; row debt is stale"
     ]
+
+
+@pytest.mark.parametrize("key", ["set1-1", "set1-2", "set1-11"])
+def test_set_poststate_rejects_correct_rows_from_a_no_op(monkeypatch, key):
+    from tests.cypher_tck.scenarios import SCENARIOS
+    from tests.cypher_tck.test_tck_runner import _build_graph
+
+    scenario = next(scenario for scenario in SCENARIOS if scenario.key == key)
+    source = _build_graph(scenario.graph)
+    returned = SimpleNamespace(_nodes=pd.DataFrame(scenario.expected.rows), gfql_graph=source)
+    monkeypatch.setattr(source, "gfql", lambda *args, **kwargs: returned)
+
+    with pytest.raises(PoststateMismatch):
+        execute_and_assert_mutation(source, scenario, engine="pandas")
+
+
+def test_set_return_rows_cannot_be_lost_after_a_changed_match_predicate(monkeypatch):
+    from tests.cypher_tck.scenarios import SCENARIOS
+    from tests.cypher_tck.test_tck_runner import _build_graph
+
+    scenario = next(scenario for scenario in SCENARIOS if scenario.key == "set1-1")
+    source = _build_graph(scenario.graph)
+    after = _build_graph(scenario.expected.post_graph)
+    returned = SimpleNamespace(_nodes=pd.DataFrame(columns=["n"]), gfql_graph=after)
+    monkeypatch.setattr(source, "gfql", lambda *args, **kwargs: returned)
+
+    result = execute_and_assert_mutation(source, scenario, engine="pandas")
+    with pytest.raises(AssertionError):
+        _assert_expected_rows(scenario, _returned_rows_for_mutation(scenario, result))
