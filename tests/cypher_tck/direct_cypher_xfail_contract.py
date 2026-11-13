@@ -40,7 +40,8 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # graph against a one-row oracle.  Expanding the upstream `UNWIND range(1, 20)`
 # setup into its explicit 22-node chain makes the engine return the expected row,
 # so match4-4 is promoted rather than recorded as wrong-row debt.
-DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
+DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = (
+)
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
@@ -197,11 +198,15 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "with-where3-3",
     "with2-1",
     "usecase-countingsubgraphmatches1-2",
+    "create6-1",
+    "create6-2",
+    # Node CREATE/RETURN scope paired with pygraphistry #2316.
+    # Relationship cases stay unsupported in this node-only companion.
+    "expr-graph3-1",
+    "expr-graph3-2",
+    "expr-graph3-3",
 )
-DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = (
-    # Empty after tck-gfql#142: all tracked success_matches_expected xfails
-    # are represented in the direct-Cypher row support snapshot.
-)
+DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS: Final[tuple[str, ...]] = ()
 DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] = (
     *DIRECT_CYPHER_XFAIL_MATCHES_EXPECTED_BASE_KEYS,
 )
