@@ -1,6 +1,8 @@
 from graphistry.compute import e_forward, e_undirected, n
 
-from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from dataclasses import replace
+
+from tests.cypher_tck.models import Expected, GraphFixture, MutationEffects, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
 from tests.cypher_tck.scenarios.fixtures import (
@@ -85,3 +87,27 @@ SCENARIOS = [
         tags=('set', 'xfail'),
     ),
 ]
+
+# Original Set2.feature @59edf2e1c17b845bf97c334ed06b2eb780950c13.
+# SET p = null removes the matched node's property; the old value is read before it is removed.
+# The postgraph keeps the setup's physical identity and drops only that property.
+_SET2_REMOVED = {"set2-1": "property1", "set2-2": "name"}
+for _index, _scenario in enumerate(SCENARIOS):
+    if _scenario.key not in _SET2_REMOVED:
+        continue
+    _removed = _SET2_REMOVED[_scenario.key]
+    _post = replace(
+        _scenario.graph,
+        nodes=[{k: v for k, v in node.items() if k != _removed} for node in _scenario.graph.nodes],
+    )
+    SCENARIOS[_index] = replace(
+        _scenario,
+        status="supported",
+        reason=None,
+        tags=("set", "cypher-string", "cypher-string-pure", "mutation"),
+        expected=replace(
+            _scenario.expected,
+            post_graph=_post,
+            effects=MutationEffects(properties_added=0, properties_removed=1),
+        ),
+    )

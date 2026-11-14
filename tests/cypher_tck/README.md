@@ -135,7 +135,9 @@ parallel-edge and direction controls exercise the oracle itself.
 ### SET companion scope
 
 This branch pairs with pygraphistry `feat/gfql-set-nodes-20261113` (PR #2320)
-and builds on the relationship CREATE companion. Set1-1, Set1-2, and Set1-11
+and builds on the relationship CREATE companion. Set1-1, Set1-2, Set1-11, Set2-1, Set2-2
+(null assignment removes the property), and Set6-1/2/3/4/6 (SKIP/LIMIT and aggregate RETURN
+shape the returned rows while every matched node is still set)
 carry original RETURN rows, complete postgraphs with existing identities
 anchored, and original +properties/-properties counters. The changed predicate
 in Set1-1/2 must retain the original matched node and return its new value.
