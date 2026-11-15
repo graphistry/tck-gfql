@@ -52,7 +52,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason='Expression evaluation is not supported',
+        reason="toFloat() of a non-numeric string raises instead of returning null",
         tags=('expr', 'typeConversion', 'meta-xfail', 'xfail'),
     ),
 

@@ -122,7 +122,7 @@ SCENARIOS = [
             select([("nonEmpty", "count > 0")]),
         ),
         status="xfail",
-        reason="WITH pipelines, SKIP, and functions are not supported",
+        reason="rand() inside SKIP/LIMIT expressions is not supported",
         tags=("return", "skip", "with", "function", "xfail"),
     ),
 

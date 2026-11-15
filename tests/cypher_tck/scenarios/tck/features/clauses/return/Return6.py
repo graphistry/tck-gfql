@@ -136,7 +136,7 @@ SCENARIOS = [
         expected=Expected(rows=[]),
         gfql=None,
         status="xfail",
-        reason="Aggregations inside map projections are not supported",
+        reason="aggregate expressions inside map literals are not supported in the local compiler",
         tags=("return", "aggregation", "map", "xfail"),
     ),
 
@@ -383,7 +383,7 @@ SCENARIOS = [
         expected=Expected(rows=[]),
         gfql=None,
         status="xfail",
-        reason="WITH pipelines, aggregations, and RETURN expressions are not supported",
+        reason="multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
         tags=("return", "with", "aggregation", "xfail"),
     ),
 
@@ -396,7 +396,7 @@ SCENARIOS = [
         expected=Expected(rows=[]),
         gfql=None,
         status="xfail",
-        reason="Aggregations and RETURN expressions are not supported",
+        reason="multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
         tags=("return", "aggregation", "xfail"),
     ),
 

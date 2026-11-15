@@ -1676,6 +1676,7 @@ DIRECT_CYPHER_OVERLAP_KEYS = {
     "expr-typeconversion1-5-5",
     "expr-typeconversion1-5-6",
     "expr-typeconversion2-1",
+    "expr-typeconversion2-2",
     "expr-typeconversion2-8-1",
     "expr-typeconversion2-8-2",
     "expr-typeconversion2-8-4",

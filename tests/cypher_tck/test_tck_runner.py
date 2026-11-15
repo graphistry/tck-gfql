@@ -1195,6 +1195,18 @@ _ISSUE142_PROMOTED_ERROR_KEYS = (
 )
 
 
+def test_supported_scenarios_without_a_direct_cypher_string_are_product_proven() -> None:
+    """Supported must be product-proven: a scenario with no cypher-string tag and no GFQL plan needs a direct-Cypher snapshot entry."""
+    from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_OVERLAP_KEYS
+
+    unproven = {
+        scenario.key
+        for scenario in SCENARIOS
+        if scenario.status == "supported" and "cypher-string" not in scenario.tags and scenario.gfql is None
+    } - DIRECT_CYPHER_OVERLAP_KEYS - DIRECT_CYPHER_PROMOTION_KEYS
+    assert unproven == set()
+
+
 @pytest.mark.parametrize("key", _PARAM_BINDING_CLUSTER3_KEYS)
 def test_issue120_parameter_binding_cluster_has_explicit_params(key: str) -> None:
     scenario = next(s for s in SCENARIOS if s.key == key)

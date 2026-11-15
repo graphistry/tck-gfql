@@ -189,7 +189,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason="WITH pipelines, ORDER BY, LIMIT, and expression aliasing are not supported",
+        reason="the % operator is not evaluated by pandas row expressions (passes on Polars only)",
         tags=("with", "orderby", "limit", "alias", "expression", "xfail"),
     ),
 ]

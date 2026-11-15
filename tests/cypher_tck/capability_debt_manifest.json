@@ -16789,7 +16789,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier10-1",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -16804,7 +16804,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier10-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -16909,7 +16909,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier11-1",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -16924,7 +16924,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier11-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -17239,7 +17239,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier12-1",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -17254,7 +17254,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier12-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -24037,7 +24037,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier9-1",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -24052,7 +24052,7 @@
       "implementation_status": "translated",
       "key": "expr-quantifier9-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
       "support_status": "xfail",
       "tags": [
         "defer-quantifier",
@@ -38838,7 +38838,7 @@
       "implementation_status": "translated",
       "key": "expr-typeconversion1-4",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "toBoolean() of invalid strings is not evaluated by the row pipeline (call-execution error)",
       "support_status": "xfail",
       "tags": [
         "expr",
@@ -39139,7 +39139,7 @@
       "implementation_status": "translated",
       "key": "expr-typeconversion3-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Expression evaluation is not supported",
+      "reason": "toFloat() of a non-numeric string raises instead of returning null",
       "support_status": "xfail",
       "tags": [
         "expr",
@@ -43990,7 +43990,7 @@
       "implementation_status": "translated",
       "key": "return-orderby6-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Aggregations and ORDER BY are not supported",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -44107,7 +44107,7 @@
       "implementation_status": "translated",
       "key": "return-skip-limit1-3",
       "ownership": "row-pipeline-read-forms",
-      "reason": "WITH pipelines, SKIP, and functions are not supported",
+      "reason": "rand() inside SKIP/LIMIT expressions is not supported",
       "support_status": "xfail",
       "tags": [
         "function",
@@ -45187,7 +45187,7 @@
       "implementation_status": "translated",
       "key": "return6-18",
       "ownership": "row-pipeline-read-forms",
-      "reason": "WITH pipelines, aggregations, and RETURN expressions are not supported",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -45201,7 +45201,7 @@
       "implementation_status": "translated",
       "key": "return6-19",
       "ownership": "other-read-gaps",
-      "reason": "Aggregations and RETURN expressions are not supported",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -45301,7 +45301,7 @@
       "implementation_status": "translated",
       "key": "return6-6",
       "ownership": "other-read-gaps",
-      "reason": "Aggregations inside map projections are not supported",
+      "reason": "aggregate expressions inside map literals are not supported in the local compiler",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -51089,7 +51089,7 @@
       "implementation_status": "translated",
       "key": "with-orderby4-9",
       "ownership": "row-pipeline-read-forms",
-      "reason": "WITH pipelines, ORDER BY, LIMIT, and expression aliasing are not supported",
+      "reason": "the % operator is not evaluated by pandas row expressions (passes on Polars only)",
       "support_status": "xfail",
       "tags": [
         "alias",
