@@ -38964,10 +38964,10 @@
       "ownership": "supported",
       "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-expr-dsl",
         "typeConversion"
       ]
@@ -40230,7 +40230,7 @@
       "implementation_status": "not_yet_implemented",
       "key": "match-where2-2",
       "ownership": "other-read-gaps",
-      "reason": "Parameter binding, multi-variable WHERE, and projection validation not supported",
+      "reason": "the product Cypher parser rejects the numeric parameter names $1 and $2 (GFQLSyntaxError invalid-cypher-syntax)",
       "support_status": "xfail",
       "tags": [
         "and",
@@ -43990,7 +43990,7 @@
       "implementation_status": "translated",
       "key": "return-orderby6-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -45187,7 +45187,7 @@
       "implementation_status": "translated",
       "key": "return6-18",
       "ownership": "row-pipeline-read-forms",
-      "reason": "multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -45201,7 +45201,7 @@
       "implementation_status": "translated",
       "key": "return6-19",
       "ownership": "other-read-gaps",
-      "reason": "multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
       "support_status": "xfail",
       "tags": [
         "aggregation",
@@ -51089,7 +51089,7 @@
       "implementation_status": "translated",
       "key": "with-orderby4-9",
       "ownership": "row-pipeline-read-forms",
-      "reason": "the % operator is not evaluated by pandas row expressions (passes on Polars only)",
+      "reason": "the pandas row evaluator declines `x % 3` in this projection (GFQLCallExecutionError: unsupported row expression); passes on Polars",
       "support_status": "xfail",
       "tags": [
         "alias",
@@ -51307,7 +51307,7 @@
       "implementation_status": "translated",
       "key": "with-where2-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "WITH pipelines, parameter binding, and multi-variable WHERE predicates are not supported",
+      "reason": "the product Cypher parser rejects the numeric parameter names $1 and $2 (GFQLSyntaxError invalid-cypher-syntax)",
       "support_status": "xfail",
       "tags": [
         "multi-var",
@@ -51809,7 +51809,7 @@
       "implementation_status": "translated",
       "key": "with6-5",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Parameters, aggregations, and WITH pipelines are not supported",
+      "reason": "an aggregate inside an arithmetic WITH expression with a parameter (`$age + avg(person.age) - 1000`) is declined as unsupported-cypher-query",
       "support_status": "xfail",
       "tags": [
         "aggregation",

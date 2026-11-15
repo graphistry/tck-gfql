@@ -77,7 +77,7 @@ SCENARIOS = [
         gfql=None,
         params={"1": 0, "2": 1},
         status="xfail",
-        reason="WITH pipelines, parameter binding, and multi-variable WHERE predicates are not supported",
+        reason="the product Cypher parser rejects the numeric parameter names $1 and $2 (GFQLSyntaxError invalid-cypher-syntax)",
         tags=("with", "where", "params", "multi-var", "xfail"),
     ),
 ]

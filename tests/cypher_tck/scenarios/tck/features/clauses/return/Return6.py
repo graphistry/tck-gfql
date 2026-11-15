@@ -383,7 +383,7 @@ SCENARIOS = [
         expected=Expected(rows=[]),
         gfql=None,
         status="xfail",
-        reason="multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
+        reason="multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
         tags=("return", "with", "aggregation", "xfail"),
     ),
 
@@ -396,7 +396,7 @@ SCENARIOS = [
         expected=Expected(rows=[]),
         gfql=None,
         status="xfail",
-        reason="multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
+        reason="multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
         tags=("return", "aggregation", "xfail"),
     ),
 

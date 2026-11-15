@@ -189,7 +189,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason="the % operator is not evaluated by pandas row expressions (passes on Polars only)",
+        reason="the pandas row evaluator declines `x % 3` in this projection (GFQLCallExecutionError: unsupported row expression); passes on Polars",
         tags=("with", "orderby", "limit", "alias", "expression", "xfail"),
     ),
 ]

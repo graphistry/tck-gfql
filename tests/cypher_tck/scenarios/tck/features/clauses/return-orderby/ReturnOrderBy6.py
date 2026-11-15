@@ -72,7 +72,7 @@ SCENARIOS = [
             order_by([("age", "asc"), ("age + count(you.age)", "asc")]),
         ),
         status="xfail",
-        reason="multiple MATCH source aliases in one row lowering are not supported (issue #12 residual)",
+        reason="multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
         tags=("return", "orderby", "aggregation", "xfail"),
     ),
 

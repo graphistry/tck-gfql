@@ -133,7 +133,7 @@ SCENARIOS = [
         gfql=None,
         params={"age": 38},
         status="xfail",
-        reason="Parameters, aggregations, and WITH pipelines are not supported",
+        reason="an aggregate inside an arithmetic WITH expression with a parameter (`$age + avg(person.age) - 1000`) is declined as unsupported-cypher-query",
         tags=("with", "aggregation", "params", "xfail"),
     ),
 

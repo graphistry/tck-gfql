@@ -77,7 +77,7 @@ SCENARIOS = [
         gfql=None,
         params={"1": 0, "2": 1},
         status="xfail",
-        reason="Parameter binding, multi-variable WHERE, and projection validation not supported",
+        reason="the product Cypher parser rejects the numeric parameter names $1 and $2 (GFQLSyntaxError invalid-cypher-syntax)",
         tags=("match-where", "params", "and", "multi-var", "xfail"),
     ),
 ]
