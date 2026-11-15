@@ -51,7 +51,6 @@ ROW_PIPELINE_TRANCHE3_KEYS: Final[tuple[str, ...]] = (
     "return-orderby1-11",
     "return-orderby1-12",
     "return-orderby2-12",
-    "return-orderby6-1",
     "return-orderby6-3",
     "return4-11",
     "return6-13",

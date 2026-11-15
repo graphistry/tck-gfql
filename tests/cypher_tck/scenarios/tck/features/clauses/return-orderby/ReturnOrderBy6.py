@@ -48,6 +48,7 @@ SCENARIOS = [
             select([("avgAge", "avg(person.age)")]),
             order_by([("$age + avg(person.age) - 1000", "asc")]),
         ),
+        params={"age": 38},
         status="xfail",
         reason="Parameters, aggregations, and ORDER BY are not supported",
         tags=("return", "orderby", "aggregation", "params", "xfail"),
@@ -71,7 +72,7 @@ SCENARIOS = [
             order_by([("age", "asc"), ("age + count(you.age)", "asc")]),
         ),
         status="xfail",
-        reason="Aggregations and ORDER BY are not supported",
+        reason="multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
         tags=("return", "orderby", "aggregation", "xfail"),
     ),
 

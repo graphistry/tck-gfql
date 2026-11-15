@@ -16788,31 +16788,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier10-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier10-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -16908,31 +16908,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier11-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier11-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -17238,31 +17238,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier12-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier12-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -24036,31 +24036,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier9-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier9-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() is not supported by the product (the capability check declines the comprehension predicate)",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -38837,15 +38837,15 @@
     {
       "implementation_status": "translated",
       "key": "expr-typeconversion1-4",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "toBoolean() of invalid strings is not evaluated by the row pipeline (call-execution error)",
+      "support_status": "xfail",
       "tags": [
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-expr-dsl",
-        "typeConversion"
+        "typeConversion",
+        "xfail"
       ]
     },
     {
@@ -38964,10 +38964,10 @@
       "ownership": "supported",
       "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-expr-dsl",
         "typeConversion"
       ]
@@ -39138,15 +39138,15 @@
     {
       "implementation_status": "translated",
       "key": "expr-typeconversion3-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "toFloat() of a non-numeric string raises instead of returning null",
+      "support_status": "xfail",
       "tags": [
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-expr-dsl",
-        "typeConversion"
+        "typeConversion",
+        "xfail"
       ]
     },
     {
@@ -40166,16 +40166,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match-where1-6",
-      "ownership": "other-read-gaps",
-      "reason": "Parameter binding and edge-return validation not supported in harness",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "edge-return",
         "match-where",
-        "params",
-        "xfail"
+        "params"
       ]
     },
     {
@@ -40201,16 +40201,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match-where1-9",
-      "ownership": "other-read-gaps",
-      "reason": "Parameter binding and edge-return validation not supported in harness",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "edge-return",
         "match-where",
-        "params",
-        "xfail"
+        "params"
       ]
     },
     {
@@ -40230,7 +40230,7 @@
       "implementation_status": "not_yet_implemented",
       "key": "match-where2-2",
       "ownership": "other-read-gaps",
-      "reason": "Parameter binding, multi-variable WHERE, and projection validation not supported",
+      "reason": "the product Cypher parser rejects the numeric parameter names $1 and $2 (GFQLSyntaxError invalid-cypher-syntax)",
       "support_status": "xfail",
       "tags": [
         "and",
@@ -43974,30 +43974,30 @@
     {
       "implementation_status": "translated",
       "key": "return-orderby6-1",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Parameters, aggregations, and ORDER BY are not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "orderby",
         "params",
         "return",
-        "target-table-ops",
-        "xfail"
+        "target-table-ops"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "return-orderby6-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
         "orderby",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
-        "target-table-ops"
+        "target-table-ops",
+        "xfail"
       ]
     },
     {
@@ -44106,16 +44106,16 @@
     {
       "implementation_status": "translated",
       "key": "return-skip-limit1-3",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "rand() inside SKIP/LIMIT expressions is not supported",
+      "support_status": "xfail",
       "tags": [
         "function",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
         "skip",
         "target-table-ops",
-        "with"
+        "with",
+        "xfail"
       ]
     },
     {
@@ -45172,42 +45172,42 @@
     {
       "implementation_status": "translated",
       "key": "return6-17",
-      "ownership": "other-read-gaps",
-      "reason": "Parameters, aggregations, and RETURN expressions are not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "params",
         "return",
-        "target-table-ops",
-        "xfail"
+        "target-table-ops"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "return6-18",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
         "target-table-ops",
-        "with"
+        "with",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "return6-19",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "other-read-gaps",
+      "reason": "multiple MATCH source aliases in one row lowering are not supported (multi-source residual, issue #1273)",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
-        "target-table-ops"
+        "target-table-ops",
+        "xfail"
       ]
     },
     {
@@ -45300,15 +45300,15 @@
     {
       "implementation_status": "translated",
       "key": "return6-6",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "other-read-gaps",
+      "reason": "aggregate expressions inside map literals are not supported in the local compiler",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
         "map",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
-        "target-table-ops"
+        "target-table-ops",
+        "xfail"
       ]
     },
     {
@@ -51088,17 +51088,17 @@
     {
       "implementation_status": "translated",
       "key": "with-orderby4-9",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "the pandas row evaluator declines `x % 3` in this projection (GFQLCallExecutionError: unsupported row expression); passes on Polars",
+      "support_status": "xfail",
       "tags": [
         "alias",
         "expression",
         "limit",
         "orderby",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-table-ops",
-        "with"
+        "with",
+        "xfail"
       ]
     },
     {
@@ -51307,7 +51307,7 @@
       "implementation_status": "translated",
       "key": "with-where2-2",
       "ownership": "row-pipeline-read-forms",
-      "reason": "WITH pipelines, parameter binding, and multi-variable WHERE predicates are not supported",
+      "reason": "the product Cypher parser rejects the numeric parameter names $1 and $2 (GFQLSyntaxError invalid-cypher-syntax)",
       "support_status": "xfail",
       "tags": [
         "multi-var",
@@ -51809,7 +51809,7 @@
       "implementation_status": "translated",
       "key": "with6-5",
       "ownership": "row-pipeline-read-forms",
-      "reason": "Parameters, aggregations, and WITH pipelines are not supported",
+      "reason": "an aggregate inside an arithmetic WITH expression with a parameter (`$age + avg(person.age) - 1000`) is declined as unsupported-cypher-query",
       "support_status": "xfail",
       "tags": [
         "aggregation",

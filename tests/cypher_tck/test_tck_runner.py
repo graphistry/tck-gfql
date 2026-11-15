@@ -1148,6 +1148,10 @@ _PARAM_BINDING_CLUSTER3_KEYS = (
 )
 
 _PARAM_BINDING_PROMOTED_ROW_KEYS = (
+    "match-where1-6",
+    "match-where1-9",
+    "return-orderby6-1",
+    "return6-17",
     "expr-list1-3",
     "expr-list1-4",
     "expr-list1-5",
@@ -1189,6 +1193,18 @@ _ISSUE142_PROMOTED_ERROR_KEYS = (
     "expr-typeconversion4-10-1",
     "expr-typeconversion4-10-2",
 )
+
+
+def test_supported_scenarios_without_a_direct_cypher_string_are_product_proven() -> None:
+    """Supported must be product-proven: an executor-only scenario (no cypher-string tag) needs a direct-Cypher snapshot entry."""
+    from tests.cypher_tck.direct_cypher_support import DIRECT_CYPHER_OVERLAP_KEYS
+
+    unproven = {
+        scenario.key
+        for scenario in SCENARIOS
+        if scenario.status == "supported" and "phase1-executor" in scenario.tags and "cypher-string" not in scenario.tags
+    } - DIRECT_CYPHER_OVERLAP_KEYS - DIRECT_CYPHER_PROMOTION_KEYS
+    assert unproven == set()
 
 
 @pytest.mark.parametrize("key", _PARAM_BINDING_CLUSTER3_KEYS)
