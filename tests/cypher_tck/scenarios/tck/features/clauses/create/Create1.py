@@ -1,6 +1,7 @@
+from dataclasses import replace
 from graphistry.compute import e_forward, e_undirected, n
 
-from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from tests.cypher_tck.models import Expected, GraphFixture, MutationEffects, Scenario
 from tests.cypher_tck.parse_cypher import graph_fixture_from_create
 
 from tests.cypher_tck.scenarios.fixtures import (
@@ -298,3 +299,51 @@ SCENARIOS = [
         tags=('create', 'syntax-error', 'xfail'),
     ),
 ]
+
+# Exact positive poststates/side effects from openCypher Create1.feature,
+# source 59edf2e1c17b845bf97c334ed06b2eb780950c13. Physical fixture identity
+# deliberately differs from the user property `id`.
+_CREATE_POST_NODES = {
+    1: [{}],
+    2: [{}, {}],
+    3: [{"labels": ["Label"]}],
+    4: [{"labels": ["Label"]}, {"labels": ["Label"]}],
+    5: [{"labels": ["A", "B", "C", "D"]}],
+    6: [{"labels": ["B", "A", "D"]}, {"labels": ["B", "C"]}, {"labels": ["D", "E", "B"]}],
+    7: [{"created": True}],
+    8: [{"name": "foo"}],
+    9: [{"id": 12, "name": "foo"}],
+    10: [{"id": 12, "name": "foo"}],
+    11: [{"id": 12}],
+    12: [{"id": 4611686018427387905, "labels": ["TheLabel"]}],
+}
+# These are original TCK +labels counters (distinct label names, not node memberships).
+_CREATE_EFFECTS = {
+    1: MutationEffects(nodes_created=1),
+    2: MutationEffects(nodes_created=2),
+    3: MutationEffects(nodes_created=1, labels_added=1),
+    4: MutationEffects(nodes_created=2, labels_added=1),
+    5: MutationEffects(nodes_created=1, labels_added=4),
+    6: MutationEffects(nodes_created=3, labels_added=5),
+    7: MutationEffects(nodes_created=1, properties_added=1),
+    8: MutationEffects(nodes_created=1, properties_added=1),
+    9: MutationEffects(nodes_created=1, properties_added=2),
+    10: MutationEffects(nodes_created=1, properties_added=2),
+    11: MutationEffects(nodes_created=1, properties_added=1),
+    12: MutationEffects(nodes_created=1, properties_added=1, labels_added=1),
+}
+for _index, _scenario in enumerate(SCENARIOS):
+    _number = int(_scenario.key.split("-")[1])
+    if _number not in _CREATE_POST_NODES:
+        continue
+    _post = GraphFixture(
+        nodes=[{"__fixture_id__": i, **node} for i, node in enumerate(_CREATE_POST_NODES[_number])],
+        edges=[], node_id="__fixture_id__", node_columns=("__fixture_id__",),
+    )
+    _tags = tuple(tag for tag in _scenario.tags if tag != "xfail") + ("cypher-string", "cypher-string-pure", "mutation")
+    if _number in {1, 2, 3, 4, 5, 6, 7, 9}:
+        _tags += ("mutation-no-return",)
+    SCENARIOS[_index] = replace(
+        _scenario, status="supported", reason=None, tags=_tags,
+        expected=replace(_scenario.expected, post_graph=_post, effects=_CREATE_EFFECTS[_number]),
+    )

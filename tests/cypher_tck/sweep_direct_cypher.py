@@ -14,6 +14,10 @@ from tests.cypher_tck.direct_cypher_xfail_contract import (
     DirectCypherXfailOutcome,
 )
 from tests.cypher_tck.models import Scenario
+from tests.cypher_tck.mutation_oracle import (
+    CallerMutation, EffectMismatch, ExistingIdentityMismatch, PoststateMismatch,
+    execute_and_assert_mutation, requires_mutation_oracle,
+)
 from tests.cypher_tck.scenarios import SCENARIOS
 from tests.cypher_tck.sweep_promotions import (
     _expects_error_scenario as _expects_translated_error_scenario,
@@ -127,11 +131,19 @@ def _compare_graph_result(scenario: Scenario, result: object) -> None:
 
 
 def _run_direct_cypher_scenario(scenario: Scenario) -> Tuple[bool, str]:
+    mutation = requires_mutation_oracle(scenario)
+    if mutation and (scenario.expected.post_graph is None or scenario.expected.effects is None):
+        return False, "Mutation scenarios require complete poststate and side-effect expectations"
     graph = _build_graph(scenario.graph)
     expects_error = _expects_direct_cypher_error_scenario(scenario)
 
     try:
-        result = graph.gfql(scenario.cypher, params=scenario.params)
+        if mutation:
+            result = execute_and_assert_mutation(graph, scenario, engine="pandas")
+        else:
+            result = graph.gfql(scenario.cypher, params=scenario.params)
+    except (CallerMutation, EffectMismatch, ExistingIdentityMismatch, PoststateMismatch) as exc:
+        return False, f"{type(exc).__name__}: {exc}"
     except Exception as exc:  # noqa: BLE001 - report exact blocker class/message
         if expects_error:
             return True, ""
@@ -142,7 +154,8 @@ def _run_direct_cypher_scenario(scenario: Scenario) -> Tuple[bool, str]:
 
     try:
         if scenario.expected.rows is not None:
-            _assert_expected_rows(scenario, _rows_from_result(result))
+            rows = [] if mutation and "mutation-no-return" in scenario.tags else _rows_from_result(result)
+            _assert_expected_rows(scenario, rows)
         else:
             _compare_graph_result(scenario, result)
     except Exception as exc:  # noqa: BLE001 - report exact blocker class/message

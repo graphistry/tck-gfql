@@ -778,7 +778,6 @@ OTHER_READ_GAPS_TRANCHE1_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
 
 # Issue #54 tranche-1: write-clause lane (cross-clause anchor keys).
 WRITE_CLAUSES_TRANCHE1_KEYS: Final[tuple[str, ...]] = (
-    "create1-1",
     "create2-1",
     "create6-1",
     "merge1-1",
