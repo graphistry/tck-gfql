@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Development]
 
 ### Changed
+- **Map2 [1] and [2] promoted**: `WITH $expr AS expr, $idx AS idx RETURN expr[idx]` (and `expr[toString(idx)]`) match their expected rows through direct Cypher once a string parameter is a string literal in row expressions (pygraphistry#2324, fixed in pygraphistry#2328). xfail count 681 -> 679, supported 2979 -> 2981. Requires pygraphistry#2328 on the product ref.
 - **Return6 [12] promoted**: `MATCH (a:L)-[rel]->(b) RETURN a, count(*)` matches its expected rows through direct Cypher once pygraphistry aggregates relationship-pattern rows per path (pygraphistry#2174). xfail count 689 to 688; grouped-aggregate lane samples and pinned report counts updated.
 
 ### Fixed

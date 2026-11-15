@@ -292,8 +292,6 @@ ROW_PIPELINE_TRANCHE14_KEYS: Final[tuple[str, ...]] = (
     "expr-list12-5",
     "expr-list2-10",
     "expr-list2-11",
-    "expr-map2-1",
-    "expr-map2-2",
     "expr-pattern2-11",
     "expr-precedence4-4",
     "expr-quantifier1-8",
@@ -305,6 +303,8 @@ ROW_PIPELINE_TRANCHE14_KEYS: Final[tuple[str, ...]] = (
     "expr-typeconversion3-4",
 )
 
+# expr-map2-1/2 promoted via the direct-Cypher path once a string parameter is a
+# string literal in row expressions (pygraphistry#2324).
 ROW_PIPELINE_TRANCHE14_EXPECTED_STATUS: Final[str] = "xfail"
 ROW_PIPELINE_TRANCHE14_FORBIDDEN_TAGS: Final[tuple[str, ...]] = (
     "cypher-string",

@@ -11840,31 +11840,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-map2-1",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Parameter binding is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
         "params",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-map2-2",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Parameter binding is not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "map",
         "meta-xfail",
         "params",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
