@@ -107,3 +107,42 @@ BACKLOG_LIMIT=20 python -m tests.cypher_tck.porting_backlog
   error payloads when a report artifact includes `direct_cypher_cases`. Entries
   without the block remain valid against artifacts that do not carry case-level
   actual error payloads.
+
+### Mutation poststate and effects
+
+A mutation scenario supplies `Expected.post_graph` and `Expected.effects`
+(`MutationEffects`) alongside its RETURN rows. The direct-Cypher runner checks
+complete node/relationship properties, labels, direction and parallel edges with existing node/relationship identities anchored and only fresh physical IDs
+normalized, compares the original side-effect counters, and
+checks the caller's frames and bindings remain unchanged. No-return scenarios
+use the `mutation-no-return` tag; their empty rows cannot bypass graph/effect
+assertions. The mutation lane requires successful native execution on each
+requested engine and does not accept a capability decline as conformance.
+
+Retained relationship IDs must keep their original endpoints. Poststate fixtures
+retain existing physical IDs; fresh IDs may use arbitrary noncolliding names. The
+runner and direct-Cypher promotion sweep use the same mutation oracle.
+
+Use a separate physical fixture key, such as `node_id="__fixture_id__"`, when a
+poststate contains a user property named `id`. Null properties are absent from
+poststate/effects. The original openCypher `+labels` counter counts distinct
+label names, so creating two nodes with the same label adds one label.
+`Create1` positive scenarios 1–12 carry explicit poststates/effects from original
+source `59edf2e1c17b845bf97c334ed06b2eb780950c13`; later CREATE and other write
+operators remain separate conformance work. No-op, wrong-effect, caller-mutation,
+parallel-edge and direction controls exercise the oracle itself.
+
+### Node CREATE companion scope
+
+This branch pairs with pygraphistry `feat/gfql-create-nodes-parent-20261112`
+(PR #2316). It promotes only Create1-1..12, Create6-1..2, Graph3-1..3, and Graph7-2..3: 19
+node CREATE scenarios with complete graph, original effects, RETURN rows, and
+caller checks. Relationship CREATE remains unsupported and unpassed here; its
+separate companion is `feat/gfql-create-relationships-20261112`. SET has its own
+companion. Promotions describe the required contract; native failures remain
+failures until repaired and verified.
+
+Existing legacy `type` labels cannot always be preserved when CREATE introduces
+canonical label flags. The product declines those inputs before effects; they
+are unsupported, not successful conformance. Full representation support is
+tracked in [pygraphistry #2322](https://github.com/graphistry/pygraphistry/issues/2322).

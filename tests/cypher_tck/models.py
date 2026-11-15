@@ -15,11 +15,25 @@ class GraphFixture:
 
 
 @dataclass(frozen=True)
+class MutationEffects:
+    nodes_created: int = 0
+    nodes_deleted: int = 0
+    relationships_created: int = 0
+    relationships_deleted: int = 0
+    properties_added: int = 0
+    properties_removed: int = 0
+    labels_added: int = 0
+    labels_removed: int = 0
+
+
+@dataclass(frozen=True)
 class Expected:
     node_ids: Optional[Sequence[Any]] = None
     edge_ids: Optional[Sequence[Any]] = None
     rows: Optional[List[Dict[str, Any]]] = None
     ordered: Optional[bool] = None
+    post_graph: Optional[GraphFixture] = None
+    effects: Optional[MutationEffects] = None
 
 
 @dataclass(frozen=True)

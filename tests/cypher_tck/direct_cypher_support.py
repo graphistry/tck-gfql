@@ -1966,6 +1966,27 @@ DIRECT_CYPHER_OVERLAP_KEYS = {
 }
 
 DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
+    "create1-1",
+    "create1-2",
+    "create1-3",
+    "create1-4",
+    "create1-5",
+    "create1-6",
+    "create1-7",
+    "create1-8",
+    "create1-9",
+    "create1-10",
+    "create1-11",
+    "create1-12",
+    "create6-1",
+    "create6-2",
+
+    "expr-graph3-1",
+    "expr-graph3-2",
+    "expr-graph3-3",
+    "expr-graph7-2",
+    "expr-graph7-3",
+
     "expr-aggregation2-7",
     "expr-aggregation2-8",
     "expr-aggregation3-1",

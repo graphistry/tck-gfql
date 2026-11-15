@@ -30,6 +30,7 @@ from tests.cypher_tck.direct_cypher_support import (
 )
 from tests.cypher_tck.gfql_plan import PlanStep, col, order_by
 from tests.cypher_tck.models import Expected, GraphFixture, Scenario
+from tests.cypher_tck.mutation_oracle import requires_mutation_oracle, snapshot_input
 from tests.cypher_tck.parse_cypher import _parse_literal
 from tests.cypher_tck.plan_executor import execute_plan
 from tests.cypher_tck.scenarios import SCENARIOS
@@ -898,6 +899,40 @@ def _rows_from_result(result: Any) -> List[Dict[str, Any]]:
     return pdf.to_dict("records")
 
 
+def _returned_rows_for_mutation(scenario: Scenario, result: Any) -> List[Dict[str, Any]]:
+    if "mutation-no-return" in scenario.tags:
+        return []
+    return _rows_from_result(result)
+
+
+def _classify_xfail_mutation_oracle(
+    graph: Any, scenario: Scenario, engine: str
+) -> str:
+    """Classify whether an xfail mutation scenario still has row debt.
+
+    ``execute_and_assert_mutation`` must prove graph/effects before row debt
+    can be inferred. A row assertion failure confirms the historical debt; a
+    passing assertion means the xfail is stale. Polars capability declines
+    remain separately deferred.
+    """
+    from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
+
+    try:
+        result = execute_and_assert_mutation(graph, scenario, engine=engine)
+    except NotImplementedError as exc:
+        if engine != "polars":
+            raise
+        _POLARS_NOT_IMPLEMENTED.append(f"{scenario.key}: {str(exc)[:80]}")
+        return "deferred"
+
+    rows = _returned_rows_for_mutation(scenario, result)
+    try:
+        _assert_expected_rows(scenario, rows)
+    except AssertionError:
+        return "debt"
+    return "stale"
+
+
 def _ids_from_entity_projection_meta(
     result: object,
     *,
@@ -1191,6 +1226,7 @@ _ISSUE142_PROMOTED_ERROR_KEYS = (
 )
 
 
+
 @pytest.mark.parametrize("key", _PARAM_BINDING_CLUSTER3_KEYS)
 def test_issue120_parameter_binding_cluster_has_explicit_params(key: str) -> None:
     scenario = next(s for s in SCENARIOS if s.key == key)
@@ -1275,6 +1311,8 @@ def test_issue142_refreshed_xfail_error_promotions_raise_direct_cypher(
         _build_graph(scenario.graph).gfql(
             scenario.cypher, params=scenario.params, engine="pandas"
         )
+
+
 
 
 def test_valid_range_scenario_is_not_promoted_as_an_error() -> None:
@@ -1440,12 +1478,42 @@ def _assert_ids(
 
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s.key)
 def test_cypher_tck_scenario(scenario: Scenario) -> None:
+    if scenario.status == "xfail" and requires_mutation_oracle(scenario):
+        from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
+
+        g = _build_graph(scenario.graph)
+        engines = ["pandas"]
+        if _TEST_CUDF and _HAS_CUDF:
+            engines.append("cudf")
+        if _TEST_POLARS and _HAS_POLARS:
+            engines.append("polars")
+        for engine in engines:
+            classification = _classify_xfail_mutation_oracle(g, scenario, engine)
+            if classification == "stale":
+                pytest.fail(
+                    f"{scenario.key}: mutation scenario passed expected rows; "
+                    "row debt is stale"
+                )
+        pytest.xfail(scenario.reason or "mutation passes but projected rows are unsupported")
     if scenario.status == "skip":
         pytest.skip(scenario.reason or "skipped")
     if scenario.status == "xfail":
         pytest.xfail(scenario.reason or "expected failure")
 
     g = _build_graph(scenario.graph)
+
+    if requires_mutation_oracle(scenario):
+        from tests.cypher_tck.mutation_oracle import execute_and_assert_mutation
+        engines = ["pandas"]
+        if _TEST_CUDF and _HAS_CUDF:
+            engines.append("cudf")
+        if _TEST_POLARS and _HAS_POLARS:
+            engines.append("polars")
+        for engine in engines:
+            result = execute_and_assert_mutation(g, scenario, engine=engine)
+            rows = _returned_rows_for_mutation(scenario, result)
+            _assert_expected_rows(scenario, rows)
+        return
 
     if is_typed_schema_scenario(scenario):
         g = bind_schema_for_scenario(g, scenario)

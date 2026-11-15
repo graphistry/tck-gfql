@@ -574,47 +574,52 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-1",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-10",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-11",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-12",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation"
       ]
     },
     {
@@ -709,14 +714,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-2",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
@@ -733,80 +740,93 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-3",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-4",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-5",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-6",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-7",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-8",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create1-9",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation",
+        "mutation-no-return"
       ]
     },
     {
@@ -1308,14 +1328,15 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create6-1",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation"
       ]
     },
     {
@@ -1374,14 +1395,15 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "create6-2",
-      "ownership": "write-clauses",
-      "reason": "CREATE clause semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
         "create",
-        "xfail"
+        "cypher-string",
+        "cypher-string-pure",
+        "mutation"
       ]
     },
     {
@@ -6091,52 +6113,46 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-graph3-1",
-      "ownership": "write-clauses",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
         "expr",
         "graph",
-        "meta-xfail",
-        "xfail"
+        "mutation"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-graph3-2",
-      "ownership": "write-clauses",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
         "expr",
         "graph",
-        "meta-xfail",
-        "xfail"
+        "mutation"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-graph3-3",
-      "ownership": "write-clauses",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
         "expr",
         "graph",
-        "meta-xfail",
-        "xfail"
+        "mutation"
       ]
     },
     {
       "implementation_status": "not_yet_implemented",
       "key": "expr-graph3-4",
       "ownership": "write-clauses",
-      "reason": "Expression evaluation is not supported",
+      "reason": "Relationship CREATE is outside the node-only companion",
       "support_status": "xfail",
       "tags": [
         "defer-expr-advanced",
@@ -6735,32 +6751,28 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-graph7-2",
-      "ownership": "write-clauses",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
         "expr",
         "graph",
-        "meta-xfail",
-        "xfail"
+        "mutation"
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-graph7-3",
-      "ownership": "write-clauses",
-      "reason": "Parameter binding is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
-        "defer-expr-advanced",
+        "cypher-string",
         "expr",
         "graph",
-        "meta-xfail",
-        "params",
-        "xfail"
+        "mutation",
+        "params"
       ]
     },
     {
