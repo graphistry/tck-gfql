@@ -75,6 +75,7 @@ SCENARIOS = [
             rows=[{"out.name": "'product1'"}],
         ),
         gfql=None,
+        params={"1": 0, "2": 1},
         status="xfail",
         reason="Parameter binding, multi-variable WHERE, and projection validation not supported",
         tags=("match-where", "params", "and", "multi-var", "xfail"),

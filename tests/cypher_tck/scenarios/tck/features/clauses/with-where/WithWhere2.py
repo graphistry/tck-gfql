@@ -75,6 +75,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
+        params={"1": 0, "2": 1},
         status="xfail",
         reason="WITH pipelines, parameter binding, and multi-variable WHERE predicates are not supported",
         tags=("with", "where", "params", "multi-var", "xfail"),

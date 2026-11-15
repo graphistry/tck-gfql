@@ -131,6 +131,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
+        params={"age": 38},
         status="xfail",
         reason="Parameters, aggregations, and WITH pipelines are not supported",
         tags=("with", "aggregation", "params", "xfail"),

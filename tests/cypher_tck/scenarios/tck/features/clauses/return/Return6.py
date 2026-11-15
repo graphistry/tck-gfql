@@ -368,6 +368,7 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
+        params={"age": 38},
         status="xfail",
         reason="Parameters, aggregations, and RETURN expressions are not supported",
         tags=("return", "params", "aggregation", "xfail"),

@@ -1148,6 +1148,10 @@ _PARAM_BINDING_CLUSTER3_KEYS = (
 )
 
 _PARAM_BINDING_PROMOTED_ROW_KEYS = (
+    "match-where1-6",
+    "match-where1-9",
+    "return-orderby6-1",
+    "return6-17",
     "expr-list1-3",
     "expr-list1-4",
     "expr-list1-5",

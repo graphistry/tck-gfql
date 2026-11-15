@@ -16788,31 +16788,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier10-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier10-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -16908,31 +16908,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier11-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier11-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -17238,31 +17238,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier12-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier12-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -24036,31 +24036,31 @@
     {
       "implementation_status": "translated",
       "key": "expr-quantifier9-1",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "expr-quantifier9-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "defer-quantifier",
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "quantifier",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
@@ -38837,15 +38837,15 @@
     {
       "implementation_status": "translated",
       "key": "expr-typeconversion1-4",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-expr-dsl",
-        "typeConversion"
+        "typeConversion",
+        "xfail"
       ]
     },
     {
@@ -39138,15 +39138,15 @@
     {
       "implementation_status": "translated",
       "key": "expr-typeconversion3-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
         "expr",
         "meta-xfail",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-expr-dsl",
-        "typeConversion"
+        "typeConversion",
+        "xfail"
       ]
     },
     {
@@ -40166,16 +40166,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match-where1-6",
-      "ownership": "other-read-gaps",
-      "reason": "Parameter binding and edge-return validation not supported in harness",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "edge-return",
         "match-where",
-        "params",
-        "xfail"
+        "params"
       ]
     },
     {
@@ -40201,16 +40201,16 @@
       ]
     },
     {
-      "implementation_status": "not_yet_implemented",
+      "implementation_status": "direct_cypher_only",
       "key": "match-where1-9",
-      "ownership": "other-read-gaps",
-      "reason": "Parameter binding and edge-return validation not supported in harness",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "edge-return",
         "match-where",
-        "params",
-        "xfail"
+        "params"
       ]
     },
     {
@@ -43974,30 +43974,30 @@
     {
       "implementation_status": "translated",
       "key": "return-orderby6-1",
-      "ownership": "row-pipeline-read-forms",
-      "reason": "Parameters, aggregations, and ORDER BY are not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "orderby",
         "params",
         "return",
-        "target-table-ops",
-        "xfail"
+        "target-table-ops"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "return-orderby6-2",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Aggregations and ORDER BY are not supported",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
         "orderby",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
-        "target-table-ops"
+        "target-table-ops",
+        "xfail"
       ]
     },
     {
@@ -44106,16 +44106,16 @@
     {
       "implementation_status": "translated",
       "key": "return-skip-limit1-3",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "WITH pipelines, SKIP, and functions are not supported",
+      "support_status": "xfail",
       "tags": [
         "function",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
         "skip",
         "target-table-ops",
-        "with"
+        "with",
+        "xfail"
       ]
     },
     {
@@ -45172,42 +45172,42 @@
     {
       "implementation_status": "translated",
       "key": "return6-17",
-      "ownership": "other-read-gaps",
-      "reason": "Parameters, aggregations, and RETURN expressions are not supported",
-      "support_status": "xfail",
+      "ownership": "supported",
+      "support_status": "supported",
       "tags": [
         "aggregation",
+        "cypher-string",
+        "cypher-string-pure",
         "params",
         "return",
-        "target-table-ops",
-        "xfail"
+        "target-table-ops"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "return6-18",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "WITH pipelines, aggregations, and RETURN expressions are not supported",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
         "target-table-ops",
-        "with"
+        "with",
+        "xfail"
       ]
     },
     {
       "implementation_status": "translated",
       "key": "return6-19",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "other-read-gaps",
+      "reason": "Aggregations and RETURN expressions are not supported",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
-        "target-table-ops"
+        "target-table-ops",
+        "xfail"
       ]
     },
     {
@@ -45300,15 +45300,15 @@
     {
       "implementation_status": "translated",
       "key": "return6-6",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "other-read-gaps",
+      "reason": "Aggregations inside map projections are not supported",
+      "support_status": "xfail",
       "tags": [
         "aggregation",
         "map",
-        "phase1-executor",
-        "phase1-executor-pure",
         "return",
-        "target-table-ops"
+        "target-table-ops",
+        "xfail"
       ]
     },
     {
@@ -51088,17 +51088,17 @@
     {
       "implementation_status": "translated",
       "key": "with-orderby4-9",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "WITH pipelines, ORDER BY, LIMIT, and expression aliasing are not supported",
+      "support_status": "xfail",
       "tags": [
         "alias",
         "expression",
         "limit",
         "orderby",
-        "phase1-executor",
-        "phase1-executor-pure",
         "target-table-ops",
-        "with"
+        "with",
+        "xfail"
       ]
     },
     {

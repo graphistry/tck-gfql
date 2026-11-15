@@ -48,6 +48,7 @@ SCENARIOS = [
             select([("avgAge", "avg(person.age)")]),
             order_by([("$age + avg(person.age) - 1000", "asc")]),
         ),
+        params={"age": 38},
         status="xfail",
         reason="Parameters, aggregations, and ORDER BY are not supported",
         tags=("return", "orderby", "aggregation", "params", "xfail"),
