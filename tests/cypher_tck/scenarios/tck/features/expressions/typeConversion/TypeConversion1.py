@@ -91,7 +91,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason='Expression evaluation is not supported',
+        reason="toBoolean() of invalid strings is not evaluated by the row pipeline (call-execution error)",
         tags=('expr', 'typeConversion', 'meta-xfail', 'xfail'),
     ),
 

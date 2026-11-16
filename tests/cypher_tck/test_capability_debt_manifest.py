@@ -126,10 +126,10 @@ def test_default_capability_debt_manifest_validates_against_report_artifact() ->
     summary = manifest_module.validate_manifest(_manifest(), artifact=_artifact())
 
     assert summary.scenario_count == len(SCENARIOS)
-    assert summary.status_counts == {"skip": 5, "supported": 2981, "xfail": 679}
+    assert summary.status_counts == {"skip": 5, "supported": 2969, "xfail": 691}
     assert summary.implementation_counts == {
-        "direct_cypher_only": 284,
-        "not_yet_implemented": 446,
+        "direct_cypher_only": 286,
+        "not_yet_implemented": 444,
         "translated": 2935,
     }
     assert summary.direct_cypher_debt_count == len(

@@ -189,7 +189,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason="WITH pipelines, ORDER BY, LIMIT, and expression aliasing are not supported",
+        reason="the pandas row evaluator declines `x % 3` in this projection (GFQLCallExecutionError: unsupported row expression); passes on Polars",
         tags=("with", "orderby", "limit", "alias", "expression", "xfail"),
     ),
 ]

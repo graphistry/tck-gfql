@@ -35,7 +35,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason='Expression evaluation is not supported',
+        reason="rand() is not supported by the product (the capability check declines the comprehension predicate)",
         tags=('expr', 'quantifier', 'meta-xfail', 'xfail'),
     ),
 
@@ -52,7 +52,7 @@ SCENARIOS = [
         ),
         gfql=None,
         status="xfail",
-        reason='Expression evaluation is not supported',
+        reason="rand() is not supported by the product (the capability check declines the comprehension predicate)",
         tags=('expr', 'quantifier', 'meta-xfail', 'xfail'),
     ),
 
