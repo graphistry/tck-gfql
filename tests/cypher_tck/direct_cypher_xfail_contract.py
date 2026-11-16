@@ -48,6 +48,8 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     # These keys now match their expected row oracle via the direct-Cypher row
     # support snapshot and are no longer tracked as xfail non-validation debt.
     "expr-aggregation3-1",
+    "expr-map2-1",
+    "expr-map2-2",
     "match-where1-6",
     "match-where1-9",
     "return-orderby6-1",
