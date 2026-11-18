@@ -34,9 +34,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason="RETURN expression evaluation and null arithmetic semantics are not supported",
-        tags=("return", "expression", "null", "xfail"),
+        status="supported",
+        tags=("return", "expression", "null", "cypher-string", "cypher-string-pure"),
     ),
 
     Scenario(
