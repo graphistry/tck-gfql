@@ -330,6 +330,18 @@ def _cypher_series_from_masks(
     return out
 
 
+def _cypher_string_predicate_series(index: Any, left: Any, right: Any, kind: str, negate: bool = False) -> Any:
+    """openCypher STARTS WITH / ENDS WITH / CONTAINS: both operands must be strings, anything else is null."""
+    values: List[Any] = []
+    for lhs, rhs in zip(left, right):
+        if not (isinstance(lhs, str) and isinstance(rhs, str)):
+            values.append(pd.NA)
+            continue
+        hit = lhs.startswith(rhs) if kind == "starts_with" else lhs.endswith(rhs) if kind == "ends_with" else rhs in lhs
+        values.append((not hit) if negate else hit)
+    return pd.Series(values, index=index, dtype="object")
+
+
 def _cypher_not_series(index: pd.Index, value: Any) -> pd.Series:
     true_mask, false_mask, null_mask = _cypher_truth_masks(value, index)
     return _cypher_series_from_masks(index, false_mask, true_mask, null_mask)
@@ -2394,26 +2406,9 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
                     null_mask = left_series.isna() if hasattr(left_series, "isna") else pd.Series(False, index=df.index)
                     return out.where(~null_mask, pd.NA)
             if op_name in {"contains", "starts_with", "ends_with", "not_contains", "not_starts_with", "not_ends_with"}:
-                right_lit = _UNSUPPORTED_EXPR
-                try:
-                    right_lit = _expr_literal_value(right_expr)
-                except Exception:
-                    right_lit = _UNSUPPORTED_EXPR
-                if right_lit is _UNSUPPORTED_EXPR:
-                    raise PlanExecutionError(f"unsupported binary expression op: {op_name}")
-                left_txt = left_series.astype(str)
-                needle = str(right_lit)
-                if op_name in {"contains", "not_contains"}:
-                    out = left_txt.str.contains(needle, regex=False)
-                elif op_name in {"starts_with", "not_starts_with"}:
-                    out = left_txt.str.startswith(needle)
-                else:
-                    out = left_txt.str.endswith(needle)
-                if op_name in {"not_contains", "not_starts_with", "not_ends_with"}:
-                    out = ~out
-                left_null = left_series.isna() if hasattr(left_series, "isna") else pd.Series(False, index=df.index)
-                right_null = pd.Series([_is_null(right_lit)] * len(df), index=df.index)
-                return out.where(~(left_null | right_null), pd.NA)
+                return _cypher_string_predicate_series(
+                    df.index, left_series, right_series, op_name.removeprefix("not_"), negate=op_name.startswith("not_")
+                )
             raise PlanExecutionError(f"unsupported binary expression op: {op_name}")
         if expr.op == "func":
             name = str(expr.args.get("name", ""))
