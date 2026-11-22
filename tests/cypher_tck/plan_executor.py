@@ -2355,7 +2355,7 @@ def _eval_expr_series(df: pd.DataFrame, expr: Any) -> pd.Series:
             if op_name == "not":
                 return _cypher_not_series(df.index, value_series)
             if op_name == "neg":
-                return 0 - value_series
+                return -value_series
             if op_name == "pos":
                 return value_series
             raise PlanExecutionError(f"unsupported unary expression op: {op_name}")

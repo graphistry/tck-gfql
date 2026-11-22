@@ -38,9 +38,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'graph', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'graph', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
