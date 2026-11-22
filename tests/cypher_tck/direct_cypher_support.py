@@ -1966,6 +1966,7 @@ DIRECT_CYPHER_OVERLAP_KEYS = {
 }
 
 DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
+    "expr-graph7-1",
     "expr-aggregation2-7",
     "expr-aggregation2-8",
     "expr-aggregation3-1",

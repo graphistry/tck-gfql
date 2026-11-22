@@ -166,7 +166,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'literal': 0.0}
+            {'literal': -0.0}
             ],
         ),
         gfql=None,
@@ -183,7 +183,7 @@ SCENARIOS = [
         graph=GraphFixture(nodes=[], edges=[]),
         expected=Expected(
             rows=[
-            {'literal': 0.0}
+            {'literal': -0.0}
             ],
         ),
         gfql=None,
