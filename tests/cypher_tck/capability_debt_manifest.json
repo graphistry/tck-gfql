@@ -15191,17 +15191,21 @@
       ]
     },
     {
+      "direct_cypher_debt": {
+        "outcome": "success_wrong_rows",
+        "reason": "direct_cypher_nonvalidation:success_wrong_rows"
+      },
       "implementation_status": "translated",
       "key": "expr-precedence4-4",
-      "ownership": "supported",
-      "support_status": "supported",
+      "ownership": "row-pipeline-read-forms",
+      "reason": "Expression evaluation is not supported",
+      "support_status": "xfail",
       "tags": [
-        "cypher-string",
-        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl"
+        "target-expr-dsl",
+        "xfail"
       ]
     },
     {
