@@ -2273,6 +2273,7 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-string10-4",
     "expr-string10-5",
     "expr-string10-7",
+    "expr-precedence4-4",
     "expr-string10-8",
     "expr-string10-9",
     "expr-string8-4",

@@ -40,10 +40,7 @@ DIRECT_CYPHER_XFAIL_TYPE_ERROR_KEYS: Final[tuple[str, ...]] = ()
 # graph against a one-row oracle.  Expanding the upstream `UNWIND range(1, 20)`
 # setup into its explicit 22-node chain makes the engine return the expected row,
 # so match4-4 is promoted rather than recorded as wrong-row debt.
-# precedence4-4 evaluates once a string predicate takes a non-literal right operand (pygraphistry #2374),
-# but `(true OR null) STARTS WITH 'abc'` still stringifies the boolean until a non-string left operand is
-# null (pygraphistry #2349): wrong in `d` only. Promote it when both have landed.
-DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ("expr-precedence4-4",)
+DIRECT_CYPHER_XFAIL_WRONG_ROW_KEYS: Final[tuple[str, ...]] = ()
 
 DIRECT_CYPHER_XFAIL_UNEXPECTED_SUCCESS_KEYS: Final[tuple[str, ...]] = ()
 
@@ -71,6 +68,7 @@ DIRECT_CYPHER_PROMOTED_FROM_XFAIL_MATCHES_EXPECTED_KEYS: Final[tuple[str, ...]] 
     "expr-comparison2-6-2",
     "expr-comparison3-1",
     "expr-comparison3-2",
+    "expr-precedence4-4",
     "expr-string10-8",
     "expr-string8-8",
     "expr-string9-8",
