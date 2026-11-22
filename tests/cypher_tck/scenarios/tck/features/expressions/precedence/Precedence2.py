@@ -340,9 +340,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'precedence', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'precedence', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
@@ -357,9 +356,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'precedence', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'precedence', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
@@ -374,9 +372,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'precedence', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'precedence', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
@@ -391,9 +388,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'precedence', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'precedence', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
@@ -408,9 +404,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'precedence', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'precedence', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
@@ -425,9 +420,8 @@ SCENARIOS = [
             ],
         ),
         gfql=None,
-        status="xfail",
-        reason='Expression evaluation is not supported',
-        tags=('expr', 'precedence', 'meta-xfail', 'xfail'),
+        status="supported",
+        tags=('expr', 'precedence', 'cypher-string', 'cypher-string-pure', 'meta-xfail', 'target-expr-dsl'),
     ),
 
     Scenario(
