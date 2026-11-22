@@ -14771,87 +14771,87 @@
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-precedence2-2-1",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-precedence2-2-2",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-precedence2-2-3",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-precedence2-3-1",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-precedence2-3-2",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "expr-precedence2-4",
-      "ownership": "expression-long-tail",
-      "reason": "Expression evaluation is not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expr",
         "meta-xfail",
         "precedence",
-        "target-expr-dsl",
-        "xfail"
+        "target-expr-dsl"
       ]
     },
     {
@@ -44534,17 +44534,16 @@
       ]
     },
     {
-      "implementation_status": "translated",
+      "implementation_status": "direct_cypher_only",
       "key": "return2-1",
-      "ownership": "other-read-gaps",
-      "reason": "RETURN expression evaluation and null arithmetic semantics are not supported",
-      "support_status": "xfail",
+      "ownership": "direct-cypher-promotion",
+      "support_status": "supported",
       "tags": [
+        "cypher-string",
+        "cypher-string-pure",
         "expression",
         "null",
-        "return",
-        "target-table-ops",
-        "xfail"
+        "return"
       ]
     },
     {
