@@ -45,7 +45,8 @@ jobs:
           fi
 
           if [[ -z "${pygraphistry_ref}" ]]; then
-            pygraphistry_ref="master"
+            # pygraphistry integrates on develop; a PR whose paired branch was merged and deleted tests against it.
+            pygraphistry_ref="develop"
             if git ls-remote --exit-code --heads "${pygraphistry_repo}" "${candidate_ref}" >/dev/null 2>&1; then
               pygraphistry_ref="${candidate_ref}"
             fi
