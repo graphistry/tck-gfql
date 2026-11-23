@@ -58,7 +58,7 @@ expression tests also need pygraphistry's parser dependency installed.
 
 Install a specific ref from GitHub:
 ```bash
-PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh
+PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=develop ./bin/ci.sh
 ```
 
 Dependency freshness policy:
