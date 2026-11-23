@@ -29,6 +29,17 @@ def _job_env() -> dict[str, str]:
             "PATH": str(Path(sys.executable).parent) + os.pathsep + os.environ["PATH"]}
 
 
+def test_nightly_tests_the_same_pygraphistry_branch_as_pr_ci_by_default() -> None:
+    nightly = WORKFLOW.read_text()
+    ci = Path(".github/workflows/ci.yml").read_text()
+    assert "PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'develop' }}" in nightly
+    dispatch_input = nightly.split("      pygraphistry_ref:\n", 1)[1].split("      pygraphistry_repo:", 1)[0]
+    assert 'default: "develop"' in dispatch_input
+    # ci.yml falls back to the same branch when no same-name pygraphistry branch exists.
+    assert 'pygraphistry_ref="develop"' in ci
+    assert "'master'" not in nightly.split("    env:\n", 1)[1].split("    steps:\n", 1)[0]
+
+
 def test_nightly_checkout_keeps_resolved_revision_after_branch_advances(tmp_path: Path) -> None:
     source = tmp_path / "source"
     source.mkdir()

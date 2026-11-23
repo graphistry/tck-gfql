@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Return6 [12] promoted**: `MATCH (a:L)-[rel]->(b) RETURN a, count(*)` matches its expected rows through direct Cypher once pygraphistry aggregates relationship-pattern rows per path (pygraphistry#2174). xfail count 689 to 688; grouped-aggregate lane samples and pinned report counts updated.
 
 ### Fixed
+- **Nightly tests pygraphistry `develop`, like PR CI**: `nightly.yml` (and its `pygraphistry_ref` dispatch input) defaulted to `master`, so the nightly went red on `expr-map2-1` once #225 promoted Map2 [1]/[2] paired with pygraphistry#2379, which is on `develop` and not yet on `master`. PR CI already fell back to `develop` (#224). The workflow name is unchanged so the Slack subscription and failure dispatch keep working; the badge now reads `develop @ <version>`.
 - Keep the resolved PyGraphistry checkout available for nightly reports and badge updates.
 - Publish nightly badge commits only on the default branch; validate badges on pull requests.
 <!-- Do Not Erase This Section - Used for tracking unreleased changes -->

@@ -26,7 +26,7 @@ PYTHONPATH=/path/to/pygraphistry python3 -m tests.cypher_tck.porting_backlog
 - `PYGRAPHISTRY_PATH`: use a local pygraphistry checkout (sibling repo).
 - `PYGRAPHISTRY_INSTALL=1`: install pygraphistry (editable if `PYGRAPHISTRY_PATH` set).
 - `PYGRAPHISTRY_REPO`: git URL for pygraphistry (CI default is upstream).
-- `PYGRAPHISTRY_REF`: branch/tag/sha for pygraphistry (CI default is `master`).
+- `PYGRAPHISTRY_REF`: branch/tag/sha for pygraphistry (CI and nightly default to `develop`, pygraphistry's integration branch; `master` only moves at release time).
 - `UV_EXCLUDE_NEWER`: set to `6 days` for non-graphistry dependency installs.
 
 Notes:
@@ -36,7 +36,7 @@ Notes:
 ## CI
 
 GitHub Actions runs the suite on PRs. See `.github/workflows`.
-`nightly.yml` runs on schedule and updates the pygraphistry badge.
+`nightly.yml` runs on schedule against pygraphistry `develop` (override with the `pygraphistry_ref` dispatch input) and updates the pygraphistry badge. Its workflow name stays `Nightly Master Conformance` so the Slack subscription and the failure-dispatch workflow keep matching.
 
 To receive scheduled nightly results in Slack, run this command in the target
 channel using the GitHub app:
