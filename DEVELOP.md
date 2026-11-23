@@ -26,7 +26,7 @@ PYTHONPATH=/path/to/pygraphistry python3 -m tests.cypher_tck.porting_backlog
 - `PYGRAPHISTRY_PATH`: use a local pygraphistry checkout (sibling repo).
 - `PYGRAPHISTRY_INSTALL=1`: install pygraphistry (editable if `PYGRAPHISTRY_PATH` set).
 - `PYGRAPHISTRY_REPO`: git URL for pygraphistry (CI default is upstream).
-- `PYGRAPHISTRY_REF`: branch/tag/sha for pygraphistry (CI and nightly default to `develop`, pygraphistry's integration branch; `master` only moves at release time).
+- `PYGRAPHISTRY_REF`: branch/tag/sha for pygraphistry (CI, nightly, the PR conformance summary and `bin/ci.sh` all default to `develop`, pygraphistry's integration branch; `master` only moves at release time; `tests/cypher_tck/test_pygraphistry_ref_lockstep.py` keeps them in step).
 - `UV_EXCLUDE_NEWER`: set to `6 days` for non-graphistry dependency installs.
 
 Notes:

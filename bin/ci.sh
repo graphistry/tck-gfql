@@ -31,7 +31,7 @@ if [[ "${PYGRAPHISTRY_INSTALL:-0}" == "1" ]]; then
     uv pip install --python "${PYTHON_BIN}" -e "${PYGRAPHISTRY_PATH}"
   else
     repo="${PYGRAPHISTRY_REPO:-https://github.com/graphistry/pygraphistry.git}"
-    ref="${PYGRAPHISTRY_REF:-master}"
+    ref="${PYGRAPHISTRY_REF:-develop}"
     if [[ "${repo}" == git+* ]]; then
       repo="${repo#git+}"
     fi
@@ -106,7 +106,7 @@ if missing:
     )
     print(
         "Or install a specific ref with: "
-        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh",
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=develop ./bin/ci.sh",
         file=sys.stderr,
     )
     raise SystemExit(1)
@@ -137,7 +137,7 @@ if missing_modules:
     )
     print(
         "Or install a specific ref with: "
-        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=master ./bin/ci.sh",
+        "PYGRAPHISTRY_INSTALL=1 PYGRAPHISTRY_REF=develop ./bin/ci.sh",
         file=sys.stderr,
     )
     raise SystemExit(1)
