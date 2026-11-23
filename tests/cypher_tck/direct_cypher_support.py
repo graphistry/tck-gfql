@@ -2277,6 +2277,8 @@ DIRECT_CYPHER_PROMOTION_ROW_KEYS = {
     "expr-quantifier7-3-3",
     "expr-quantifier7-3-4",
     "expr-quantifier7-3-5",
+    "expr-map2-1",
+    "expr-map2-2",
     "expr-string10-4",
     "expr-string10-5",
     "expr-string10-7",

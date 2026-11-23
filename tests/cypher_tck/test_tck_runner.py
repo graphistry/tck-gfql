@@ -1157,6 +1157,8 @@ _PARAM_BINDING_PROMOTED_ROW_KEYS = (
     "expr-list1-5",
     "expr-list2-10",
     "expr-list2-11",
+    "expr-map2-1",
+    "expr-map2-2",
     "expr-map3-2",
     "expr-null3-4-1",
     "expr-null3-4-2",
