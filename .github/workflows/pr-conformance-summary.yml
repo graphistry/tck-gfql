@@ -44,8 +44,10 @@ jobs:
           PYGRAPHISTRY_REPO_INPUT: https://github.com/graphistry/pygraphistry.git
         run: |
           pygraphistry_repo="${PYGRAPHISTRY_REPO_INPUT}"
-          base_ref="master"
-          candidate_ref="master"
+          # pygraphistry integrates on develop (master only moves at release time); keep in lockstep with
+          # ci.yml, nightly.yml and bin/ci.sh (guarded by test_pygraphistry_ref_lockstep.py).
+          base_ref="develop"
+          candidate_ref="develop"
 
           if [[ "${{ github.event_name }}" == "pull_request" && -n "${{ github.head_ref }}" ]]; then
             candidate_ref="${{ github.head_ref }}"

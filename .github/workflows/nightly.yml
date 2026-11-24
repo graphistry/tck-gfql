@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       pygraphistry_ref:
-        description: "pygraphistry ref (branch/tag/sha)"
+        description: "pygraphistry ref (branch/tag/sha); default is the integration branch, develop"
         required: false
-        default: "master"
+        default: "develop"
       pygraphistry_repo:
         description: "pygraphistry repo URL"
         required: false
@@ -33,7 +33,10 @@ jobs:
       PYTHON_VERSION: "3.12"
       UV_VERSION: "0.11.3"
       UV_EXCLUDE_NEWER: "6 days"
-      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'master' }}
+      # pygraphistry integrates on develop and master only moves at release time, so a harness promotion
+      # paired with a develop-merged product change (e.g. pygraphistry#2379) is red against master.
+      # Keep this default in lockstep with the ci.yml fallback (guarded by test_nightly_product_checkout.py).
+      PYGRAPHISTRY_REF: ${{ github.event.inputs.pygraphistry_ref || 'develop' }}
       PYGRAPHISTRY_REPO: ${{ github.event.inputs.pygraphistry_repo || 'https://github.com/graphistry/pygraphistry.git' }}
       PYGRAPHISTRY_INSTALL: "1"
       PYGRAPHISTRY_PATH: pygraphistry
